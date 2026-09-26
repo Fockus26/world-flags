@@ -139,17 +139,25 @@ export function GameTypeToggle({
 					return (
 						<label
 							key={type}
-							// El color del texto sale del estado de React y no de
-							// `has-checked:` como antes. Medido en el navegador: al
-							// cargar la página, Chrome no vuelve a calcular el estilo
-							// de la etiqueta cuando React marca su radio por código
-							// (sigue con el color normal ≥4,5 s, hasta que algo fuerza
-							// un recálculo). Con la regla sin aplicar, el texto de la
-							// opción marcada quedaba sobre el morado a 3,62:1 en claro
-							// y 2,44:1 en oscuro — el fallo de contraste que ya se
-							// había reportado dos veces. El texto va en
-							// `--btn-contained-fg` (el de los botones rellenos): 4,66:1
-							// en claro y 6,64:1 en oscuro.
+							// El color del texto sale del estado de React. El de la marcada
+							// va en `--btn-contained-fg` (el de los botones rellenos):
+							// 4,66:1 en claro y 6,64:1 en oscuro.
+							//
+							// **`color` no se anima (D159).** Al terminar la carga (D042)
+							// la opción guardada pasa a marcada y la etiqueta cambia de
+							// color; con `color` en la lista de transición, ese cambio
+							// arrancaba una transición que solo avanza mientras la
+							// página pinta fotogramas. Medido: en una pestaña o un panel
+							// que no se está mostrando se queda en `currentTime` 0 sin
+							// fin, con el color de partida (`--default-foreground`), y
+							// así lo leen axe y cualquier medición: 3,62:1 en claro y
+							// 2,44:1 en oscuro, el fallo reportado tres veces (la última
+							// con tema "system"). No era que Chrome no recalculara el
+							// estilo: la regla sí se aplicaba, pero por debajo de la
+							// transición. Sin animar `color`, el texto correcto está en
+							// el mismo fotograma en que se marca el radio, al cargar y
+							// al cambiar de tema en caliente. La píldora sigue
+							// deslizándose; el texto no necesita fundido.
 							//
 							// Movimiento (D157): pulsar encoge a 0,98 todas; subir 2 px
 							// con `shadow-sm` y el fondo de hover solo las no elegidas,
@@ -159,7 +167,7 @@ export function GameTypeToggle({
 							className={`
 								relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5
 								min-h-11 rounded-[calc(var(--radius)-2px)] py-2
-								transition-[color,background-color,box-shadow,translate,scale] duration-150 ease-in-out
+								transition-[background-color,box-shadow,translate,scale] duration-150 ease-in-out
 								motion-safe:active:translate-y-0 motion-safe:active:scale-98
 								has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2
 								has-focus-visible:outline-[var(--focus)]
