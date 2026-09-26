@@ -27,7 +27,10 @@ interface OptionTileProps {
  * `overflow-hidden` pegada al borde (`AutoHeight`, las pestañas del modal de
  * configuración). Medido: "5 s" queda a 0 px del borde superior de su
  * `AutoHeight` y la columna derecha a 0 px del borde derecho del panel, así
- * que el desplazamiento le cortaba el borde de arriba.
+ * que el desplazamiento le cortaba el borde de arriba. Desde D160 `AutoHeight`
+ * deja 4 px de hueco (lo justo para el anillo de foco), pero la subida sigue
+ * apagada: no todos los consumidores pasan por `AutoHeight` y 4 px no
+ * alcanzan para subir 2 px y además llevar el anillo entero.
  */
 export function OptionTile({
 	name,
