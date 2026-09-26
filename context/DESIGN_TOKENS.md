@@ -42,6 +42,11 @@ Clases: `rounded-sm/md/lg/xl/2xl` ya heredan estos valores. Modales HeroUI usan
   (como el badge de castigo, D132); confeti `confetti-fall` de 1,2–1,7 s, una vez.
 - `tw-animate-css` (viene con `@heroui/styles`): `animate-in fade-in-0 slide-in-from-*
   duration-200` para entradas de vista y paneles de tabs.
+- Respuesta en la partida (`StimulusFrame`, D151–D152, `@theme` al final de
+  `global.css`): `animate-stimulus-ring` (anillo de acierto, **600 ms** `ease-out`,
+  única duración fuera de la escala: con 200 ms no se percibe) y
+  `animate-stimulus-shake` (sacudida de fallo, 200 ms, ±`--spacing`). Siempre con
+  `motion-safe:`.
 - Skeleton (`ui/Skeleton.tsx`, D042): brillo de HeroUI (`skeleton 2s linear
   infinite` en `::after`) + entrada `animate-in fade-in duration-200` que espera
   `SKELETON_DELAY_MS` (300 ms) para que una carga rápida no parpadee. Con
