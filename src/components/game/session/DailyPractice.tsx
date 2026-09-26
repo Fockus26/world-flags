@@ -45,7 +45,10 @@ export function DailyPractice({
 	const isAwaitingGradeRef = useRef(false);
 	const [isExitModalOpen, setIsExitModalOpen] = useState(false);
 	const correctAnswersRef = useRef(0);
-	const startTimeRef = useRef(Date.now());
+	// Reloj monótono, como el de `Session` (D132): si la hora del sistema
+	// cambia a mitad de la práctica, `Date.now()` saltaría y el tiempo final
+	// saldría negativo o de horas. El valor inicial se toma al montar (D165).
+	const startTimeRef = useRef(performance.now());
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 	// La cola ya llega sin códigos fuera del catálogo (`getDueCountries`),
 	// pero se filtra otra vez aquí: un código sin bandera ni nombre en la
@@ -76,7 +79,7 @@ export function DailyPractice({
 				onComplete({
 					totalCountries: playableCodes.length,
 					correctAnswers: correctAnswersRef.current,
-					elapsedMs: Date.now() - startTimeRef.current,
+					elapsedMs: performance.now() - startTimeRef.current,
 				}),
 		});
 
