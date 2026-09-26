@@ -31,7 +31,8 @@ Clases: `rounded-sm/md/lg/xl/2xl` ya heredan estos valores. Modales HeroUI usan
 - `shadow-xl` de Tailwind en las tarjetas de pantalla (`Configuration`, `Session`,
   `DailyPractice`, `Results`).
 - `--overlay-shadow` de HeroUI en modales/tooltips.
-- El resto son `shadow-[0_0_0_2px_...]` (anillos) definidos inline en `RegionOption`.
+- Anillos de 2 px: `ring-2` del color de la nota en `RegionOption` (antes `shadow-[0_0_0_2px_...]`; D157).
+- Elevación al pasar (D157): `shadow-md` en la tarjeta de continente, `shadow-sm` en las opciones del selector de juego y en `OptionTile`. `ring-*` y `shadow-*` se suman en un solo `box-shadow`.
 
 ## Movimiento
 
@@ -47,6 +48,8 @@ Clases: `rounded-sm/md/lg/xl/2xl` ya heredan estos valores. Modales HeroUI usan
   única duración fuera de la escala: con 200 ms no se percibe) y
   `animate-stimulus-shake` (sacudida de fallo, 200 ms, ±`--spacing`). Siempre con
   `motion-safe:`.
+- "Pop" al elegir (D158): `animate-in zoom-in-95` con `motion-safe:`, solo desde el
+  `onChange` del usuario (nunca al montar ni al restaurar lo guardado).
 - Skeleton (`ui/Skeleton.tsx`, D042): brillo de HeroUI (`skeleton 2s linear
   infinite` en `::after`) + entrada `animate-in fade-in duration-200` que espera
   `SKELETON_DELAY_MS` (300 ms) para que una carga rápida no parpadee. Con
