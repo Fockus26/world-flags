@@ -53,17 +53,37 @@ const SKELETON_ROW_COUNT = 5;
 /** Caja del avatar de cada fila: la comparten la imagen, la inicial y su skeleton. */
 const ROW_AVATAR_CLASS = "size-8 shrink-0 rounded-full";
 
-/** Clases de una fila, compartidas por la real y la de skeleton. */
+/**
+ * Clases de una fila, compartidas por la real y la de skeleton: puesto,
+ * avatar y el cuerpo (nombre y tiempo). Entre el puesto y el avatar siempre
+ * `gap-3` (D150: `gap-2` + el `me-1` del puesto bajo `sm`), para que el
+ * número no se pegue al avatar. Bajo `sm` el resto va a `gap-2` y la fila a
+ * `px-2`: a 320 px cada píxel es del nombre, que es lo que se trunca.
+ */
 const ROW_CLASS =
-	"flex items-center justify-between gap-3 rounded-md px-2 py-2 sm:px-3";
+	"flex items-center gap-2 rounded-md px-2 py-2 sm:gap-3 sm:px-3";
 
 /**
- * Puesto, avatar y nombre (D150): entre el puesto y el avatar siempre
- * `gap-3` (antes `gap-2.5`), para que el número no se pegue al avatar. Bajo
- * `sm` el resto va a `gap-2` y la fila a `px-2`: a 320 px cada píxel es del
- * nombre, que es lo que se trunca.
+ * Nombre y tiempo (D163). Bajo `sm` el tiempo va debajo del nombre, en todas
+ * las filas para que el ritmo sea igual: con tu puesto de tres cifras, al
+ * nombre le quedaban ~19 px a 320 px. Desde `sm`, en la misma línea y el
+ * tiempo a la derecha, como antes. `items-start` para que el tiempo (y su
+ * skeleton) no se estire a todo el ancho en la columna.
  */
-const ROW_LEAD_CLASS = "flex min-w-0 items-center gap-2 sm:gap-3";
+const ROW_BODY_CLASS =
+	"flex min-w-0 flex-1 flex-col items-start sm:flex-row sm:items-center sm:justify-between sm:gap-3";
+
+/** Nombre y "(tú)": el nombre es lo único que se trunca. */
+const ROW_NAME_LINE_CLASS =
+	"flex max-w-full min-w-0 items-center gap-2 max-sm:leading-tight sm:gap-3";
+
+/**
+ * El tiempo (D163): bajo `sm`, segunda línea de la fila, un punto más
+ * pequeño (`text-sm`, escala de Tailwind) y con interlineado ajustado para
+ * que la fila crezca lo justo (`max-sm:`: desde `sm` no cambia nada).
+ */
+const ROW_TIME_CLASS =
+	"shrink-0 font-extrabold tabular-nums max-sm:text-sm max-sm:leading-tight";
 
 /** Caja del puesto (D150): el ancho lo pone `rankColumnWidth`, igual en todas las filas. */
 const RANK_CLASS = "me-1 shrink-0 text-right font-black tabular-nums sm:me-0";
@@ -224,42 +244,44 @@ function LeaderboardRow({
 
 	return (
 		<li className={`${ROW_CLASS} ${rowColors} transition-colors duration-150`}>
-			<span className={ROW_LEAD_CLASS}>
-				<span
-					className={`${RANK_CLASS} ${podium?.rank ?? ""}`}
-					style={{ width: rankWidth }}
-				>
-					#{rank}
-				</span>
-				<span className="relative flex shrink-0">
-					{/* Decorativo: el nombre va al lado. Al volver la red se remonta
-					    para reintentar un avatar que no cargó (como en `UserSummary`). */}
-					<UserAvatar
-						key={`${avatarUrl}|${isOnline}`}
-						src={avatarUrl}
-						name={entry.displayName}
-						className={ROW_AVATAR_CLASS}
-						initialClassName="text-sm"
-						loading="lazy"
-					/>
-					{/* La medalla (D148) es decorativa: el puesto ya se lee en "#1". */}
-					{podium && (
-						<span
-							className={`absolute -right-1 -bottom-1 grid size-4.5 place-items-center rounded-full border bg-overlay ${podium.badge}`}
-							aria-hidden="true"
-						>
-							<Medal className="size-3" strokeWidth={2} />
-						</span>
-					)}
-				</span>
-				<span className="truncate font-bold">{entry.displayName}</span>
-				{/* Tu fila no se distingue solo por el color. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #27). */}
-				{isMe && (
-					<span className="shrink-0 text-[0.8rem] font-extrabold">(tú)</span>
+			<span
+				className={`${RANK_CLASS} ${podium?.rank ?? ""}`}
+				style={{ width: rankWidth }}
+			>
+				#{rank}
+			</span>
+			<span className="relative flex shrink-0">
+				{/* Decorativo: el nombre va al lado. Al volver la red se remonta
+				    para reintentar un avatar que no cargó (como en `UserSummary`). */}
+				<UserAvatar
+					key={`${avatarUrl}|${isOnline}`}
+					src={avatarUrl}
+					name={entry.displayName}
+					className={ROW_AVATAR_CLASS}
+					initialClassName="text-sm"
+					loading="lazy"
+				/>
+				{/* La medalla (D148) es decorativa: el puesto ya se lee en "#1". */}
+				{podium && (
+					<span
+						className={`absolute -right-1 -bottom-1 grid size-4.5 place-items-center rounded-full border bg-overlay ${podium.badge}`}
+						aria-hidden="true"
+					>
+						<Medal className="size-3" strokeWidth={2} />
+					</span>
 				)}
 			</span>
-			<span className="shrink-0 font-extrabold tabular-nums">
-				{formatElapsedTime(entry.bestTimeMs)}
+			<span className={ROW_BODY_CLASS}>
+				<span className={ROW_NAME_LINE_CLASS}>
+					<span className="truncate font-bold">{entry.displayName}</span>
+					{/* Tu fila no se distingue solo por el color. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #27). */}
+					{isMe && (
+						<span className="shrink-0 text-[0.8rem] font-extrabold">(tú)</span>
+					)}
+				</span>
+				<span className={ROW_TIME_CLASS}>
+					{formatElapsedTime(entry.bestTimeMs)}
+				</span>
 			</span>
 		</li>
 	);
@@ -268,7 +290,9 @@ function LeaderboardRow({
 /**
  * Fila de carga con la forma de una real: puesto, avatar redondo, nombre y
  * tiempo. Las medidas salen del contenido de referencia invisible de
- * `Skeleton` (D042), no de anchos inventados.
+ * `Skeleton` (D042), no de anchos inventados. Mismas cajas que la real
+ * (D163): bajo `sm` el tiempo va debajo del nombre, así que la fila de
+ * skeleton mide lo mismo que la de datos.
  *
  * `immediate` (D115): el ranking va siempre a la red, así que la espera de
  * 300 ms solo dejaba ver un hueco del alto del skeleton sin nada dentro.
@@ -282,24 +306,32 @@ function LeaderboardSkeletonRow({
 }) {
 	return (
 		<li className={`${ROW_CLASS} text-surface-soft`} aria-hidden="true">
-			<span className={ROW_LEAD_CLASS}>
-				<span className={RANK_CLASS} style={{ width: rankWidth }}>
-					<Skeleton shape="line" className="ml-auto rounded-sm" immediate>
-						#{rank}
-					</Skeleton>
-				</span>
-				<Skeleton className={ROW_AVATAR_CLASS} immediate />
-				<Skeleton shape="line" className="rounded-sm font-bold" immediate>
-					Jugador de ejemplo
+			<span className={RANK_CLASS} style={{ width: rankWidth }}>
+				<Skeleton shape="line" className="ml-auto rounded-sm" immediate>
+					#{rank}
 				</Skeleton>
 			</span>
-			<Skeleton
-				shape="line"
-				className="shrink-0 rounded-sm font-extrabold tabular-nums"
-				immediate
-			>
-				0:00.00
-			</Skeleton>
+			<Skeleton className={ROW_AVATAR_CLASS} immediate />
+			<span className={ROW_BODY_CLASS}>
+				{/* `truncate`: a 320 px el nombre de referencia no cabe y, sin él,
+				    partía en dos líneas y la fila crecía (D163). */}
+				<span className={ROW_NAME_LINE_CLASS}>
+					<Skeleton
+						shape="line"
+						className="max-w-full truncate rounded-sm font-bold"
+						immediate
+					>
+						Jugador de ejemplo
+					</Skeleton>
+				</span>
+				<Skeleton
+					shape="line"
+					className={`${ROW_TIME_CLASS} rounded-sm`}
+					immediate
+				>
+					0:00.00
+				</Skeleton>
+			</span>
 		</li>
 	);
 }

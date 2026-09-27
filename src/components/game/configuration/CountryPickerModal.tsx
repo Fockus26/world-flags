@@ -167,11 +167,14 @@ export function CountryPickerModal({
 		isCatalogCountryCode,
 	).length;
 
+	// Ancho (D162): 34 rem, con `max-w-none` para quitar el tope de 28 rem de
+	// `modal__dialog--md` (como el ranking, D150); sin él, el 34 rem nunca se
+	// aplicaba. A 320 px sigue mandando el 92vw.
 	return (
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="w-[min(34rem,92vw)] text-left"
+			className="w-[min(34rem,92vw)] max-w-none text-left"
 			ariaLabelledby="country-picker-title"
 		>
 			<header className="mb-3 flex items-center justify-between gap-3">
