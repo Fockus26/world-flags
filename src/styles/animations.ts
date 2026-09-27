@@ -18,16 +18,6 @@ export const motionVariants = {
 		},
 	},
 
-	flagEnter: {
-		hidden: { opacity: 0, y: 12, scale: 0.96 },
-		visible: {
-			opacity: 1,
-			y: 0,
-			scale: 1,
-			transition: motionTransition(0.28),
-		},
-	},
-
 	feedbackEnter: {
 		hidden: { opacity: 0, y: 4 },
 		visible: {
