@@ -53,12 +53,17 @@ export function OptionTile({
 			onAnimationEnd={endPop}
 			// Sin `transition-colors` (D129 le quita `outline-color`, aquí se hace
 			// igual a mano): la lista suma sombra y `scale`, que en Tailwind 4 es
-			// una propiedad propia y no pisa el `transform` del pop.
+			// una propiedad propia y no pisa el `transform` del pop. Ningún color
+			// del tema (texto, fondo, borde) entra en la lista (D166): una
+			// transición solo avanza con fotogramas, y tras cambiar de tema o de
+			// opción con la pestaña sin pintar se queda en su valor de partida.
+			// Quitar solo `color` (como D159) dejaba el texto nuevo sobre el fondo
+			// viejo: 1,1:1 medido; sin ninguno, el contraste es el final al instante.
 			className={`
 				group relative flex w-full min-w-0 cursor-pointer items-center justify-center
 				rounded-[var(--radius)] border border-[var(--border)] bg-[var(--default)]
 				text-[var(--default-foreground)]
-				transition-[color,background-color,border-color,box-shadow,scale]
+				transition-[box-shadow,scale]
 				duration-150 ease-in-out
 				min-h-10 sm:min-h-11
 				hover:bg-[var(--default-hover)] hover:shadow-sm
