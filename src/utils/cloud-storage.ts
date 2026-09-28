@@ -10,6 +10,7 @@ import {
 	isLeaderboardTimeRejected,
 	type LeaderboardUploadResult,
 } from "./leaderboard-validation";
+import { pickChangedColumns, SUB_GAME_COLUMNS } from "./learning-data-row";
 import {
 	normalizeLearningData,
 	planSync,
@@ -17,17 +18,6 @@ import {
 	SUB_GAME_TYPES,
 	type SubGameType,
 } from "./learning-storage";
-
-/**
- * La columna de `user_learning_data` de cada juego con sub-objeto propio
- * (D028, D061). Una columna nueva aquí exige su SQL en `supabase/` corrido
- * ANTES de desplegar: si el `select` pide una columna que no existe, falla y
- * toda cuenta autenticada se queda en `local` sin sincronizar (D044/D050).
- */
-const SUB_GAME_COLUMNS = {
-	countries: "countries_game",
-	capitals: "capitals_game",
-} as const satisfies Record<SubGameType, string>;
 
 type SubGameColumn = (typeof SUB_GAME_COLUMNS)[SubGameType];
 
@@ -184,37 +174,19 @@ export async function fetchRemoteLearningData(
 	});
 }
 
+/**
+ * Sube `data`. Con `previous` (lo que la nube tiene ahora mismo) solo van las
+ * columnas que cambiaron; sin él (la fila no existe) va la fila entera.
+ */
 export async function pushLearningData(
 	userId: string,
 	data: UserLearningData,
+	previous: UserLearningData | null,
 	signal?: AbortSignal,
 ): Promise<void> {
 	let query = supabase.from("user_learning_data").upsert({
 		user_id: userId,
-		profile: data.profile,
-		country_history: data.countryHistory,
-		region_game_scores: data.regionGameScores,
-		region_best_times: data.regionBestTimes,
-		last_configuration: data.lastConfiguration,
-		last_practice_by_country: data.lastPracticeByCountry,
-		// Se enumeran columnas, no se sube la fila a ciegas: un cliente viejo
-		// que no conoce un juego no manda su columna, y Postgres conserva lo
-		// que ya había (D028).
-		...Object.fromEntries(
-			SUB_GAME_TYPES.map((gameType) => [
-				SUB_GAME_COLUMNS[gameType],
-				data[SUB_GAME_KEYS[gameType]],
-			]),
-		),
-		achievements: data.achievements,
-		stats: data.stats,
-		session_history: data.sessionHistory,
-		daily_reminder: data.dailyReminder,
-		field_updated_at: {
-			profile: data.fieldUpdatedAt.profile,
-			lastConfiguration: data.fieldUpdatedAt.lastConfiguration,
-			regionGameScores: data.regionGameScoresUpdatedAt,
-		},
+		...pickChangedColumns(data, previous),
 		updated_at: new Date().toISOString(),
 	});
 
@@ -343,7 +315,7 @@ async function runSync(
 	const plan = planSync(remote, localData, base);
 
 	if (plan.push) {
-		await pushLearningData(userId, plan.data, signal);
+		await pushLearningData(userId, plan.data, remote, signal);
 	}
 
 	return { data: plan.data, discardedLocal: plan.discardedLocal };
