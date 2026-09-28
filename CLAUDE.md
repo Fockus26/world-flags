@@ -47,9 +47,8 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 - **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
 - **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm
 - **iconoir-react** para iconos · PWA con SW propio (`public/sw.js`)
-- `framer-motion` está instalado pero **deprecado en la práctica** (ver
-  `context/decisions/03-animaciones.md`): sus animaciones no corren en este stack.
-  Las animaciones nuevas van con `tw-animate-css` (`animate-in fade-in / slide-in…`,
+- `framer-motion` **se quitó** (D177; ver `context/decisions/03-animaciones.md`): sus
+  animaciones no corrían en este stack. Las animaciones van con `tw-animate-css` (`animate-in fade-in / slide-in…`,
   ya incluido por `@heroui/styles`) o transiciones CSS.
 
 ```bash
