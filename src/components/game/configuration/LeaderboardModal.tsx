@@ -151,7 +151,6 @@ const ROW_BG_DEFAULT = "hover:bg-surface-hover";
 
 /**
  * Sin el punto final: en un continente se le añade "de Europa" (D141).
- * ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #10, #21 y #44).
  */
 const LEADERBOARD_DESCRIPTIONS: Record<GameType, string> = {
 	countries: "Mejor tiempo en modo competitivo practicando todos los países",
@@ -161,7 +160,7 @@ const LEADERBOARD_DESCRIPTIONS: Record<GameType, string> = {
 
 /**
  * "de Europa", "del Caribe"…: para la descripción y el anuncio del cambio de
- * continente (D141). ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #44).
+ * continente (D141).
  */
 const REGION_PHRASES: Record<PracticeRegion, string> = {
 	world: "de todo el mundo",
@@ -274,7 +273,7 @@ function LeaderboardRow({
 			<span className={ROW_BODY_CLASS}>
 				<span className={ROW_NAME_LINE_CLASS}>
 					<span className="truncate font-bold">{entry.displayName}</span>
-					{/* Tu fila no se distingue solo por el color. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #27). */}
+					{/* Tu fila no se distingue solo por el color. */}
 					{isMe && (
 						<span className="shrink-0 text-[0.8rem] font-extrabold">(tú)</span>
 					)}
@@ -383,7 +382,7 @@ export function LeaderboardModal({
 
 		// El anuncio del cambio de continente sale cuando ya hay algo que leer
 		// (filas, vacío, error o sin conexión), no al elegir: así no se pisa
-		// con "Cargando el ranking…". ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #45).
+		// con "Cargando el ranking…".
 		const announceRegion = () => {
 			if (!announceRegionRef.current) return;
 			announceRegionRef.current = false;
@@ -462,7 +461,7 @@ export function LeaderboardModal({
 			/>
 
 			{/* Continente (D141): un Select y no pestañas, porque 9 opciones no
-			    caben a 320 px. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #44). */}
+			    caben a 320 px. */}
 			<Select
 				id="leaderboard-region"
 				label="Continente"
@@ -486,8 +485,7 @@ export function LeaderboardModal({
 				{regionAnnouncement}
 			</p>
 
-			{/* Fuera de la lista ocupada: si no, el anuncio no se oiría (D042).
-			    ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #27). */}
+			{/* Fuera de la lista ocupada: si no, el anuncio no se oiría (D042). */}
 			<LoadingAnnouncer
 				isLoading={isLoading}
 				loadingMessage="Cargando el ranking…"

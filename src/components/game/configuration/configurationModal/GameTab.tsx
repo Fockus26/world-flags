@@ -64,7 +64,7 @@ export function GameTab({
 				legend={
 					<span className="inline-flex items-center gap-2">
 						Modo de juego
-						{/* ⚠️ Copy provisional — `CONTENT_CHECKLIST.md` #21 ("cada respuesta": vale para los tres juegos) y #26 (castigo, D075: el rush de Países no tiene). */}
+						{/* "Cada respuesta" vale para los tres juegos; el castigo no sale en Países (D075: su rush no tiene). */}
 						<HelpHint
 							label={`Competitivo: contrarreloj, guarda tu mejor tiempo; en Banderas y Capitales ${RUSH_PENALTY_SUMMARY}. Práctica: sin cronómetro, calificas cada respuesta para repasarla.`}
 						/>
@@ -183,7 +183,6 @@ export function GameTab({
 				</p>
 			</AutoHeight>
 
-			{/* ⚠️ Copy provisional (CONTENT_CHECKLIST.md #28): "Sonidos" y sus dos opciones. */}
 			<Fieldset legend="Sonidos">
 				{/* Mismo patrón que "Temporizador": dos opciones de radio, y no un
 				    interruptor suelto, para que la fila se lea igual que el resto

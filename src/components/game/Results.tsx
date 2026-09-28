@@ -61,7 +61,6 @@ function CompetitiveResults({
 }: {
 	result: Extract<GameResult, { mode: "competitive" }>;
 }) {
-	// ⚠️ Copy provisional ("Te rendiste", "encontrados") — CONTENT_CHECKLIST #9.
 	const noun = GAME_TYPE_NOUNS[result.gameType];
 
 	// Rush de Países que terminó por rendición (D033): no hay mejor tiempo
@@ -107,7 +106,7 @@ function CompetitiveResults({
 			{/* Lo que se ve de la fanfarria de récord (D146): el sonido nunca es
 			    la única señal (D082). Insignia con zoom-in y confeti (D155),
 			    montados en el mismo render en que `finishGame` pide el sonido
-			    `record`. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #47). */}
+			    `record`. */}
 			{result.isNewRecord && (
 				<>
 					<RecordConfetti />

@@ -106,8 +106,8 @@ export function TutorialSettings({
 						</OptionTile>
 					))}
 				</div>
-				{/* ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #24). Mismo criterio
-				    que la ayuda "?" de `GameTab`, en texto porque aquí hay sitio. */}
+				{/* Mismo criterio que la ayuda "?" de `GameTab`, en texto porque
+				    aquí hay sitio. */}
 				<p className="m-0 text-xs text-text-placeholder">
 					En Fácil valen las respuestas sin acentos (&laquo;mexico&raquo;); en
 					Difícil hay que escribirlos (&laquo;México&raquo;).
@@ -152,7 +152,6 @@ export function TutorialSettings({
 					</div>
 				</AutoHeight>
 
-				{/* ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #24). */}
 				<p className="m-0 text-xs text-text-placeholder">
 					Con el temporizador encendido, cada tarjeta se salta sola si no
 					respondes a tiempo.
@@ -197,9 +196,8 @@ export function TutorialModeChoice({
 				</div>
 			</Fieldset>
 
-			{/* ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #24). El aviso del
-			    competitivo repite lo que dice `GameTab`: orden y dificultad no
-			    son ajustables ahí, y el tutorial no puede prometer lo contrario. */}
+			{/* El aviso del competitivo repite lo que dice `GameTab`: orden y
+			    dificultad no son ajustables ahí, y el tutorial no puede prometer lo contrario. */}
 			<AutoHeight show={mode === "competitive"}>
 				<p className="m-0 text-xs text-text-placeholder">
 					En Competitivo el orden es siempre aleatorio y la dificultad siempre

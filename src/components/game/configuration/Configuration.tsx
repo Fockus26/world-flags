@@ -50,8 +50,7 @@ import { UserSummary } from "./UserSummary";
 const EMPTY_SCOPE_MESSAGE =
 	"Elige al menos un continente o algún país para practicar.";
 
-// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #16): solo lo oyen los lectores
-// de pantalla, pendiente de aprobación del dueño.
+// Solo lo oyen los lectores de pantalla.
 const LOADING_MESSAGE = "Cargando tu progreso…";
 const LOADED_MESSAGE = "Progreso cargado";
 
@@ -313,8 +312,6 @@ export function Configuration() {
 					<StreakPanel activeDays={learningData.stats.activeDays} />
 				</AutoHeight>
 
-				{/* ⚠️ Copy provisional (leyenda y título, `CONTENT_CHECKLIST.md` #9):
-				    pendiente de aprobación del dueño. */}
 				<GameTypeToggle
 					legend="Qué practicar"
 					value={gameType}
