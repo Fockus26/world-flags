@@ -5,7 +5,8 @@
  * pisar los tokens base.
  *
  * El modo oscuro lo maneja `data-theme="dark"` en <html> (lo escribe
- * `ThemeEffects`), que es el mismo selector que usa HeroUI.
+ * `ThemeEffects`), que es el mismo selector que usa HeroUI. Sin `data-theme`
+ * (tema del sistema con `localStorage` bloqueado), el `@media` del final.
  */
 
 @layer theme {
@@ -117,5 +118,51 @@
 		--backdrop: rgb(8 6 16 / 70%);
 
 		--btn-contained-fg: #14121f;
+	}
+
+	/* Tema del sistema sin `data-theme` (D168): si el script bloqueante de
+	   `Layout.astro` no pudo leer `localStorage`, `<html>` se queda sin
+	   `data-theme` hasta que `ThemeEffects` lo pone. Mientras, `variables.css`
+	   ya sigue al sistema con este mismo `@media`; sin este bloque HeroUI iba
+	   en claro y la app en oscuro. Mismos valores que el bloque oscuro de
+	   arriba: si cambias uno, cambia el otro. */
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-theme]) {
+			--background: #14121f;
+			--foreground: #f1eefc;
+			--surface: #1b1930;
+			--surface-foreground: #f1eefc;
+			--overlay: #1b1930;
+			--overlay-foreground: #f1eefc;
+			--muted: #a29cc0;
+			--default: #262238;
+			--default-foreground: #f1eefc;
+			--border: #34304a;
+			--separator: #2c2942;
+
+			--accent: #9b8bff;
+			--accent-foreground: #12101c;
+			--secondary: #e19bec;
+			--secondary-foreground: #2a1430;
+
+			--success: #4fd399;
+			--success-foreground: #06281c;
+			--warning: #f2a53d;
+			--warning-foreground: #2c1704;
+			--danger: #f2748c;
+			--danger-foreground: #2c0b12;
+
+			/* Aquí se queda MÁS CLARO que la superficie del modal (#1b1930), al
+			   revés que en claro: en un tema oscuro, "elevar" un control se lee
+			   aclarándolo, no oscureciéndolo más — oscurecerlo lo hundiría contra
+			   un fondo que ya es casi negro y perdería el poco borde que tiene. */
+			--field-background: #2b2740;
+			--field-foreground: #f1eefc;
+			/* ≥3:1 sobre el fondo del campo. */
+			--field-border: #6f6a94;
+			--backdrop: rgb(8 6 16 / 70%);
+
+			--btn-contained-fg: #14121f;
+		}
 	}
 }

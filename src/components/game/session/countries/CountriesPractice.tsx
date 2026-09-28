@@ -82,6 +82,9 @@ export function CountriesPractice({
 
 	const firstAttemptResultsRef = useRef<Record<string, boolean>>({});
 	const skippedAnswersRef = useRef(0);
+	// `performance.now()`, monótono (D167, como `Session`, D132): si la hora
+	// del sistema cambia a mitad de la práctica, `Date.now()` saltaría y el
+	// tiempo final saldría negativo o de horas.
 	const startTimeRef = useRef<number | null>(null);
 	const exitModalOpenedAtRef = useRef<number | null>(null);
 	// Evita que un tecleo 1-4 repetido rápido dispare dos calificaciones para
@@ -122,7 +125,9 @@ export function CountriesPractice({
 				skippedAnswers: skippedAnswersRef.current,
 				finishedAt: new Date().toISOString(),
 				elapsedMs:
-					startTimeRef.current !== null ? Date.now() - startTimeRef.current : 0,
+					startTimeRef.current !== null
+						? performance.now() - startTimeRef.current
+						: 0,
 				totalCountries: countries.length,
 				scope: activeGame?.configuration.scope ?? { type: "world" },
 				regionBreakdown,
@@ -144,7 +149,7 @@ export function CountriesPractice({
 
 	useEffect(() => {
 		if (startTimeRef.current === null) {
-			startTimeRef.current = Date.now();
+			startTimeRef.current = performance.now();
 		}
 	}, []);
 
@@ -219,13 +224,13 @@ export function CountriesPractice({
 
 	/** El tiempo que el modal de abandonar estuvo abierto no cuenta para `stats.totalTimePlayedMs` (mismo criterio que `Session.tsx`, aunque acá no se muestre un cronómetro en pantalla). */
 	function handleOpenExitModal() {
-		exitModalOpenedAtRef.current = Date.now();
+		exitModalOpenedAtRef.current = performance.now();
 		setIsExitModalOpen(true);
 	}
 
 	function handleCancelExit() {
 		if (exitModalOpenedAtRef.current !== null) {
-			const pausedMs = Date.now() - exitModalOpenedAtRef.current;
+			const pausedMs = performance.now() - exitModalOpenedAtRef.current;
 			if (startTimeRef.current !== null) {
 				startTimeRef.current += pausedMs;
 			}

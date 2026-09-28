@@ -19,9 +19,11 @@ de personas acepta hasta 200. Sin opciones nuevas, la demo sale igual que antes.
 
 ## Lo que esto no cubre
 
+Las dos cosas que quedaron abiertas aquí ya están resueltas en
+[`42-modales-ancho-320.md`](42-modales-ancho-320.md):
+
 - A 320 px, con tu puesto de tres cifras bajo el separador, al nombre de tu fila le
-  quedan ~19 px (se trunca casi entero): puesto, avatar, "(tú)" y el tiempo no se
-  pueden quitar. Si molesta, la salida es pasar el tiempo bajo el nombre en pantallas
-  estrechas (otra unidad).
-- `CountryPickerModal` tiene el mismo tope de 28 rem sin `max-w-none`: su `34rem`
-  tampoco se aplica. Visto aquí, no se toca.
+  quedaban ~19 px. Resuelto por D163: bajo `sm` el tiempo va debajo del nombre (107 px
+  para el nombre de tu fila), y D164 iguala el skeleton.
+- `CountryPickerModal` tenía el mismo tope de 28 rem sin `max-w-none`, así que su
+  `34rem` no se aplicaba. Resuelto por D162.
