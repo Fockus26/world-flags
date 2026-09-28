@@ -1,5 +1,8 @@
 ---
 import "@/styles/global.css";
+// Solo el subconjunto latino (español): el resto de @font-face de la fuente
+// descarga su archivo solo si la página usa esos caracteres (unicode-range).
+import jakartaLatinUrl from "@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url";
 
 interface Props {
 	title: string;
@@ -104,15 +107,14 @@ const structuredData = {
 		<meta name="theme-color" content="#9b8bff" media="(prefers-color-scheme: dark)" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<!-- Fuente autohospedada (@fontsource-variable): sin petición bloqueante a
+		     Google Fonts; se precarga el archivo latino, que es el que usa la página. -->
 		<link
-			rel="preconnect"
-			href="https://fonts.gstatic.com"
+			rel="preload"
+			href={jakartaLatinUrl}
+			as="font"
+			type="font/woff2"
 			crossorigin
-		/>
-		<link
-			rel="stylesheet"
-			href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
 		/>
 
 		<script>

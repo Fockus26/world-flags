@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "./variables.css";
 @import "./theme.css";
 @import "./heroui-theme.css";

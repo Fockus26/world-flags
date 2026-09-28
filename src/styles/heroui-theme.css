@@ -35,8 +35,8 @@
 		/* ≥3:1 sobre #fff (WCAG 1.4.11 para bordes de controles). */
 		--field-border: #9c96c4;
 		--font-sans:
-			"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-			sans-serif;
+			"Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif,
+			system-ui, -apple-system, "Segoe UI", sans-serif;
 
 		--background: #f2f1f8;
 		--foreground: #1c1b2e;
