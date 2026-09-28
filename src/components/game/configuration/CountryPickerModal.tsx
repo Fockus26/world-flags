@@ -45,9 +45,16 @@ function CountryCheckbox({
 	disabled,
 	onChange,
 }: CountryCheckboxProps) {
+	// Nombres largos (D169): hasta dos líneas con `line-clamp-2` en vez de
+	// `truncate` ("San Vicente y las Granadinas" se leía cortado a 320 px y a
+	// 34 rem). La casilla se alinea con la primera línea (`items-start` y
+	// `mt-px`: con `leading-snug` la línea mide 18 px y la casilla 16 px), así
+	// en una fila de la rejilla con un nombre en dos líneas las demás casillas
+	// siguen a la misma altura. Con tres o más líneas, "…" al final de la
+	// segunda.
 	return (
 		<label
-			className={`relative flex min-w-0 items-center gap-1.5 py-0.5 text-[0.82rem] ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer"}`}
+			className={`relative flex min-w-0 items-start gap-1.5 py-0.5 text-[0.82rem] leading-snug ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer"}`}
 		>
 			<input
 				type="checkbox"
@@ -58,9 +65,9 @@ function CountryCheckbox({
 			/>
 			<span
 				aria-hidden="true"
-				className="relative flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-[0.65rem] after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
+				className="relative mt-px flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-[0.65rem] after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
 			/>
-			<span className="truncate">
+			<span className="line-clamp-2 min-w-0 wrap-break-word">
 				{label}
 				{disabled && " · hoy"}
 			</span>
