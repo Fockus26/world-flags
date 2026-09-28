@@ -682,6 +682,36 @@ export function saveSoundEnabled(enabled: boolean): void {
 	}
 }
 
+/**
+ * Preferencia de tema (claro / oscuro / sistema), por dispositivo como el
+ * sonido. La clave `"theme"` también la lee el script bloqueante de
+ * `Layout.astro` antes del primer pintado: si cambia aquí, cambia allí.
+ * Sin acceso a `localStorage` (navegación privada, política del navegador)
+ * vale "system" y no se recuerda, sin lanzar (D171).
+ */
+const THEME_STORAGE_KEY = "theme";
+
+export type StoredThemePreference = "light" | "dark" | "system";
+
+export function getStoredThemePreference(): StoredThemePreference {
+	if (typeof window === "undefined") return "system";
+
+	try {
+		const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+		return stored === "light" || stored === "dark" ? stored : "system";
+	} catch {
+		return "system";
+	}
+}
+
+export function saveThemePreference(theme: StoredThemePreference): void {
+	try {
+		window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+	} catch {
+		// Sin almacenamiento el tema elegido vale para esta visita y ya.
+	}
+}
+
 export function saveDailyReminderAnswer(
 	currentData: UserLearningData,
 	optedIn: boolean,

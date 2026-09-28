@@ -160,7 +160,7 @@ export function UserSummary({
 			) : (
 				<button
 					type="button"
-					className={`${STREAK_BADGE_BOX_CLASS} flex cursor-pointer items-center justify-center bg-primary px-1 text-[0.65rem] font-black text-primary-soft transition-transform duration-150 ease-in-out hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-hover`}
+					className={`${STREAK_BADGE_BOX_CLASS} flex cursor-pointer items-center justify-center bg-primary px-1 text-[0.65rem] font-black text-accent-foreground transition-transform duration-150 ease-in-out hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-hover`}
 					aria-expanded={isStreakOpen}
 					aria-controls="streak-panel"
 					aria-label={`Racha, ${streakLabel}. ${isStreakOpen ? "Ocultar calendario" : "Ver calendario"}.`}
