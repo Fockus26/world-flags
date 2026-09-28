@@ -9,6 +9,36 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.6.1] - 2026-09-28
+
+### Cambiado
+
+- Las tarjetas de continente y de tipo de juego responden al pasar y al pulsar:
+  se elevan un poco, se hunden al tocarlas y la que eliges da un pequeño salto.
+  Las opciones de los ajustes también se hunden y saltan al elegirlas.
+- La partida responde con una animación al acertar o fallar, y cada bandera
+  nueva entra deslizándose.
+- Resultados más vivos: los números cuentan hacia arriba y batir tu récord se
+  celebra con confeti.
+
+### Corregido
+
+- La opción elegida del tipo de juego se lee bien en tema oscuro y el contorno
+  de foco de los ajustes ya no se corta.
+- El ranking deja más sitio a tu nombre en pantallas pequeñas y el selector de
+  países aprovecha el ancho.
+- El selector de países muestra los nombres largos completos en dos líneas.
+- El tiempo de la práctica diaria ya no se descuadra si cambia la hora del
+  dispositivo.
+- Al cambiar de tema, los colores cambian al instante y ya no se quedan a medias
+  si la pestaña estaba en segundo plano.
+- El tema elegido ya no da error en navegadores que bloquean el almacenamiento.
+- Los números de los iconos de logros y del menú se leen mejor en el tema claro.
+- En tema oscuro del sistema, los ajustes y botones ya no aparecen un instante
+  en claro.
+- El tiempo de la práctica de Países no se descuadra si cambia la hora del
+  dispositivo.
+
 ## [2.6.0] - 2026-09-26
 
 ### Añadido
