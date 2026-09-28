@@ -10,8 +10,6 @@ import { ReleaseNotesModal } from "./ReleaseNotesModal";
  * la pantalla por algo que puede esperar. Sale una vez por versión y
  * dispositivo; "Ahora no" o cerrar las novedades lo dan por visto.
  *
- * Copy provisional, ver `context/CONTENT_CHECKLIST.md` #20.
- *
  * Monta su propio contenido, sin posicionamiento: vive dentro del contenedor
  * apilable de `SystemSnackbars`, como `UpdateAvailableSnackbar`.
  */

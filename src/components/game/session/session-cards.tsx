@@ -40,7 +40,6 @@ export interface SessionCard {
 		country: Country,
 		difficulty: Difficulty,
 	) => boolean;
-	/** ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #21) en Capitales. */
 	getQuestion: (country: Country) => string;
 	placeholder: string;
 	/** Se añade al aviso de acierto o fallo: otras respuestas que valen y la nota. */
@@ -61,8 +60,6 @@ function CapitalAnswerNote({ code }: { code: string }) {
 	const alternatives = getAcceptedCapitals(capital).slice(1);
 	if (alternatives.length === 0 && !capital.note) return null;
 
-	// ⚠️ Copy provisional ("También vale") — `CONTENT_CHECKLIST.md` #21; las
-	// notas, #22.
 	return (
 		<span className="mt-1 block">
 			{alternatives.length > 0 && (

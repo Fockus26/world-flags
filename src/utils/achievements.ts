@@ -16,12 +16,7 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * ⚠️ COPY PROVISIONAL — pendiente de aprobación del dueño.
- *
- * Los nombres, las descripciones y los umbrales marcados con 🔸 son una
- * propuesta, no contenido final: `context/DESIGN_RULES.md` › Contenido prohíbe
- * que un agente invente copy definitivo. Hay fila abierta en
- * `context/CONTENT_CHECKLIST.md`.
+ * Los umbrales marcados con 🔸 son una propuesta, pendiente de confirmar.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * INVARIANTE: UN LOGRO NUNCA SE DES-DESBLOQUEA.
@@ -538,8 +533,7 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	},
 
 	// ── Modo Capitales (D070) — leen `capitalsGame`, espejo de los de Países.
-	//    Todos retroactivos. ⚠️ Nombres y textos provisionales
-	//    (`CONTENT_CHECKLIST.md` #23). ──
+	//    Todos retroactivos. ──
 	{
 		id: "capitales_de_europa",
 		name: "Capitales de Europa",

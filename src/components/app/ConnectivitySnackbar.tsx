@@ -28,8 +28,7 @@ type ConnectivityProblem = "offline" | "server-error";
  *   sincronización buena (`isOnline` vuelve a `true` únicamente entonces),
  *   así que "sincronizado" es verdad.
  *
- * El estado nunca va solo por color: emoji + título + texto. Copy
- * provisional (`context/CONTENT_CHECKLIST.md`).
+ * El estado nunca va solo por color: emoji + título + texto.
  */
 export function ConnectivitySnackbar() {
 	const { status } = useAuth();

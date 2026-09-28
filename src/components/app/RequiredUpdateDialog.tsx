@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 
-// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #34): pendiente de aprobación
-// del dueño.
 const TITLE = "Hay que actualizar";
 const DESCRIPTION =
 	"Esta versión de World Flags ya no es compatible. Actualiza para seguir jugando; tu progreso guardado se conserva.";
