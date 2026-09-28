@@ -202,8 +202,7 @@ export function ConfigurationModal({
 			    las pestañas, así se ve en las dos y no entra en la medición de
 			    alto de arriba. `flex-wrap`: con tres cosas en vez de dos, en las
 			    pantallas más estrechas los botones bajan a su propia línea en
-			    lugar de empujar.
-			    ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #20 y #25). */}
+			    lugar de empujar. */}
 			<footer className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-surface-border pt-3">
 				<p className="text-xs">Versión {APP_VERSION}</p>
 				{/* También envuelve por dentro: a 320 px los dos botones juntos

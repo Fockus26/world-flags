@@ -7,8 +7,7 @@ import { useAppSelector } from "@/store/hooks";
 
 /**
  * Sin red, Supabase Auth devuelve un "Failed to fetch" en inglés: se cambia
- * por un mensaje que diga lo que pasa (D052). Copy provisional
- * (`context/CONTENT_CHECKLIST.md`). El resto de errores, tal cual.
+ * por un mensaje que diga lo que pasa (D052). El resto de errores, tal cual.
  */
 export const AUTH_OFFLINE_MESSAGE =
 	"Sin conexión. Inténtalo de nuevo cuando vuelvas a estar en línea.";

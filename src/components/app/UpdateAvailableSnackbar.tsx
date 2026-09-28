@@ -3,8 +3,7 @@ import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 
 /**
  * Aviso in-app (sin pedir permiso) de que hay una versión nueva instalada y
- * esperando (ver `public/sw.js`, ya sin `skipWaiting()` automático). Copy
- * provisional, ver `context/CONTENT_CHECKLIST.md`.
+ * esperando (ver `public/sw.js`, ya sin `skipWaiting()` automático).
  *
  * Monta su propio contenido, sin posicionamiento: vive dentro del contenedor
  * apilable de `SystemSnackbars` junto con `DailyReminderPrompt`, para que dos

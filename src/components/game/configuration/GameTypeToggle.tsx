@@ -98,7 +98,6 @@ export function GameTypeToggle({
 				value={isLoading ? "" : value}
 				// Solo se lee mientras carga, que es cuando no hay juego elegido
 				// todavía; sin él, HeroUI pone "Select an item" en inglés.
-				// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #21).
 				placeholder="Elige un juego"
 				onChange={(selected) => handleChange(selected as GameType)}
 			/>

@@ -22,8 +22,7 @@ interface Explanation {
 	canRetry: boolean;
 }
 
-// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #41): los textos de por qué no se
-// activó el recordatorio y cómo arreglarlo.
+// Los textos de por qué no se activó el recordatorio y cómo arreglarlo.
 const EXPLANATIONS: Record<ExplainedResult, Explanation> = {
 	denied: {
 		emoji: "🔕",
@@ -61,8 +60,6 @@ const EXPLANATIONS: Record<ExplainedResult, Explanation> = {
  * Snackbar "¿te aviso mañana...?" (D025): reutiliza la anatomía/estilo de
  * `AchievementToasts`, pero no se auto-descarta — pedir permiso de
  * notificaciones necesita una decisión explícita del usuario, no un timeout.
- *
- * Copy provisional, ver `context/CONTENT_CHECKLIST.md`.
  *
  * Aparece una sola vez: justo después de terminar la primera sesión sin
  * responder todavía (`lastResult` pasa de `null` a un resultado), no en

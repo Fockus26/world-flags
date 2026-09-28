@@ -2,8 +2,7 @@ import type { Capital } from "@/types/country";
 
 /**
  * Las capitales de los 197 países del catálogo (`countries.ts`), para el
- * modo Capitales (D063-D065). Contenido aprobado por el dueño el 2026-09-22;
- * las notas son provisionales (`CONTENT_CHECKLIST.md` #22).
+ * modo Capitales (D063-D065). Contenido aprobado por el dueño el 2026-09-22.
  *
  * Fuentes, consultadas el 2026-09-22 (detalle y consultas para reproducirlo en
  * `context/plans/modo-capitales-capitales.md`, local):

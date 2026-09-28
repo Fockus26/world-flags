@@ -82,7 +82,6 @@ export function resolveGameType(value: unknown): GameType {
 	return isGameType(value) ? value : DEFAULT_GAME_TYPE;
 }
 
-/** ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #9 y #21). */
 export const GAME_TYPE_LABELS: Record<GameType, string> = {
 	countries: "Países",
 	flags: "Banderas",
@@ -93,7 +92,7 @@ export const GAME_TYPE_LABELS: Record<GameType, string> = {
 // repartidos por los componentes (D061): con `Record`, TypeScript obliga a
 // rellenar un juego nuevo en todos ellos.
 
-/** Título de la pantalla de configuración. ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #9 y #21). */
+/** Título de la pantalla de configuración. */
 export const GAME_TYPE_TITLES: Record<GameType, string> = {
 	countries: "Aprende los países del mundo",
 	flags: "Aprende las banderas del mundo",

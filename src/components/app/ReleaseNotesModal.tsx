@@ -8,9 +8,8 @@ interface ReleaseNotesModalProps {
 	onClose: () => void;
 }
 
-// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #20): pendiente de aprobación
-// del dueño. El contenido de cada versión NO es copy de UI: es
-// `CHANGELOG.md` tal cual (D057).
+// El contenido de cada versión NO es copy de UI: es `CHANGELOG.md` tal cual
+// (D057).
 const CURRENT_VERSION_LABEL = "Estás usando la versión";
 
 function formatReleaseDate(date: string): string {

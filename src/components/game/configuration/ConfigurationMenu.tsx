@@ -51,8 +51,6 @@ export function ConfigurationMenu({
 	const showUnseen = !isLoading && unseenCount > 0;
 	const showPlaces = !isLoading && customCatalogCount > 0;
 
-	// ⚠️ Copy provisional (`CONTENT_CHECKLIST.md` #33): nombre del ⋮ y de las
-	// opciones, pendiente de aprobación del dueño.
 	const triggerLabel = showUnseen
 		? `Más opciones, ${unseenCount} logro${unseenCount === 1 ? "" : "s"} sin ver`
 		: "Más opciones";
