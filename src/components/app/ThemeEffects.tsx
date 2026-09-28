@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setSystemPrefersDark } from "@/store/slices/themeSlice";
+import { saveThemePreference } from "@/utils/learning-storage";
 
 export function ThemeEffects() {
 	const dispatch = useAppDispatch();
@@ -33,8 +34,23 @@ export function ThemeEffects() {
 	}, [dispatch]);
 
 	useEffect(() => {
-		document.documentElement.dataset.theme = resolvedTheme;
-		localStorage.setItem("theme", theme);
+		const root = document.documentElement;
+
+		// Cambio de tema sin transiciones (D170): una transición de color solo
+		// avanza mientras la página pinta; en una pestaña oculta se queda
+		// congelada en el color del tema viejo, mezclado con fondos ya nuevos
+		// (1,1:1 medido, D159/D166). Se apagan todas un instante, se fuerza el
+		// recálculo de estilos con el tema nuevo y se vuelven a encender: sin
+		// cambio pendiente, ya no arranca ninguna. Solo si el tema cambia de
+		// verdad (el script de `Layout.astro` ya lo puso al cargar).
+		if (root.dataset.theme !== resolvedTheme) {
+			root.dataset.themeSwitching = "";
+			root.dataset.theme = resolvedTheme;
+			void root.offsetHeight;
+			delete root.dataset.themeSwitching;
+		}
+
+		saveThemePreference(theme);
 	}, [resolvedTheme, theme]);
 
 	return null;

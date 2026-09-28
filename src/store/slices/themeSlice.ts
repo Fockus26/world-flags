@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { getStoredThemePreference } from "@/utils/learning-storage";
 
 export type ThemeMode = "light" | "dark" | "system";
 
@@ -21,9 +22,7 @@ interface ThemeState {
  * `import` en un contexto de análisis estático que no llegue a evaluarlo.
  */
 function getStoredTheme(): ThemeMode {
-	if (typeof window === "undefined") return "system";
-	const stored = window.localStorage.getItem("theme");
-	return stored === "light" || stored === "dark" ? stored : "system";
+	return getStoredThemePreference();
 }
 
 function getSystemPrefersDark(): boolean {

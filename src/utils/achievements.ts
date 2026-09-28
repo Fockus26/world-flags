@@ -16,7 +16,7 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * Los umbrales marcados con 🔸 son una propuesta, pendiente de confirmar.
+ * Umbrales confirmados por el dueño el 2026-09-28.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * INVARIANTE: UN LOGRO NUNCA SE DES-DESBLOQUEA.
@@ -317,7 +317,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "vuelta_rapida",
 		name: "Vuelta rápida",
-		// 🔸 umbral a confirmar
 		description: "Recorre todo el mundo en menos de 15 minutos",
 		emoji: "🏎️",
 		category: "velocidad",
@@ -333,7 +332,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "rush_impecable",
 		name: "Rush impecable",
-		// 🔸 umbral a confirmar
 		description:
 			"Termina un competitivo de 20 banderas o más sin fallar ninguna",
 		emoji: "🎯",
@@ -355,7 +353,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "sin_frenos",
 		name: "Sin frenos",
-		// 🔸 umbral a confirmar
 		description:
 			"Termina un competitivo de 20 banderas o más sin saltarte ninguna",
 		emoji: "🚀",
@@ -393,7 +390,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "cinco_veces_impecable",
 		name: "Cinco veces impecable",
-		// 🔸 umbral a confirmar
 		description: "Completa 5 sesiones sin un solo fallo",
 		emoji: "✨",
 		category: "precision",
@@ -402,7 +398,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "pulso_firme",
 		name: "Pulso firme",
-		// 🔸 umbral a confirmar
 		description: "Acierta 500 respuestas en total",
 		emoji: "🎖️",
 		category: "precision",
@@ -411,7 +406,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "precision_de_relojero",
 		name: "Precisión de relojero",
-		// 🔸 umbrales a confirmar
 		description: "Mantén un 90 % de aciertos tras 200 respuestas",
 		emoji: "⚖️",
 		category: "precision",
@@ -459,7 +453,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "veterano",
 		name: "Veterano",
-		// 🔸 umbral a confirmar
 		description: "Practica 100 días en total, seguidos o no",
 		emoji: "🏛️",
 		category: "constancia",
@@ -471,7 +464,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
 	{
 		id: "kilometros_de_carrera",
 		name: "Kilómetros de carrera",
-		// 🔸 umbral a confirmar
 		description: "Acumula 10 horas de práctica",
 		emoji: "⏳",
 		category: "constancia",

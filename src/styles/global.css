@@ -233,6 +233,20 @@
 }
 
 /*
+ * Cambio de tema sin transiciones (D170). `ThemeEffects` pone
+ * `data-theme-switching` en <html> solo durante el recálculo de estilos del
+ * cambio de tema: así ningún color se funde (ni se queda congelado a medio
+ * camino en una pestaña oculta). `!important` para ganar a las utilidades
+ * `transition-*` de cada componente.
+ */
+[data-theme-switching] *,
+[data-theme-switching] *::before,
+[data-theme-switching] *::after {
+	/* biome-ignore lint/complexity/noImportantStyles: tiene que ganar a las utilidades transition-* de cada componente, solo durante el cambio de tema */
+	transition: none !important;
+}
+
+/*
  * Confeti del nuevo récord (D155, `RecordConfetti.tsx`). Cada partícula trae
  * por variables CSS cuánto cae, cuánto se desvía de lado, cuánto gira y su
  * duración/retraso: una sola animación sirve para las 20. Cae una vez
