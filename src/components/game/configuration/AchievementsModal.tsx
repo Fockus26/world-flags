@@ -80,7 +80,7 @@ function AchievementCard({
 		>
 			<span className="flex items-start gap-2.5">
 				<span
-					className="shrink-0 text-[1.35rem] leading-none"
+					className="shrink-0 text-heading-sm leading-none"
 					aria-hidden="true"
 				>
 					{achievement.emoji}
@@ -95,7 +95,7 @@ function AchievementCard({
 				    desbloqueado suma el anillo de arriba MÁS esta etiqueta de
 				    texto: nunca solo el anillo, que sería una señal solo de forma/color. */}
 				<span className="flex min-w-0 flex-wrap items-center gap-1.5">
-					<strong className="text-[0.95rem] text-surface-soft">
+					<strong className="text-body-sm text-surface-soft">
 						{achievement.name}
 					</strong>
 
@@ -105,7 +105,7 @@ function AchievementCard({
 						// mismo par texto/fondo que ya está verificado para
 						// `text-success-hover` (el icono del estado), en vez de un
 						// fondo nuevo sin contraste comprobado.
-						<span className="rounded-full border border-[color-mix(in_oklab,var(--success)_55%,transparent)] bg-transparent px-1.5 py-0.5 text-[0.65rem] font-black text-success-hover">
+						<span className="rounded-full border border-[color-mix(in_oklab,var(--success)_55%,transparent)] bg-transparent px-1.5 py-0.5 text-micro font-black text-success-hover">
 							Nuevo
 						</span>
 					)}
@@ -113,7 +113,7 @@ function AchievementCard({
 			</span>
 
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="text-[0.8rem] text-text-placeholder">
+				<span className="text-caption text-text-placeholder">
 					{achievement.description}
 				</span>
 
@@ -129,7 +129,7 @@ function AchievementCard({
 					</span>
 				)}
 
-				<span className="mt-auto flex items-center gap-1.5 pt-0.5 text-[0.75rem] font-semibold text-text-placeholder">
+				<span className="mt-auto flex items-center gap-1.5 pt-0.5 text-caption font-semibold text-text-placeholder">
 					{unlocked ? (
 						<CheckCircle
 							className="size-3.5 shrink-0 text-success-hover"
@@ -204,7 +204,7 @@ export function AchievementsModal({
 				<ModalCloseButton onClose={onClose} />
 			</header>
 
-			<p className="mt-0 mb-4 text-[0.85rem] text-text-placeholder">
+			<p className="mt-0 mb-4 text-label text-text-placeholder">
 				Llevas <strong>{unlockedCount}</strong> de {totalCount} desbloqueados.
 			</p>
 
@@ -216,7 +216,7 @@ export function AchievementsModal({
 
 					return (
 						<section key={category}>
-							<h3 className="m-0 mb-2 text-[0.8rem] font-black tracking-wide text-text-placeholder uppercase">
+							<h3 className="m-0 mb-2 text-caption font-black tracking-wide text-text-placeholder uppercase">
 								{ACHIEVEMENT_CATEGORY_LABELS[category]}
 							</h3>
 

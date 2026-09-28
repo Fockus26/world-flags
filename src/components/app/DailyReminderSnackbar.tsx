@@ -165,18 +165,15 @@ export function DailyReminderSnackbar() {
 			className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4"
 		>
 			<div className="flex items-start gap-3">
-				<span
-					className="shrink-0 text-[1.5rem] leading-none"
-					aria-hidden="true"
-				>
+				<span className="shrink-0 text-heading leading-none" aria-hidden="true">
 					{explanation?.emoji ?? "🔔"}
 				</span>
 
 				<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
-					<strong className="text-[0.9rem] text-surface-soft">
+					<strong className="text-body-sm text-surface-soft">
 						{explanation?.title ?? "¿Te aviso mañana para seguir tu racha?"}
 					</strong>
-					<span className="text-[0.78rem] text-text-placeholder">
+					<span className="text-caption text-text-placeholder">
 						{explanation?.body ??
 							"Te mandamos un recordatorio a esta hora, todos los días."}
 					</span>

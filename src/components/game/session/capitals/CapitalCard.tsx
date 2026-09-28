@@ -29,7 +29,7 @@ export function CapitalCard({
 			<p
 				key={countryName}
 				lang="es"
-				className="m-0 max-w-full text-center text-[clamp(0.9rem,min(32cqh,9cqw),3rem)] leading-tight font-extrabold text-balance wrap-break-word hyphens-auto text-surface-soft animate-in fade-in-0 zoom-in-95 duration-200"
+				className="m-0 max-w-full text-center text-capital leading-tight font-extrabold text-balance wrap-break-word hyphens-auto text-surface-soft animate-in fade-in-0 zoom-in-95 duration-200"
 			>
 				{countryName}
 			</p>

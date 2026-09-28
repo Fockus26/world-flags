@@ -110,7 +110,7 @@ export function UserSummary({
 							{isLoading ? <Skeleton shape="line">{name}</Skeleton> : name}
 						</strong>
 
-						<span className="hidden shrink-0 text-[0.7rem] font-semibold text-text-placeholder sm:inline">
+						<span className="hidden shrink-0 text-tiny font-semibold text-text-placeholder sm:inline">
 							{isLoading ? (
 								<Skeleton shape="line">{accountLabel}</Skeleton>
 							) : (
@@ -136,7 +136,7 @@ export function UserSummary({
 							)}
 						</span>
 
-						<span className="shrink-0 whitespace-nowrap text-[0.72rem] font-semibold text-text-placeholder">
+						<span className="shrink-0 whitespace-nowrap text-tiny font-semibold text-text-placeholder">
 							{isLoading ? (
 								<Skeleton shape="line">{progressLabel}</Skeleton>
 							) : (
@@ -160,7 +160,7 @@ export function UserSummary({
 			) : (
 				<button
 					type="button"
-					className={`${STREAK_BADGE_BOX_CLASS} flex cursor-pointer items-center justify-center bg-primary px-1 text-[0.65rem] font-black text-accent-foreground transition-transform duration-150 ease-in-out hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-hover`}
+					className={`${STREAK_BADGE_BOX_CLASS} flex cursor-pointer items-center justify-center bg-primary px-1 text-micro font-black text-accent-foreground transition-transform duration-150 ease-in-out hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-hover`}
 					aria-expanded={isStreakOpen}
 					aria-controls="streak-panel"
 					aria-label={`Racha, ${streakLabel}. ${isStreakOpen ? "Ocultar calendario" : "Ver calendario"}.`}

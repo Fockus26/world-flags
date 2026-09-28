@@ -145,7 +145,7 @@ export function AuthSection() {
 	if (view === "authenticated") {
 		return (
 			<div className="flex flex-col gap-3 animate-in fade-in-0 zoom-in-95 duration-300">
-				<p className="m-0 text-[0.875rem]">
+				<p className="m-0 text-label">
 					Sesión iniciada como <strong>{user?.email}</strong>
 				</p>
 
@@ -153,7 +153,7 @@ export function AuthSection() {
 					<p
 						id="sign-out-status"
 						role="status"
-						className="m-0 text-[0.8rem] text-text-placeholder"
+						className="m-0 text-caption text-text-placeholder"
 					>
 						Guardando tu progreso en tu cuenta antes de cerrar sesión…
 					</p>
@@ -214,7 +214,7 @@ export function AuthSection() {
 
 	return (
 		<div className="flex flex-col gap-3 animate-in fade-in-0 duration-200">
-			<p className="m-0 text-text-placeholder text-[0.8rem]">
+			<p className="m-0 text-text-placeholder text-caption">
 				Estás en modo invitado. Tu progreso se guarda solo en este dispositivo.
 			</p>
 
@@ -223,7 +223,7 @@ export function AuthSection() {
 			{!isOnline && (
 				<p
 					id="auth-offline-note"
-					className="m-0 flex items-start gap-2 text-[0.8rem] text-surface-soft"
+					className="m-0 flex items-start gap-2 text-caption text-surface-soft"
 				>
 					<span aria-hidden="true">📡</span>
 					<span>

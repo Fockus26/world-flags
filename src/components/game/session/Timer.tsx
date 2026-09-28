@@ -81,7 +81,7 @@ export function Timer({ timeLeft, totalDuration }: TimerProps) {
 			</svg>
 
 			<motion.span
-				className={`relative text-[1.1rem] font-extrabold tabular-nums transition-colors duration-180 ease-in-out ${text}`}
+				className={`relative text-number font-extrabold tabular-nums transition-colors duration-180 ease-in-out ${text}`}
 				key={timeLeft}
 				initial={{ opacity: 0.4, scale: 0.85 }}
 				animate={{ opacity: 1, scale: 1 }}

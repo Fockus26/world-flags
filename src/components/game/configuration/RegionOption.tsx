@@ -189,9 +189,9 @@ export function RegionOption({
 							overflow-hidden
 							text-ellipsis
 							whitespace-nowrap
-							text-[0.82rem]
+							text-label
 							font-extrabold
-							min-[44rem]:text-[0.92rem]
+							min-[44rem]:text-body-sm
 						"
 					>
 						{label}
@@ -251,7 +251,7 @@ export function RegionOption({
 						items-center
 						justify-between
 						gap-2
-						text-[0.72rem]
+						text-tiny
 						font-semibold
 					"
 				>
@@ -263,7 +263,7 @@ export function RegionOption({
 
 				{showPracticedLine && (
 					<span
-						className="text-surface-soft text-[0.68rem] font-bold"
+						className="text-surface-soft text-tiny font-bold"
 						aria-hidden={!practicedLabel || undefined}
 					>
 						{isLoading ? (

@@ -19,7 +19,7 @@ interface ConfigurationMenuProps {
 // Contador sobre un icono o en una opción del menú. Lo comparten los iconos
 // de escritorio de `Configuration` y este menú.
 export const COUNT_BADGE_CLASS =
-	"flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.6rem] font-black text-accent-foreground";
+	"flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-black text-accent-foreground";
 
 // Ancho fijo: los tres emojis no miden lo mismo y los textos de las opciones
 // quedaban desalineados.

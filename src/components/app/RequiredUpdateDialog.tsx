@@ -55,7 +55,7 @@ export function RequiredUpdateDialog() {
 			<div className="flex flex-col gap-4">
 				<div className="flex items-start gap-3">
 					<span
-						className="shrink-0 text-[1.5rem] leading-none"
+						className="shrink-0 text-heading leading-none"
 						aria-hidden="true"
 					>
 						🔄

@@ -54,7 +54,7 @@ function CountryCheckbox({
 	// segunda.
 	return (
 		<label
-			className={`relative flex min-w-0 items-start gap-1.5 py-0.5 text-[0.82rem] leading-snug ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer"}`}
+			className={`relative flex min-w-0 items-start gap-1.5 py-0.5 text-label leading-snug ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer"}`}
 		>
 			<input
 				type="checkbox"
@@ -65,7 +65,7 @@ function CountryCheckbox({
 			/>
 			<span
 				aria-hidden="true"
-				className="relative mt-px flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-[0.65rem] after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
+				className="relative mt-px flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
 			/>
 			<span className="line-clamp-2 min-w-0 wrap-break-word">
 				{label}
@@ -192,7 +192,7 @@ export function CountryPickerModal({
 			</header>
 
 			<div className="mt-0 mb-3 flex items-start justify-between gap-3">
-				<p className="text-[0.85rem] text-text-placeholder">
+				<p className="text-label text-text-placeholder">
 					Elige los países que quieres practicar. Cuentan como práctica solo
 					ellos, no todo el continente. Los ya practicados hoy aparecen
 					bloqueados.
@@ -201,7 +201,7 @@ export function CountryPickerModal({
 					<button
 						type="button"
 						onClick={clearAll}
-						className="shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-[0.78rem] font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
+						className="shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-caption font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
 					>
 						Limpiar todo ({selectedCatalogCount})
 					</button>
@@ -234,10 +234,10 @@ export function CountryPickerModal({
 										className={`size-4 shrink-0 text-text-placeholder transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
 										aria-hidden="true"
 									/>
-									<span className="truncate text-[0.85rem] font-extrabold text-surface-soft">
+									<span className="truncate text-label font-extrabold text-surface-soft">
 										{REGION_LABELS[region]}
 									</span>
-									<span className="shrink-0 text-[0.72rem] text-text-placeholder">
+									<span className="shrink-0 text-tiny text-text-placeholder">
 										{selectedCount > 0
 											? `${selectedCount}/${regionCodes.length}`
 											: regionCodes.length}
@@ -247,7 +247,7 @@ export function CountryPickerModal({
 									{selectedCount > 0 && (
 										<button
 											type="button"
-											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-[0.72rem] font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
+											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-tiny font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
 											onClick={() => toggleAllInRegion(regionCodes, true)}
 										>
 											Ninguno
@@ -256,7 +256,7 @@ export function CountryPickerModal({
 									{!allSelected && (
 										<button
 											type="button"
-											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-[0.72rem] font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
+											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-tiny font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
 											onClick={() => toggleAllInRegion(regionCodes, false)}
 										>
 											Todos

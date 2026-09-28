@@ -46,7 +46,7 @@ export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
 	return (
 		<div className="flex flex-col gap-2">
 			{!isOnline && (
-				<p className="m-0 flex items-start gap-2 text-[0.8rem] text-surface-soft">
+				<p className="m-0 flex items-start gap-2 text-caption text-surface-soft">
 					<span aria-hidden="true">📡</span>
 					<span>
 						Sin conexión: algunos avatares no se pueden ver hasta que vuelva la
