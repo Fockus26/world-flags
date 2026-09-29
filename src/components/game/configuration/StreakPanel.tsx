@@ -1,3 +1,5 @@
+import { Skeleton } from "@/components/ui/Skeleton";
+import { useIsClient } from "@/hooks/useIsClient";
 import { getLocalDateString } from "@/utils/date";
 import { getCurrentStreak, getLongestStreak } from "@/utils/learning-storage";
 
@@ -35,6 +37,10 @@ const MONTH_LABELS = [
  * queda en un cuadrado de 28 px pegado a la izquierda de su columna.
  */
 const CELL_CLASS = "aspect-square w-full max-h-7 rounded-[3px]";
+
+/** Caja del panel, compartida con su esqueleto. */
+const PANEL_CLASS =
+	"flex flex-col gap-3 rounded-[var(--radius-md)] border border-surface-border bg-surface-hover/40 p-3 mt-2";
 
 interface MonthCell {
 	key: string;
@@ -85,8 +91,18 @@ function buildMonthCells(
  * `getLongestStreak`, D018): no hay persistencia nueva. El calendario es
  * puramente ilustrativo — va `aria-hidden`, igual que la barra de progreso
  * de `UserSummary`, con el conteo real como texto al lado.
+ *
+ * Todo lo que sale de "hoy" (rachas, mes, calendario) se pinta solo en el
+ * navegador (`useIsClient`, D179): el HTML del build lleva la fecha y la zona
+ * de Vercel, y no coincidiría con la de quien juega. Hasta entonces va un
+ * esqueleto con la misma caja (el panel suele estar cerrado al cargar, así
+ * que casi nunca se ve).
  */
 export function StreakPanel({ activeDays }: StreakPanelProps) {
+	const isClient = useIsClient();
+
+	if (!isClient) return <StreakPanelSkeleton />;
+
 	const currentStreak = getCurrentStreak(activeDays);
 	const longestStreak = getLongestStreak(activeDays);
 
@@ -105,7 +121,7 @@ export function StreakPanel({ activeDays }: StreakPanelProps) {
 			// mejor racha en una fila arriba y el calendario a todo el ancho de la
 			// tarjeta debajo. El tope ya no va en el ancho del calendario sino en el
 			// alto de cada celda (`CELL_CLASS`, D119).
-			className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-surface-border bg-surface-hover/40 p-3 mt-2"
+			className={PANEL_CLASS}
 		>
 			<div className="flex items-end justify-between gap-3">
 				<div className="flex flex-col gap-0.5">
@@ -169,6 +185,44 @@ export function StreakPanel({ activeDays }: StreakPanelProps) {
 						))}
 					</div>
 				</div>
+			</div>
+		</div>
+	);
+}
+
+/**
+ * El panel antes de montar (D179): las mismas cajas que el real, sin fechas.
+ * Cinco semanas de celdas, el alto de un mes típico.
+ */
+function StreakPanelSkeleton() {
+	return (
+		<div id="streak-panel" aria-busy="true" className={PANEL_CLASS}>
+			<div className="flex items-end justify-between gap-3">
+				<div className="flex flex-col gap-0.5">
+					<Skeleton shape="line" className="text-3xl font-black leading-none">
+						00
+					</Skeleton>
+					<Skeleton shape="line" className="text-xs font-bold">
+						días seguidos
+					</Skeleton>
+				</div>
+				<div className="flex flex-col items-end gap-0.5">
+					<Skeleton
+						shape="line"
+						className="text-micro font-extrabold uppercase tracking-wide"
+					>
+						Mejor racha
+					</Skeleton>
+					<Skeleton shape="line" className="text-lg font-extrabold">
+						00
+					</Skeleton>
+				</div>
+			</div>
+			<div className="grid grid-cols-7 gap-1">
+				{Array.from({ length: 35 }).map((_, index) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: relleno fijo, no reordena
+					<Skeleton key={index} className={CELL_CLASS} />
+				))}
 			</div>
 		</div>
 	);

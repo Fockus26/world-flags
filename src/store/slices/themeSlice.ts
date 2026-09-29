@@ -16,10 +16,11 @@ interface ThemeState {
  * `document.documentElement.dataset.theme`) equivocado que se corrige un
  * instante después — el mismo parpadeo que el script bloqueante de
  * `Layout.astro` evita para el primer pintado, pero ahora dentro de React.
- * Este módulo solo lo importa el árbol cliente (`client:load`), nunca código
- * de build/SSR (`context/PROJECT_CONTEXT.md`: sin SSR), así que `window`
- * siempre existe en tiempo de ejecución — el guard es solo para no romper un
- * `import` en un contexto de análisis estático que no llegue a evaluarlo.
+ * Ojo: la isla `client:load` sí se evalúa en el build — Astro la prerenderiza
+ * (D179) —, y ahí no hay `window`: el guard de abajo y el de
+ * `getStoredThemePreference` dejan "system"/`false`. Ese HTML no depende del
+ * tema (los colores van por `data-theme`, que pone el script bloqueante de
+ * `Layout.astro` antes de pintar), así que no provoca error de hidratación.
  */
 function getStoredTheme(): ThemeMode {
 	return getStoredThemePreference();

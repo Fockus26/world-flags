@@ -39,7 +39,7 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 ## Stack
 
 - **Astro 7** (output estático: una sola página `/` que monta **un** árbol React
-  con `client:load`; no hay SSR ni routing multipágina)
+  con `client:load`; sin SSR en ejecución —Astro sí la prerenderiza en el build: lo que dependa de la fecha o de `localStorage` va tras `useIsClient`, D179— ni routing multipágina)
 - **React 19** + **TypeScript** estricto · **React Compiler** activo
   (`babel-plugin-react-compiler`, solo sobre `src/`)
 - **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
