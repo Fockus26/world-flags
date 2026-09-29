@@ -52,8 +52,8 @@ export function toLearningDataRow(data: UserLearningData): LearningDataRow {
 
 /**
  * Las columnas de `data` que difieren de lo que ya hay en la nube
- * (`previous`). Sin `previous` (la fila no existe) van todas. El upsert de
- * PostgREST solo toca las columnas que recibe, así que subir el delta basta y
+ * (`previous`). Sin `previous` (la fila no existe) van todas. Se sube con un
+ * UPDATE, que solo toca las columnas que recibe (ver `pushLearningData`), y
  * ahorra subir la fila entera (~50–80 KB) cada vez que cambia una nota.
  */
 export function pickChangedColumns(

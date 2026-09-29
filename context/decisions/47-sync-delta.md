@@ -12,11 +12,17 @@ e historial), aunque solo hubiera cambiado `country_history`.
 - `runSync` ya lee la fila antes de subir (D051): `pushLearningData(userId, data, remote)`
   compara columna a columna (`pickChangedColumns`, `src/utils/learning-data-row.ts`) y solo
   manda las distintas, más `user_id` y `updated_at`.
-- Sin fila previa (`remote === null`) va la fila entera: es un INSERT y las columnas
-  `not null` necesitan valor.
-- Es seguro porque el upsert de PostgREST (`merge-duplicates`) solo actualiza las columnas
-  del payload; es la misma propiedad que ya usaba D028 (un cliente viejo no manda la
-  columna de un juego que no conoce).
+- Con fila previa se sube con **`UPDATE … WHERE user_id`** (solo esas columnas). Sin fila
+  (`remote === null`), upsert de la fila entera: es un INSERT y las columnas `not null`
+  necesitan valor.
+- **Corrección (2026-09-28, `fix/sync-update-parcial`):** la primera versión (#53) mandaba
+  el delta por **upsert**, y en producción fallaba siempre con `23502 null value in column
+  "profile"`: Postgres comprueba los `not null` sobre la fila que *insertaría* antes de
+  resolver el `ON CONFLICT`, así que un upsert parcial no sirve aunque la fila exista (D028
+  funcionaba porque ese upsert sí llevaba todas las columnas `not null`). Ninguna subida
+  llegaba a la nube y la app mostraba "No se pudo sincronizar"; lo local no se perdió.
+- Si la fila se borrara entre la lectura y el UPDATE, este no toca nada; la sync siguiente
+  lee `null` y sube la fila entera.
 - La comparación es contra el remoto **normalizado**: si una fila vieja tiene una columna
   en `null` y el normalizador la rellena igual que lo local, no se sube; cada lectura la
   vuelve a normalizar igual, así que no cambia nada para quien juega.
