@@ -175,8 +175,12 @@ export async function fetchRemoteLearningData(
 }
 
 /**
- * Sube `data`. Con `previous` (lo que la nube tiene ahora mismo) solo van las
- * columnas que cambiaron; sin él (la fila no existe) va la fila entera.
+ * Sube `data`. Con `previous` (la fila ya existe) es un UPDATE solo de las
+ * columnas que cambiaron; sin él, un upsert de la fila entera.
+ *
+ * El delta no puede ir por upsert: Postgres comprueba los `not null` sobre la
+ * fila que INSERTARÍA antes de resolver el conflicto, así que un upsert sin
+ * `profile` falla (23502) aunque la fila exista (D173).
  */
 export async function pushLearningData(
 	userId: string,
@@ -184,17 +188,23 @@ export async function pushLearningData(
 	previous: UserLearningData | null,
 	signal?: AbortSignal,
 ): Promise<void> {
-	let query = supabase.from("user_learning_data").upsert({
-		user_id: userId,
-		...pickChangedColumns(data, previous),
-		updated_at: new Date().toISOString(),
-	});
+	const updatedAt = new Date().toISOString();
+	const table = supabase.from("user_learning_data");
 
-	if (signal) {
-		query = query.abortSignal(signal);
-	}
+	const query = previous
+		? table
+				.update({
+					...pickChangedColumns(data, previous),
+					updated_at: updatedAt,
+				})
+				.eq("user_id", userId)
+		: table.upsert({
+				user_id: userId,
+				...pickChangedColumns(data, null),
+				updated_at: updatedAt,
+			});
 
-	const { error, status } = await query;
+	const { error, status } = await (signal ? query.abortSignal(signal) : query);
 
 	if (error) {
 		const cloudError = toCloudRequestError(
