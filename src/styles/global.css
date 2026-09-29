@@ -33,6 +33,7 @@
 @import "@heroui/styles/themes/default" layer(theme);
 @import "@heroui/styles/utilities";
 @import "@heroui/styles/variants";
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "./variables.css";
 @import "./theme.css";
 @import "./heroui-theme.css";

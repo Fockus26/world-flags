@@ -32,7 +32,7 @@
 | text-placeholder / muted | `#6b6880` | texto secundario (5.36:1 sobre blanco, AA ok) |
 | border (`--app-color-surface-border` / `--border`) | `#e2dff1` / `#e4e2f2` | bordes de tarjeta |
 | field-background (`--field-background`) | `#e2dff1` | relleno de inputs/selects — mismo tono que `border` (surface-border), reutilizado a propósito. `1.31:1` contra el blanco del modal, sutil pero perceptible |
-| field-border | `#9c96c4` | borde de input. **Pre-existente sin arreglar aquí:** da `2.77:1` contra blanco, por debajo del `≥3:1` que su propio comentario en el CSS reclama |
+| field-border | `#817bab` | borde de input: 3,92:1 sobre blanco, 3,49:1 sobre `background`, 3,00:1 sobre `field-background` (D174; antes `#9c96c4`, 2,77:1) |
 | success | `#1fa971` · soft `#e3f8ee` · hover `#178a5c` | correcto, "Bien"/"Fácil". **Como texto da 2.71:1 y falla AA** — igual que `primary`, usar `success-hover` para texto/icono con acento y reservar `success` para fondo/borde |
 | warning | `#d97a13` · soft `#fdf0dc` | "Difícil" |
 | danger | `#e0435f` · soft `#fde8ec` | incorrecto, "Otra vez", "Cerrar"/"Abandonar" |
