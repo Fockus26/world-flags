@@ -200,7 +200,7 @@ function sortedUniqueDays(days: Iterable<string>): string[] {
  * fecha por país, así que quien practicó sesenta días seguidos los mismos
  * veinte países verá unos veinte días sueltos. Son falsos negativos (una
  * racha histórica se subestima), jamás falsos positivos — y por eso es
- * seguro. Ver `context/decisions/05-logros.md`.
+ * seguro. Ver D019.
  */
 function seedStats(
 	countryHistory: CountriesLearningHistory,

@@ -4,7 +4,7 @@ const BASE = process.env.BASE_URL ?? 'http://localhost:4321';
 
 async function waitForHydration(page: Page) {
   for (let attempt = 0; attempt < 6; attempt++) {
-    // D030 (modo Países, context/decisions/07-modo-paises.md): un invitado
+    // D030 (modo Países): un invitado
     // nuevo arranca en Países ("Aprende los países del mundo"), no en
     // Banderas — este selector solo comprueba que la app ya hidrató, no qué
     // juego está activo, así que acepta cualquiera de los dos títulos.

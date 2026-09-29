@@ -15,15 +15,15 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 1. `context/PROJECT_CONTEXT.md` — qué es, stack, alcance
 2. `context/CURRENT_PHASE.md` — dónde quedó todo y qué está abierto *(local)*
 3. `context/DESIGN_RULES.md` — lo que no se negocia
-4. `context/DECISIONS_INDEX.md` — buscador de decisiones ya tomadas (no las re-litigues)
 
-Detalle técnico más profundo en `docs/` (estado, tokens, componentes), en el
-`README.md` y en `CONTRIBUTING.md`.
+**Buscar, no leer:** `decisions/` (un archivo por decisión; no las re-litigues),
+`CONTENT_CHECKLIST.md`, inventarios, `PHASE_LOG/`. `grep` y abrir solo lo que sale:
+`grep -rhi "^# D.*modal" context/decisions/`. Más detalle en `docs/`, `README.md`, `CONTRIBUTING.md`.
 
 ### Qué está en el repo y qué vive solo en local
 
 En git solo están los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
-`DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY`, `DECISIONS_INDEX` y `decisions/`.
+`DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
@@ -38,8 +38,9 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 
 ## Stack
 
-- **Astro 7** (output estático: una sola página `/` que monta **un** árbol React
-  con `client:load`; sin SSR en ejecución —Astro sí la prerenderiza en el build: lo que dependa de la fecha o de `localStorage` va tras `useIsClient`, D179— ni routing multipágina)
+- **Astro 7** (estático: una página `/` que monta **un** árbol React con `client:load`,
+  sin routing multipágina ni SSR en ejecución; el build sí prerenderiza: lo que dependa de
+  la fecha o de `localStorage` va tras `useIsClient`, D179)
 - **React 19** + **TypeScript** estricto · **React Compiler** activo
   (`babel-plugin-react-compiler`, solo sobre `src/`)
 - **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
@@ -47,9 +48,8 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 - **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
 - **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm
 - **iconoir-react** para iconos · PWA con SW propio (`public/sw.js`)
-- `framer-motion` **se quitó** (D177; ver `context/decisions/03-animaciones.md`): sus
-  animaciones no corrían en este stack. Las animaciones van con `tw-animate-css` (`animate-in fade-in / slide-in…`,
-  ya incluido por `@heroui/styles`) o transiciones CSS.
+- Animaciones: `tw-animate-css` (`animate-in fade-in / slide-in…`, viene con
+  `@heroui/styles`) o transiciones CSS. `framer-motion` **se quitó**: no corría aquí (D006, D177).
 
 ```bash
 bun install
@@ -63,14 +63,14 @@ bun run test:e2e       # Playwright (necesita el server corriendo)
 **El servidor de desarrollo (`bun run dev`) lo levanta el dueño, no un agente.**
 Si necesitas el sitio corriendo para verificar algo, pídelo y espera.
 
-**Documentación de librerías:** consulta **Context7** antes de usar cualquier API
-de HeroUI, Astro, React Aria, Supabase o Tailwind — cambian rápido.
+**Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
+Supabase o Tailwind (cambian rápido).
 
 ---
 
 ## Cómo se trabaja aquí
 
-Una unidad a la vez (un componente, una pantalla, un flujo, un fix acotado).
+Una unidad a la vez (componente, pantalla, flujo o fix acotado).
 
 Todo cambio llega a `main` **por Pull Request**. `main` está protegida.
 
@@ -99,8 +99,7 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
   ni force-push sobre commits ya empujados.
 - Tras el merge: `git switch main && git pull`. Ojo: si el PR dejó de trackear archivos,
   el pull los borra del disco — cópialos fuera del repo antes y restáuralos después.
-- Nada destructivo: sin `reset --hard`, sin `push --force`, sin reescribir historia,
-  sin borrar ramas ajenas.
+- Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historia, ni borrar ramas ajenas.
 - **Skill `git-flow`:** aplica en modo `pr` (ramas, Conventional Commits, changesets §2.1.3,
   prohibiciones). No aplican su pausa antes del commit ni su merge local. Sin `GIT_STATE.md`.
 
@@ -115,10 +114,9 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 ### Subagentes de QA
 
 `design-qa` y `functional-qa` — al cerrar una pantalla completa o un flujo. Corren
-aislados (Playwright real). **Nota de entorno:** en Windows aquí Playwright y el
-preview embebido fallan de forma intermitente (Chromium se cuelga al arrancar;
-`window.innerHeight` puede reportar `0`). Si un subagente no puede ejecutar, su
-reporte es revisión de código — vale, pero márcalo como no verificado en navegador.
+aislados (Playwright real). **Entorno:** en este Windows Playwright y el preview fallan
+a ratos (Chromium colgado al arrancar, `window.innerHeight` = `0`). Si un subagente no
+puede ejecutar, su reporte es revisión de código: vale, marcado como no verificado en navegador.
 
 ---
 

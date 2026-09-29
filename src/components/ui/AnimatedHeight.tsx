@@ -8,12 +8,12 @@ interface AnimatedHeightProps {
 /**
  * Contenedor que anima su alto cuando cambia el de su contenido (D116): el
  * contenido cambia de golpe y la caja lo sigue con una transición de
- * `height`. Distinto de `AutoHeight` (D009), que abre y cierra un bloque que
+ * `height`. Distinto de `AutoHeight` (D182), que abre y cierra un bloque que
  * siempre está montado; aquí el contenido es cualquiera y se mide.
  *
  * Se mide con `ResizeObserver` (no hay `interpolate-size` fiable en este
  * motor y framer no corre aquí, D006), como el alto de las pestañas de
- * `ConfigurationModal` (D010). Detalles:
+ * `ConfigurationModal` (D183). Detalles:
  *
  * - `offsetHeight` y no `getBoundingClientRect`: la entrada del diálogo de
  *   HeroUI escala el contenido, y una medida transformada se quedaría fija.
@@ -30,7 +30,7 @@ export function AnimatedHeight({ children, className }: AnimatedHeightProps) {
 	const [height, setHeight] = useState<number | null>(null);
 
 	// `ref` de callback con identidad estable: se conecta cuando React monta
-	// el nodo real y el observador no se recrea en cada render (D010).
+	// el nodo real y el observador no se recrea en cada render (D183).
 	const observeContent = useCallback((node: HTMLDivElement | null) => {
 		if (!node) return undefined;
 

@@ -32,7 +32,7 @@ issue if your change needs the backend.
 - **Look for an existing issue** or open one first for anything bigger than a small fix,
   so we can agree on the approach before you write code.
 - Check the roadmap in the [README](./README.md) and [`TODO.md`](./TODO.md).
-- Read the [decision records](./context/DECISIONS_INDEX.md). If a decision is marked as
+- Read the [decision records](./context/decisions/) (one file per decision; `grep -rh "^# D" context/decisions/` lists them). If a decision is marked as
   implemented, don't reopen it inside a PR — open an issue to discuss it instead.
 
 ---
@@ -103,8 +103,8 @@ Never rewrite shared history (`push --force`, `reset --hard` on pushed branches)
 [`CHANGELOG.md`](./CHANGELOG.md) is in **Spanish**, for players — not generated from
 commits. The app shows the same text in its "Novedades" dialog, so every line is
 something a player notices. Rationale:
-[`context/decisions/15-changelog-y-versionado.md`](./context/decisions/15-changelog-y-versionado.md)
-and [`context/decisions/33-changesets.md`](./context/decisions/33-changesets.md).
+decisions D057–D060
+and D135–D136 in `context/decisions/`.
 
 **PRs don't touch `version`, `CHANGELOG.md` or `APP_VERSION` in `public/sw.js`.** Every PR
 with a user-visible change adds a [changeset](https://github.com/changesets/changesets)
@@ -185,7 +185,7 @@ These are non-negotiable. A PR that breaks one will be asked to change.
   depend on it.
 - **Animations** use `tw-animate-css` (`animate-in fade-in …`) or CSS transitions.
   `framer-motion` is installed but doesn't run in this stack (see
-  [`context/decisions/03-animaciones.md`](./context/decisions/03-animaciones.md)).
+  D006 and D177 in `context/decisions/`).
 
 ### Architecture
 

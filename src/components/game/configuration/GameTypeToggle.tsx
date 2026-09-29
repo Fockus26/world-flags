@@ -59,7 +59,7 @@ const OPTIONS = GAME_TYPES.map((gameType) => ({
  * El `name` del grupo de radios se genera con `useId()` en vez de recibirlo
  * como prop: `Configuration` vive dentro de `PageFlip`, que — por un bug
  * preexistente de esa pieza (ranuras duplicadas desde el montaje, ver
- * `context/decisions/07-modo-paises.md`) — puede montar dos copias de esta
+ * D028–D038) — puede montar dos copias de esta
  * pantalla en el DOM a la vez. Dos `<input type="radio">` con el mismo
  * `name` se agrupan por el navegador **aunque vivan en árboles de React
  * distintos** (el agrupamiento nativo de radios es por `name` en todo el

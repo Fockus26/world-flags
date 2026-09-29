@@ -12,6 +12,6 @@ onboarding real; este archivo solo redirige.
 - **Bun** para todo. Nunca npm/yarn/pnpm.
 - Persistencia solo por `src/utils/learning-storage.ts`. Redux solo por los hooks de `src/hooks/`.
 - Nada de valores mágicos de color/espaciado/radio: tokens (`context/COLORS.md`, `context/DESIGN_TOKENS.md`).
-- `framer-motion` no ejecuta aquí — animaciones nuevas con `tw-animate-css` (`animate-in …`). Ver `context/decisions/03-animaciones.md`.
+- `framer-motion` no ejecuta aquí — animaciones nuevas con `tw-animate-css` (`animate-in …`). Ver D006 y D177.
 - El servidor de dev lo levanta el dueño, no un agente. El SW (`public/sw.js`) cachea agresivo: desregistrar + limpiar `caches` al verificar en dev.
 - Docs de librerías: **Context7** antes de usar cualquier API.

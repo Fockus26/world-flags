@@ -12,7 +12,7 @@ const SLOT_TRANSFORMS = ["rotateY(0deg)", "rotateY(180deg)"] as const;
  * Transición de "página" en giro 3D entre las vistas de nivel superior del
  * juego (configuración, sesión, práctica diaria, resultados). No hay
  * `AnimatePresence` disponible en este stack (ver
- * `context/decisions/03-animaciones.md`, D008).
+ * D181).
  *
  * Dos ranuras fijas (0°/180°) que se turnan el rol de "visible": el giro
  * **solo avanza, nunca se resetea** — resetear a 0° tras cada giro dispara

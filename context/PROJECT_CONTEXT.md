@@ -50,7 +50,7 @@ ni un test académico severo.
 - Componentes: **HeroUI v3** (`@heroui/react` 3.2.x + `@heroui/styles`) — razón:
   el dueño lo pidió explícitamente; el tema propio ya iba "HeroUI-ish"
 - Estilos: **Tailwind CSS v4** (CSS-first, sin `tailwind.config.js`); tokens propios
-  puenteados a los de HeroUI (ver `context/decisions/02-tokens-y-tema.md`)
+  puenteados a los de HeroUI (ver D003–D005, D013)
 - Gestor: **bun**. Docs de librerías: **Context7**
 - Estado en memoria: **Redux Toolkit** (`src/store/`, slices `auth`/`game`/`theme`)
 - Base de datos / Auth: **Supabase** (`user_learning_data` privada + `leaderboard_entries` pública)

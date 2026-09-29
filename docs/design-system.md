@@ -1,7 +1,7 @@
 # Design system
 
 > Resumen técnico. Para el detalle vivo (paleta con hex, decisiones, inventario)
-> ver `context/COLORS.md`, `context/DESIGN_TOKENS.md`, `context/DECISIONS_INDEX.md`.
+> ver `context/COLORS.md`, `context/DESIGN_TOKENS.md`, `context/decisions/`.
 
 ## Librería de componentes
 
@@ -31,7 +31,7 @@ conservan su API previa a la migración** (props `color`/`variant`/`disabled`/
 **Cuidado:** hubo colisiones de namespace (Tailwind `overlay` apuntaba al scrim
 oscuro viejo → modales oscuros en modo claro; `--field-background` = blanco → campos
 invisibles). Resueltas en `heroui-theme.css` / `theme.css`. **Lee
-`context/decisions/02-tokens-y-tema.md` antes de tocar esos archivos.**
+D003–D005, D013 antes de tocar esos archivos.**
 
 ## Reglas
 
@@ -44,7 +44,7 @@ invisibles). Resueltas en `heroui-theme.css` / `theme.css`. **Lee
 ## Animaciones
 
 - **Sin framer-motion** (quitado en D177: sus animaciones no corrían en este stack, D006).
-  Ver `context/decisions/03-animaciones.md`.
+  Ver D006 y D177.
 - Animaciones nuevas: `tw-animate-css` (`animate-in fade-in-0 slide-in-from-* duration-200`,
   viene con `@heroui/styles`) o transiciones CSS.
 - Los propios componentes de HeroUI traen sus micro-interacciones (tabs, backdrop,

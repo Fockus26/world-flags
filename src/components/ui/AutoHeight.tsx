@@ -9,7 +9,7 @@ interface AutoHeightProps {
 /**
  * Anima el alto de un bloque que aparece/desaparece por condición, sin medir
  * nada por JS: el truco de `grid-template-rows: 0fr → 1fr` (ver
- * `context/decisions/03-animaciones.md`, D009). `interpolate-size` no anima
+ * D182). `interpolate-size` no anima
  * cambios de alto por contenido en este motor y `framer-motion` no corre
  * aquí (D006), así que esta es la alternativa puramente CSS.
  *
