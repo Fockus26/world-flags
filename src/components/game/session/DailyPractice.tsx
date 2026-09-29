@@ -173,10 +173,10 @@ export function DailyPractice({
 							<button
 								type="button"
 								onClick={reveal}
-								className="m-0 cursor-pointer border-0 bg-transparent p-0 text-center text-[0.95rem] text-text-placeholder animate-in fade-in-0 duration-150"
+								className="m-0 cursor-pointer border-0 bg-transparent p-0 text-center text-body-sm text-text-placeholder animate-in fade-in-0 duration-150"
 							>
 								Presiona{" "}
-								<kbd className="hidden rounded-sm border border-surface-border bg-surface-soft px-2 py-[0.15rem] text-[0.85rem] text-secondary-soft min-[44rem]:inline">
+								<kbd className="hidden rounded-sm border border-surface-border bg-surface-soft px-2 py-[0.15rem] text-label text-secondary-soft min-[44rem]:inline">
 									Espacio
 								</kbd>{" "}
 								<span className="min-[44rem]:hidden">Toca aquí</span>
@@ -187,7 +187,7 @@ export function DailyPractice({
 								{/* En Países el nombre ya se ve en el tablero (verde, en su
 								    hueco) — repetirlo acá sería redundante. */}
 								{card !== null && (
-									<p className="m-0 text-center font-extrabold text-[1.4rem] text-surface-soft">
+									<p className="m-0 text-center font-extrabold text-heading-sm text-surface-soft">
 										{card.getAnswer(currentCountry)}
 									</p>
 								)}

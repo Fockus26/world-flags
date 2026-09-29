@@ -40,7 +40,7 @@ export function ConfirmationModal({
 			className="flex flex-col gap-3.5"
 		>
 			<div
-				className="mx-auto grid size-14 place-items-center rounded-full bg-danger text-[1.75rem] font-black text-danger-soft"
+				className="mx-auto grid size-14 place-items-center rounded-full bg-danger text-display font-black text-danger-soft"
 				aria-hidden="true"
 			>
 				!

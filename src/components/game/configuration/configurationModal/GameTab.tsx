@@ -23,7 +23,7 @@ function HelpHint({ label }: { label: string }) {
 			<button
 				type="button"
 				aria-label={label}
-				className="inline-flex size-5 items-center justify-center rounded-full bg-surface-hover text-text-placeholder text-[0.7rem] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
+				className="inline-flex size-5 items-center justify-center rounded-full bg-surface-hover text-text-placeholder text-tiny font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
 			>
 				<span aria-hidden="true">?</span>
 			</button>
@@ -177,7 +177,7 @@ export function GameTab({
 			</AutoHeight>
 
 			<AutoHeight show={mode === "competitive"}>
-				<p className="m-0 text-[0.8rem] text-text-placeholder">
+				<p className="m-0 text-caption text-text-placeholder">
 					En modo competitivo el orden es aleatorio y la dificultad es difícil
 					siempre, para que el ranking compare partidas equivalentes.
 				</p>

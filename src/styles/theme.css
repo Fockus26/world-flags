@@ -96,6 +96,27 @@
 	--radius-2xl: 2rem;
 
 	/* ===========================
+	   Tamaños de letra (D178)
+	   Sin `--line-height` a propósito: como los `text-[Xrem]` que
+	   sustituyen, solo fijan el tamaño y el interlineado se hereda.
+	=========================== */
+	--text-micro: 0.625rem;
+	--text-tiny: 0.7rem;
+	--text-caption: 0.78rem;
+	--text-label: 0.85rem;
+	--text-body-sm: 0.925rem;
+	--text-number: 1.1rem;
+	--text-heading-sm: 1.4rem;
+	--text-heading: 1.5rem;
+	--text-display: 1.8rem;
+	/* Fluidos */
+	--text-stat: clamp(1.65rem, 4vh, 2.75rem);
+	--text-stat-sm: clamp(1.5rem, 4.2vw, 2.1rem);
+	--text-score: clamp(2rem, 6vw, 2.8rem);
+	--text-session-title: clamp(1rem, 2.5vh, 1.3rem);
+	--text-capital: clamp(0.9rem, min(32cqh, 9cqw), 3rem);
+
+	/* ===========================
 	   Tipografía
 	=========================== */
 	--font-sans:

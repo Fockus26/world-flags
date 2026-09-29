@@ -117,7 +117,7 @@ export function StreakPanel({ activeDays }: StreakPanelProps) {
 					</span>
 				</div>
 				<div className="flex flex-col items-end gap-0.5">
-					<span className="text-[0.65rem] font-extrabold uppercase tracking-wide text-text-placeholder">
+					<span className="text-micro font-extrabold uppercase tracking-wide text-text-placeholder">
 						Mejor racha
 					</span>
 					<span className="text-lg font-extrabold text-surface-soft tabular-nums">
@@ -128,7 +128,7 @@ export function StreakPanel({ activeDays }: StreakPanelProps) {
 
 			<div className="flex w-full flex-col gap-1.5">
 				<div className="flex items-center justify-between">
-					<span className="text-[0.65rem] font-extrabold uppercase tracking-wide text-surface-soft">
+					<span className="text-micro font-extrabold uppercase tracking-wide text-surface-soft">
 						{monthLabel}
 					</span>
 					<span className="text-xs font-bold text-text-placeholder">
@@ -144,7 +144,7 @@ export function StreakPanel({ activeDays }: StreakPanelProps) {
 						{WEEKDAY_LABELS.map((label) => (
 							<span
 								key={label}
-								className="text-center text-[0.6rem] font-bold text-text-placeholder"
+								className="text-center text-micro font-bold text-text-placeholder"
 							>
 								{label}
 							</span>

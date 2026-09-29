@@ -82,7 +82,7 @@ export function Timer({ timeLeft, totalDuration }: TimerProps) {
 			{/* `key` remonta el número cada segundo: vuelve a entrar desde 40 %
 			    de opacidad y 85 % de tamaño. */}
 			<span
-				className={`relative text-[1.1rem] font-extrabold tabular-nums transition-colors duration-180 ease-in-out motion-safe:animate-in motion-safe:fade-in-40 motion-safe:zoom-in-85 motion-safe:duration-180 ${text}`}
+				className={`relative text-number font-extrabold tabular-nums transition-colors duration-180 ease-in-out motion-safe:animate-in motion-safe:fade-in-40 motion-safe:zoom-in-85 motion-safe:duration-180 ${text}`}
 				key={timeLeft}
 			>
 				{timeLeft}

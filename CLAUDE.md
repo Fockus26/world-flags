@@ -127,8 +127,8 @@ reporte es revisión de código — vale, pero márcalo como no verificado en na
 - **Cero valores mágicos de color/espaciado/radio.** Todo sale de tokens (ver
   `context/COLORS.md`, `context/DESIGN_TOKENS.md`). `text-[#6d5ef0]` o `mt-[13px]`
   = o falta un token, o falta registrar una decisión.
-  - Excepción tolerada hoy: tamaños de fuente arbitrarios (`text-[0.82rem]`, etc.)
-    heredados de antes de HeroUI. No agregues más; consolida cuando toques un archivo.
+  - Tamaños de letra: escala de `theme.css` (`text-caption`, `text-label`…, D178;
+    tabla en `context/TYPOGRAPHY.md`). Tampoco `text-[Xrem]`.
 - **HeroUI antes que reimplementar** un primitivo (foco/teclado ya resueltos).
   Los wrappers propios viven en `src/components/ui/` y **conservan su API previa**
   para no tocar los ~17 consumidores — respeta ese contrato.

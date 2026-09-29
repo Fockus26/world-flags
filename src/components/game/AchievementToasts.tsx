@@ -80,7 +80,7 @@ function AchievementToastCard({
 				}
 			}}
 		>
-			<span className="shrink-0 text-[1.5rem] leading-none" aria-hidden="true">
+			<span className="shrink-0 text-heading leading-none" aria-hidden="true">
 				{toast.emoji}
 			</span>
 
@@ -89,13 +89,11 @@ function AchievementToastCard({
 				    texto ni `success` (2.71:1) ni `success-hover` (3.92:1) llegan
 				    a los 4.5:1 de AA. El verde queda para el fondo, el borde y el
 				    emoji — nunca hace falta que el texto lo cargue solo. */}
-				<span className="text-[0.7rem] font-black tracking-wide text-text-placeholder uppercase">
+				<span className="text-tiny font-black tracking-wide text-text-placeholder uppercase">
 					Logro desbloqueado
 				</span>
-				<strong className="text-[0.9rem] text-surface-soft">
-					{toast.name}
-				</strong>
-				<span className="text-[0.78rem] text-text-placeholder">
+				<strong className="text-body-sm text-surface-soft">{toast.name}</strong>
+				<span className="text-caption text-text-placeholder">
 					{toast.description}
 				</span>
 			</span>

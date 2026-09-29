@@ -71,7 +71,7 @@ function CompetitiveResults({
 			<>
 				<p className="m-0 text-text-placeholder">Rush terminado</p>
 
-				<h1 className="my-[0.35rem] mb-2 text-[1.45rem] leading-[1.08] text-surface-soft sm:text-[clamp(1.65rem,4vh,2.75rem)]">
+				<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
 					Te rendiste
 				</h1>
 
@@ -79,9 +79,9 @@ function CompetitiveResults({
 					<CountUpNumber
 						value={result.correctAnswers}
 						format={(count) => `${formatCount(count)}/${result.totalCountries}`}
-						className="text-[1.35rem] leading-none tabular-nums whitespace-nowrap sm:text-[clamp(1.5rem,4.2vw,2.1rem)]"
+						className="text-heading-sm leading-none tabular-nums whitespace-nowrap sm:text-stat-sm"
 					/>
-					<span className="mt-1 text-[0.7rem] font-bold">encontrados</span>
+					<span className="mt-1 text-tiny font-bold">encontrados</span>
 				</div>
 
 				<p className="m-0 max-w-lg leading-[1.6] text-text-placeholder">
@@ -99,7 +99,7 @@ function CompetitiveResults({
 		<>
 			<p className="m-0 text-text-placeholder">Rush terminado</p>
 
-			<h1 className="my-[0.35rem] mb-2 text-[1.45rem] leading-[1.08] text-surface-soft sm:text-[clamp(1.65rem,4vh,2.75rem)]">
+			<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
 				¡Completado!
 			</h1>
 
@@ -121,9 +121,9 @@ function CompetitiveResults({
 				<CountUpNumber
 					value={result.elapsedMs}
 					format={formatElapsedTime}
-					className="text-[1.35rem] leading-none tabular-nums whitespace-nowrap sm:text-[clamp(1.5rem,4.2vw,2.1rem)]"
+					className="text-heading-sm leading-none tabular-nums whitespace-nowrap sm:text-stat-sm"
 				/>
-				<span className="mt-1 text-[0.7rem] font-bold">tiempo</span>
+				<span className="mt-1 text-tiny font-bold">tiempo</span>
 			</div>
 
 			<p className="m-0 max-w-lg leading-[1.6] text-text-placeholder">
@@ -153,7 +153,7 @@ function PracticeResults({
 		<>
 			<p className="m-0 text-text-placeholder">Práctica terminada</p>
 
-			<h1 className="my-[0.35rem] mb-2 text-[1.45rem] leading-[1.08] text-surface-soft sm:text-[clamp(1.65rem,4vh,2.75rem)]">
+			<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
 				{getScoreMessage(result.score)}
 			</h1>
 
@@ -168,9 +168,9 @@ function PracticeResults({
 				<CountUpNumber
 					value={result.score}
 					format={formatCount}
-					className="text-[1.8rem] leading-none tabular-nums sm:text-[clamp(2rem,6vw,2.8rem)]"
+					className="text-display leading-none tabular-nums sm:text-score"
 				/>
-				<span className="mt-[-0.35rem] text-[0.9rem] font-bold">/10</span>
+				<span className="mt-[-0.35rem] text-body-sm font-bold">/10</span>
 			</div>
 
 			<p className="m-0 max-w-lg leading-[1.6] text-text-placeholder">
@@ -197,7 +197,7 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 			)}
 
 			{result.scope.type !== "world" && (
-				<p className="mt-3 mb-0 text-[0.9rem] text-text-placeholder">
+				<p className="mt-3 mb-0 text-body-sm text-text-placeholder">
 					Esto se guardó para <strong>{scopeLabel}</strong>.
 				</p>
 			)}

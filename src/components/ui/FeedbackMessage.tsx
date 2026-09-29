@@ -28,7 +28,7 @@ const variantClass: Record<FeedbackVariant, string> = {
 
 const sizeClass: Record<FeedbackSize, string> = {
 	sm: "!py-2 !px-3 !gap-2 text-xs",
-	md: "!py-2.5 !px-3.5 !gap-2.5 text-[0.9rem]",
+	md: "!py-2.5 !px-3.5 !gap-2.5 text-body-sm",
 };
 
 export function FeedbackMessage({

@@ -275,7 +275,7 @@ function LeaderboardRow({
 					<span className="truncate font-bold">{entry.displayName}</span>
 					{/* Tu fila no se distingue solo por el color. */}
 					{isMe && (
-						<span className="shrink-0 text-[0.8rem] font-extrabold">(tú)</span>
+						<span className="shrink-0 text-caption font-extrabold">(tú)</span>
 					)}
 				</span>
 				<span className={ROW_TIME_CLASS}>
@@ -476,7 +476,7 @@ export function LeaderboardModal({
 				className="mb-3"
 			/>
 
-			<p className="mt-0 mb-3 text-[0.85rem] text-text-placeholder">
+			<p className="mt-0 mb-3 text-label text-text-placeholder">
 				{LEADERBOARD_DESCRIPTIONS[gameType]}
 				{region === "world" ? "" : ` ${REGION_PHRASES[region]}`}.
 			</p>
@@ -503,7 +503,7 @@ export function LeaderboardModal({
 				)}
 
 				{!error && isOffline && (
-					<p className="flex items-start gap-2 text-[0.85rem] text-text-placeholder">
+					<p className="flex items-start gap-2 text-label text-text-placeholder">
 						<span aria-hidden="true">📡</span>
 						<span>
 							Sin conexión: el ranking necesita internet. Aparecerá aquí en
@@ -532,7 +532,7 @@ export function LeaderboardModal({
 				)}
 
 				{!error && entries !== null && entries.length === 0 && (
-					<p className="text-[0.85rem] text-text-placeholder">
+					<p className="text-label text-text-placeholder">
 						Todavía nadie tiene un tiempo registrado. ¡Sé el primero!
 					</p>
 				)}
@@ -579,7 +579,7 @@ export function LeaderboardModal({
 					entries !== null &&
 					entries.length > 0 &&
 					myRank === null && (
-						<p className="mt-3 mb-0 text-[0.8rem] text-text-placeholder">
+						<p className="mt-3 mb-0 text-caption text-text-placeholder">
 							Todavía no tienes un tiempo registrado: completa una práctica
 							competitiva de "{REGION_LABELS[region]}" para entrar al ranking.
 						</p>
@@ -587,7 +587,7 @@ export function LeaderboardModal({
 			</AnimatedHeight>
 
 			{status !== "authenticated" && (
-				<p className="mt-3 mb-0 text-[0.8rem] text-text-placeholder">
+				<p className="mt-3 mb-0 text-caption text-text-placeholder">
 					Inicia sesión para poder aparecer en el ranking.
 				</p>
 			)}

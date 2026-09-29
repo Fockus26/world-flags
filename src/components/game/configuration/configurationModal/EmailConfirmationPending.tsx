@@ -56,7 +56,7 @@ export function EmailConfirmationPending({
 
 			<h3 className="m-0 text-surface-soft">Revisa tu correo</h3>
 
-			<p className="m-0 text-text-placeholder text-[0.875rem] leading-normal">
+			<p className="m-0 text-text-placeholder text-label leading-normal">
 				Te enviamos un enlace de confirmación a <strong>{email}</strong>. Esta
 				pantalla se cerrará sola cuando confirmes tu cuenta.
 			</p>
