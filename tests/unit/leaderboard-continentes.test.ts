@@ -223,6 +223,15 @@ describe("marcas que se suben (D137, D139)", () => {
 
 		assert.deepEqual(collectLeaderboardMarks(data), []);
 	});
+
+	test("el tiempo se sube en ms enteros (D180)", () => {
+		// `performance.now()` da fracciones: la columna es `integer`.
+		const data = withBestTimes({ "world@2": 671_768.199_999_988_1 });
+
+		assert.deepEqual(collectLeaderboardMarks(data), [
+			{ scope: "flags:world@2", bestTimeMs: 671_768 },
+		]);
+	});
 });
 
 /** Temporizadores de mentira: se disparan a mano. */
