@@ -10,9 +10,11 @@
 # Una vez por repo, en GitHub: Settings › Actions › General › "Allow GitHub Actions to
 # create and approve pull requests". Sin eso la Action falla al abrir el PR.
 #
-# Un PR abierto con GITHUB_TOKEN no dispara el CI: si `main` exige checks, ese PR no los
-# tendrá (se mergea saltándose la protección, o se cambia el token por uno de una GitHub
-# App). Solo cambia package.json, CHANGELOG.md, public/sw.js y borra los changesets.
+# Un PR abierto con GITHUB_TOKEN no dispara `pull_request` (GitHub lo impide para evitar
+# bucles), así que el CI no correría y el check `ci` que exige `main` quedaría pendiente.
+# `workflow_dispatch` es la excepción: el último paso lanza ci.yml sobre la rama del PR y su
+# check `ci` queda en el commit que pide la protección. Necesita `workflow_dispatch` en ci.yml.
+# El PR solo cambia package.json, CHANGELOG.md, public/sw.js y borra los changesets.
 name: Release
 
 on:
@@ -24,6 +26,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  actions: write # para lanzar ci.yml sobre el PR de versión
 
 jobs:
   version-pr:
@@ -42,9 +45,17 @@ jobs:
       # scripts/release.ts corre `changeset version` (con `--bun`: Changesets 3 pide
       # Node ≥ 22.11) y después escribe CHANGELOG.md y public/sw.js.
       - uses: changesets/action@v2
+        id: changesets
         with:
           version-script: bun scripts/release.ts
           pr-title: "chore(release): versión"
           commit-message: "chore(release): versión"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Rama que usa changesets/action para el PR: changeset-release/<rama base>.
+      - name: CI del PR de versión
+        if: steps.changesets.outputs.pr-number != ''
+        run: gh workflow run ci.yml --ref changeset-release/${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}

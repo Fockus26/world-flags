@@ -66,7 +66,7 @@
 - **Anillos de foco** (D101–D102): el tono `-hover` de cada color (en claro más
   oscuro, en oscuro más claro) es el que pasa 3:1 en los dos temas; el base de
   `success` y `warning` no llega en claro (2,68/2,77:1 contra `--background`).
-  Tabla completa en `decisions/23-foco-y-toque.md`.
+  Tabla completa en D101–D104.
 
 - Botones sin relleno pleno (`soft`/`outline`/`text`): el texto se calcula con
   `color-mix(in oklab, <color> 62%, var(--foreground))` (`readableFg` en `Button.tsx`)
@@ -81,8 +81,8 @@
   verde por fondo/borde/icono — nunca por texto: `success` sobre `success-soft`
   da 2.71:1 en claro. El nombre se queda en `text-surface-soft`, el icono en
   `text-success-hover` (icono informativo, solo necesita 3:1). Ver
-  `decisions/06-ajustes-logros.md`.
+  D024–D027.
 - Medallas del podio (D147–D148): el color del puesto nunca va solo; el número
   ("#1") es texto real y la medalla de `iconoir-react` es `aria-hidden`. Con el
   hover de la fila encima (D149, 6 % del texto mezclado en el fondo) el tono de
-  medalla sigue ≥4,8:1 en claro. Tabla medida en `decisions/37-ranking-podio.md`.
+  medalla sigue ≥4,8:1 en claro. Tabla medida en D147–D150.

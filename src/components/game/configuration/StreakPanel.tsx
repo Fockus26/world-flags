@@ -85,7 +85,7 @@ function buildMonthCells(
  * mes en curso. Se abre y se cierra desde el badge de `UserSummary`
  * (`isStreakOpen`/`onToggleStreak`, estado que vive en `Configuration`) y se
  * anima con `AutoHeight`, igual que el resto de paneles condicionales del
- * juego (D009).
+ * juego (D182).
  *
  * El dato es 100% derivado de `stats.activeDays` (`getCurrentStreak` /
  * `getLongestStreak`, D018): no hay persistencia nueva. El calendario es

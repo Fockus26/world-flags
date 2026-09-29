@@ -48,5 +48,5 @@ interlineado.
 ## Reglas
 
 - **Cero tamaños arbitrarios** (`text-[Xrem]`): escala de arriba o de Tailwind.
-- Un tamaño nuevo intencional = decisión → fila en `DECISIONS_INDEX.md`.
+- Un tamaño nuevo intencional = decisión → su archivo `D0NN-<tema>.md` en `decisions/`.
 - Un tamaño nuevo = token en `theme.css` + fila en esta tabla + decisión.

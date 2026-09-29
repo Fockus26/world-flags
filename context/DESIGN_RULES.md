@@ -17,7 +17,7 @@
   solo (`--focus` = `-hover` de su color); en elementos propios usa el tono `-hover`
   del color de marca que ya tienen, `surface-soft` si son neutros, y nunca un
   color que dé menos de 3:1 contra el fondo en claro u oscuro. Ver
-  `decisions/23-foco-y-toque.md`.
+  D101–D104.
 - **Al tocar se ve el hover** (D103, D130): `hover:` incluye `:active` y
   `[data-pressed="true"]` de React Aria (variante en `global.css`), y los
   `Tabs`/`Select`/`Accordion` de HeroUI tienen su pulsado en `global.css`. No
@@ -56,7 +56,7 @@ El código usa además breakpoints arbitrarios `min-[30rem]`, `min-[43rem]`,
   `DESIGN_TOKENS.md`. Convive un sistema propio (`--app-color-*` → `@theme inline`
   → `--color-*`) con los tokens de HeroUI (`--accent`, `--surface`, `--overlay`,
   `--field-*`, …). El puente vive en `src/styles/heroui-theme.css`. Ver
-  `decisions/02-tokens-y-tema.md` — **entiéndelo antes de tocar `theme.css` o
+  D003–D005, D013 — **entiéndelo antes de tocar `theme.css` o
   `heroui-theme.css`**, hay colisiones de namespace resueltas ahí.
 - Excepción viva: tamaños de fuente arbitrarios heredados. No sumes más.
 
@@ -77,7 +77,7 @@ El código usa además breakpoints arbitrarios `min-[30rem]`, `min-[43rem]`,
 - Persistencia solo por `learning-storage.ts`. Redux solo por los hooks de `src/hooks/`.
 - **Nadie levanta `bun run dev`.** Lo levanta el dueño; los agentes piden y esperan.
 - `framer-motion` no se usa para nada nuevo (no ejecuta aquí). Animaciones nuevas:
-  `tw-animate-css` (`animate-in …`) o CSS. Ver `decisions/03-animaciones.md`.
+  `tw-animate-css` (`animate-in …`) o CSS. Ver D006 y D177.
 
 ## Contenido
 

@@ -68,7 +68,7 @@ interface FlyOptions {
 /**
  * Anima el texto de un país "volando" desde `fromEl` hasta su hueco en el
  * tablero, con la Web Animations API — no framer-motion, que no ejecuta en
- * este stack (D037, ver `context/decisions/03-animaciones.md`).
+ * este stack (D037, ver D006).
  *
  * Técnica FLIP: el clon se posiciona YA en su lugar final (el del hueco) y
  * se anima un `transform` que lo trae desde la posición de `fromEl` hasta

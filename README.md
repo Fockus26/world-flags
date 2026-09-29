@@ -139,7 +139,7 @@ Deeper dives:
 
 - [State management](./docs/state-management.md)
 - [Design system](./docs/design-system.md) and [components](./docs/components.md)
-- [Decision records](./context/DECISIONS_INDEX.md) — read before re-opening a settled decision
+- [Decision records](./context/decisions/) — one file per decision; read before re-opening a settled one
 
 ---
 
