@@ -11,12 +11,10 @@ Referenciados desde `src/layouts/Layout.astro` y `public/manifest.webmanifest`.
 | `public/pwa-192x192.png` | **192×192** | PNG | `any` | `manifest.webmanifest` | No — PNG |
 | `public/pwa-512x512.png` | **512×512** | PNG | `any` | `manifest.webmanifest` | No — PNG |
 | `public/maskable-icon-512x512.png` | **512×512** | PNG, arte dentro del **safe area** (círculo central del 80% ≈ 410px); el resto es "sangrado" que el SO recorta | `maskable` | `manifest.webmanifest` | No — PNG |
-| **`public/og-image.png`** (NUEVO) | **1200×630** | PNG o JPG | — | `og:image` / `twitter:image` (hoy apuntan mal a `pwa-512`) | No — PNG |
+| `public/og-image.png` | **1200×630** | PNG o JPG | — | `og:image` / `twitter:image` (default de `image` en `Layout.astro`) | No — PNG |
 
-Tras crear `og-image.png`, cambiar el default de `image` en `Layout.astro` de
-`/pwa-512x512.png` a `/og-image.png` y confirmar que `SITE_URL` en `astro.config.mjs`
-ya es el dominio real (si no, la URL absoluta de OG sale rota — ver
-`context/CONTENT_CHECKLIST.md` fila 1).
+Los cuatro iconos y `og-image.png` ya están en `public/`; `SITE_URL` (`astro.config.mjs`) es
+`https://world-flags-hazel.vercel.app`, así que las URL absolutas de OG salen bien.
 
 ## Identidad visual (para que todo vaya a juego)
 
