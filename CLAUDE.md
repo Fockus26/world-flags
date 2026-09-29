@@ -110,7 +110,7 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 | Skill | Cuándo |
 |---|---|
 | `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
-| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` sigue siendo un placeholder (ver `CONTENT_CHECKLIST.md`) |
+| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
 | `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
 
 ### Subagentes de QA
