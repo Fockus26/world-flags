@@ -9,6 +9,32 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.6.2] - 2026-09-29
+
+### Cambiado
+
+- La app carga su tipo de letra más rápido y lo conserva sin conexión, en lugar
+  de pasar a la letra del sistema.
+- La app descarga menos código al abrirse. El cronómetro por pregunta, el aviso
+  de "Revisa tu correo" y la lista de países de cada continente mantienen sus
+  animaciones.
+
+### Corregido
+
+- Los bordes de los campos de texto y de los desplegables se distinguen mejor en
+  tema claro.
+- Al abrir la app ya no se vuelve a dibujar entera en el primer instante. Pasaba
+  cuando la abrías un día distinto al de la última actualización o desde otra
+  zona horaria, por culpa del calendario de racha.
+- Al compartir el enlace de World Flags, la vista previa muestra ahora la imagen
+  de la app completa en lugar de un icono recortado.
+- Las mejores marcas del modo competitivo vuelven a subir al ranking. Durante
+  unos días, un récord nuevo se quedaba solo en tu dispositivo; ahora se sube
+  solo, también el que ya tenías guardado.
+- El progreso de las cuentas vuelve a guardarse en la nube. Desde la última
+  actualización aparecía "No se pudo sincronizar" y los cambios se quedaban solo
+  en el dispositivo; al actualizar se suben solos.
+
 ## [2.6.1] - 2026-09-28
 
 ### Cambiado
