@@ -42,7 +42,7 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
   con `client:load`; no hay SSR ni routing multipágina)
 - **React 19** + **TypeScript** estricto · **React Compiler** activo
   (`babel-plugin-react-compiler`, solo sobre `src/`)
-- **HeroUI v3** (`@heroui/react` + `@heroui/styles`) como librería de componentes,
+- **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
   sobre **Tailwind CSS v4** (CSS-first, sin `tailwind.config`)
 - **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
 - **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm

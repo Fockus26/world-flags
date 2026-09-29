@@ -6,8 +6,10 @@
 ## Librería de componentes
 
 **HeroUI v3** (`@heroui/react` + `@heroui/styles`) sobre **Tailwind CSS v4**
-(CSS-first: `@import "tailwindcss"` + `@import "@heroui/styles"` en `global.css`,
-sin `tailwind.config.js`).
+(CSS-first, sin `tailwind.config.js`). `global.css` importa HeroUI **por partes** (D176):
+solo las hojas de los componentes que usa la app. Usar un componente nuevo de HeroUI
+exige añadir su `@heroui/styles/components/<nombre>.css` (y las de lo que monte por
+dentro) o se pintará sin estilos.
 
 Los primitivos propios de `src/components/ui/` son **wrappers sobre HeroUI que
 conservan su API previa a la migración** (props `color`/`variant`/`disabled`/
