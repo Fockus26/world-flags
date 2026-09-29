@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
-import { motionVariants } from "@/styles/animations";
 import { getCurrentStreak } from "@/utils/learning-storage";
 import { UserAvatar } from "./UserAvatar";
 
@@ -67,11 +65,8 @@ export function UserSummary({
 	const progressLabel = `${learningProgress}% · ${learnedCountries}/${totalCountries}`;
 
 	return (
-		<motion.div
+		<div
 			className={`relative flex w-full items-center ${className ?? ""}`}
-			variants={motionVariants.contentEnter}
-			initial={false}
-			animate="visible"
 			// Los props aún son los por defecto: nada de esto es del usuario.
 			inert={isLoading}
 		>
@@ -169,6 +164,6 @@ export function UserSummary({
 					{currentStreak}
 				</button>
 			)}
-		</motion.div>
+		</div>
 	);
 }

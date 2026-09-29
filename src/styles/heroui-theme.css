@@ -32,11 +32,12 @@
 	:root,
 	[data-theme="light"] {
 		--radius: 0.75rem;
-		/* ≥3:1 sobre #fff (WCAG 1.4.11 para bordes de controles). */
-		--field-border: #9c96c4;
+		/* WCAG 1.4.11: 3,92:1 sobre surface #fff, 3,49:1 sobre background
+		   #f2f1f8 y 3,00:1 sobre su propio relleno #e2dff1 (D174). */
+		--field-border: #817bab;
 		--font-sans:
-			"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-			sans-serif;
+			"Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif,
+			system-ui, -apple-system, "Segoe UI", sans-serif;
 
 		--background: #f2f1f8;
 		--foreground: #1c1b2e;

@@ -42,14 +42,13 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
   con `client:load`; no hay SSR ni routing multipágina)
 - **React 19** + **TypeScript** estricto · **React Compiler** activo
   (`babel-plugin-react-compiler`, solo sobre `src/`)
-- **HeroUI v3** (`@heroui/react` + `@heroui/styles`) como librería de componentes,
+- **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
   sobre **Tailwind CSS v4** (CSS-first, sin `tailwind.config`)
 - **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
 - **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm
 - **iconoir-react** para iconos · PWA con SW propio (`public/sw.js`)
-- `framer-motion` está instalado pero **deprecado en la práctica** (ver
-  `context/decisions/03-animaciones.md`): sus animaciones no corren en este stack.
-  Las animaciones nuevas van con `tw-animate-css` (`animate-in fade-in / slide-in…`,
+- `framer-motion` **se quitó** (D177; ver `context/decisions/03-animaciones.md`): sus
+  animaciones no corrían en este stack. Las animaciones van con `tw-animate-css` (`animate-in fade-in / slide-in…`,
   ya incluido por `@heroui/styles`) o transiciones CSS.
 
 ```bash
@@ -110,7 +109,7 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 | Skill | Cuándo |
 |---|---|
 | `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
-| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` sigue siendo un placeholder (ver `CONTENT_CHECKLIST.md`) |
+| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
 | `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
 
 ### Subagentes de QA

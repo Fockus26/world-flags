@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from "framer-motion";
 import {
 	type ReactNode,
 	type RefObject,
@@ -10,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { GradeButtons } from "@/components/ui/GradeButtons";
 import { Input } from "@/components/ui/Input";
-import { motionTransition, motionVariants } from "@/styles/animations";
 import type { AnswerStatus, GameMode } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
 import { focusWhenVisible } from "@/utils/focus";
@@ -68,10 +66,8 @@ export function AnswerForm({
 	}, [answerStatus, resolvedInputRef]);
 
 	return (
-		<motion.form
+		<form
 			className="grid shrink-0 gap-[0.45rem] min-[43rem]:gap-[0.65rem]"
-			layout
-			transition={{ layout: motionTransition(0.2) }}
 			onSubmit={onSubmit}
 		>
 			<label
@@ -94,31 +90,25 @@ export function AnswerForm({
 				placeholder={placeholder}
 			/>
 
-			<AnimatePresence mode="popLayout" initial={false}>
-				{answerStatus === "correct" && (
-					<FeedbackMessage key="correct" variant="success" role="status">
-						Correcto: <strong className="text-inherit">{countryName}</strong>
-						{correctSuffix}
-						{answerNote}
-					</FeedbackMessage>
-				)}
+			{answerStatus === "correct" && (
+				<FeedbackMessage key="correct" variant="success" role="status">
+					Correcto: <strong className="text-inherit">{countryName}</strong>
+					{correctSuffix}
+					{answerNote}
+				</FeedbackMessage>
+			)}
 
-				{answerStatus === "incorrect" && (
-					<FeedbackMessage key="incorrect" variant="danger" role="alert">
-						La respuesta correcta es <strong>{countryName}</strong>
-						{answerNote}
-					</FeedbackMessage>
-				)}
-			</AnimatePresence>
+			{answerStatus === "incorrect" && (
+				<FeedbackMessage key="incorrect" variant="danger" role="alert">
+					La respuesta correcta es <strong>{countryName}</strong>
+					{answerNote}
+				</FeedbackMessage>
+			)}
 
 			{isAnswerChecked && mode === "practice" && !hideGradeButtons && (
-				<motion.div
-					variants={motionVariants.answerFeedbackEnter}
-					initial={false}
-					animate="visible"
-				>
+				<div>
 					<GradeButtons onGrade={onGrade} />
-				</motion.div>
+				</div>
 			)}
 
 			{!isAnswerChecked && (
@@ -136,6 +126,6 @@ export function AnswerForm({
 					</Button>
 				</div>
 			)}
-		</motion.form>
+		</form>
 	);
 }

@@ -1,5 +1,3 @@
-import { motion } from "framer-motion";
-
 type TimerTone = "primary" | "warning" | "danger";
 
 const DANGER_THRESHOLD = 3;
@@ -67,28 +65,28 @@ export function Timer({ timeLeft, totalDuration }: TimerProps) {
 					r={RADIUS}
 					strokeWidth="5"
 				/>
-				<motion.circle
-					className={`fill-none ${progressClass}`}
+				{/* 900 ms lineales: el anillo avanza de un segundo a otro sin
+				    detenerse (D177). */}
+				<circle
+					className={`fill-none transition-[stroke-dashoffset] duration-900 ease-linear ${progressClass}`}
 					cx="30"
 					cy="30"
 					r={RADIUS}
 					strokeWidth="5"
 					strokeLinecap="round"
 					strokeDasharray={CIRCUMFERENCE}
-					animate={{ strokeDashoffset: dashOffset }}
-					transition={{ duration: 0.9, ease: "linear" }}
+					strokeDashoffset={dashOffset}
 				/>
 			</svg>
 
-			<motion.span
-				className={`relative text-number font-extrabold tabular-nums transition-colors duration-180 ease-in-out ${text}`}
+			{/* `key` remonta el número cada segundo: vuelve a entrar desde 40 %
+			    de opacidad y 85 % de tamaño. */}
+			<span
+				className={`relative text-number font-extrabold tabular-nums transition-colors duration-180 ease-in-out motion-safe:animate-in motion-safe:fade-in-40 motion-safe:zoom-in-85 motion-safe:duration-180 ${text}`}
 				key={timeLeft}
-				initial={{ opacity: 0.4, scale: 0.85 }}
-				animate={{ opacity: 1, scale: 1 }}
-				transition={{ duration: 0.18 }}
 			>
 				{timeLeft}
-			</motion.span>
+			</span>
 		</div>
 	);
 }

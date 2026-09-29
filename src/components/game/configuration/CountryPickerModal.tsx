@@ -1,11 +1,9 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { NavArrowDown } from "iconoir-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
 import { countries } from "@/data/countries";
-import { motionVariants } from "@/styles/animations";
 import { REGION_LABELS, REGIONS, type Region } from "@/types/country";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 
@@ -265,30 +263,21 @@ export function CountryPickerModal({
 								</div>
 							</div>
 
-							<AnimatePresence initial={false}>
-								{isExpanded && (
-									<motion.div
-										key="content"
-										variants={motionVariants.collapseExpand}
-										initial={false}
-										animate="visible"
-										exit="exit"
-										className="overflow-hidden"
-									>
-										<div className="grid max-h-56 grid-cols-2 gap-x-3 gap-y-0.5 overflow-y-auto px-2.5 py-2 min-[30rem]:grid-cols-3">
-											{regionCountries.map((country) => (
-												<CountryCheckbox
-													key={country.code}
-													label={country.name}
-													checked={selected.has(country.code)}
-													disabled={isCountryDisabled?.(country.code)}
-													onChange={() => toggleCountry(country.code)}
-												/>
-											))}
-										</div>
-									</motion.div>
-								)}
-							</AnimatePresence>
+							{isExpanded && (
+								<div className="overflow-hidden motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-200">
+									<div className="grid max-h-56 grid-cols-2 gap-x-3 gap-y-0.5 overflow-y-auto px-2.5 py-2 min-[30rem]:grid-cols-3">
+										{regionCountries.map((country) => (
+											<CountryCheckbox
+												key={country.code}
+												label={country.name}
+												checked={selected.has(country.code)}
+												disabled={isCountryDisabled?.(country.code)}
+												onChange={() => toggleCountry(country.code)}
+											/>
+										))}
+									</div>
+								</div>
+							)}
 						</section>
 					);
 				})}

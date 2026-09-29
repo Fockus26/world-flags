@@ -1,9 +1,7 @@
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { useAuth } from "@/hooks/useAuth";
-import { spinTransition } from "@/styles/animations";
 
 interface EmailConfirmationPendingProps {
 	email: string;
@@ -51,11 +49,9 @@ export function EmailConfirmationPending({
 
 	return (
 		<div className="flex flex-col items-center gap-3 py-2 text-center">
-			<motion.div
-				className="size-10 rounded-full border-[3px] border-surface-soft border-t-(--color-primary)"
+			<div
+				className="size-10 animate-spin rounded-full border-[3px] border-surface-soft border-t-(--color-primary)"
 				aria-hidden="true"
-				animate={{ rotate: 360 }}
-				transition={spinTransition}
 			/>
 
 			<h3 className="m-0 text-surface-soft">Revisa tu correo</h3>

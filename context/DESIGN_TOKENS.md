@@ -54,10 +54,9 @@ Clases: `rounded-sm/md/lg/xl/2xl` ya heredan estos valores. Modales HeroUI usan
   infinite` en `::after`) + entrada `animate-in fade-in duration-200` que espera
   `SKELETON_DELAY_MS` (300 ms) para que una carga rápida no parpadee. Con
   movimiento reducido: sin brillo, misma espera, fundido de 0,01 ms.
-- `src/styles/animations.ts` (`motionVariants`, `motionTransition`) — **legado de
-  framer-motion, mayormente inerte**. No lo uses para nada nuevo. Ver
-  `decisions/03-animaciones.md`.
-- `prefers-reduced-motion`: bloque global en `global.css` + `<MotionConfig reducedMotion="user">`.
+- `framer-motion` y `src/styles/animations.ts` se quitaron (D177): todo va con
+  `tw-animate-css` (con `motion-safe:`) o transiciones CSS.
+- `prefers-reduced-motion`: bloque global en `global.css`.
 
 ## z-index
 
