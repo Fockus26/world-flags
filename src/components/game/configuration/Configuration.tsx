@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { type SubmitEvent, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGame } from "@/hooks/useGame";
 import { useHydration } from "@/hooks/useHydration";
 import { useTutorial } from "@/hooks/useTutorial";
-import { motionVariants } from "@/styles/animations";
 import {
 	DEFAULT_DIFFICULTY,
 	DEFAULT_GAME_MODE,
@@ -160,7 +158,7 @@ export function Configuration() {
 			    cabe, `max-h-full` no llega a actuar y no aparece barra. Ver
 			    el comentario de `RegionSelector` sobre por qué no es el grid
 			    de continentes el que hace scroll. */}
-			<motion.section
+			<section
 				className="
 					flex
 					w-full
@@ -179,9 +177,6 @@ export function Configuration() {
 					min-[44rem]:rounded-2xl
 					min-[44rem]:p-4
 				"
-				variants={motionVariants.contentEnter}
-				initial={false}
-				animate="visible"
 				// Carga inicial (D042): la tarjeta entera queda `inert` — nada
 				// enfocable ni clicable, y fuera del árbol de accesibilidad, así
 				// que ni los skeletons ni los valores por defecto se anuncian como
@@ -410,7 +405,7 @@ export function Configuration() {
 						</Button>
 					)
 				)}
-			</motion.section>
+			</section>
 
 			<LoadingAnnouncer
 				isLoading={isInitialLoad}
