@@ -40,18 +40,13 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 
 ## Stack
 
-- **Astro 7** (estático: una página `/` que monta **un** árbol React con `client:load`,
-  sin routing multipágina ni SSR en ejecución; el build sí prerenderiza: lo que dependa de
-  la fecha o de `localStorage` va tras `useIsClient`, D179)
-- **React 19** + **TypeScript** estricto · **React Compiler** activo
-  (`babel-plugin-react-compiler`, solo sobre `src/`)
-- **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
-  sobre **Tailwind CSS v4** (CSS-first, sin `tailwind.config`)
-- **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
-- **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm
-- **iconoir-react** para iconos · PWA con SW propio (`public/sw.js`)
-- Animaciones: `tw-animate-css` (`animate-in fade-in / slide-in…`, viene con
-  `@heroui/styles`) o transiciones CSS. `framer-motion` **se quitó**: no corría aquí (D006, D177).
+- **Astro 7** estático: `/` monta **un** árbol React (`client:load`). El build prerenderiza:
+  lo que dependa de la fecha o de `localStorage` va tras `useIsClient` (D179)
+- **React 19** + **TypeScript** estricto · **React Compiler** (solo `src/`)
+- **HeroUI v3** (CSS por partes en `global.css`: componente nuevo ⇒ su hoja, D176) sobre
+  **Tailwind CSS v4** (CSS-first) · **Redux Toolkit** · **Supabase** (auth + sync)
+- **Bun** para todo — nunca npm/yarn/pnpm · **iconoir-react** · PWA con SW propio (`public/sw.js`)
+- Animaciones: `tw-animate-css` o transiciones CSS. Sin `framer-motion` (D006, D177).
 
 ```bash
 bun install
@@ -62,8 +57,14 @@ bun run test           # tests/unit
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
 
-**El servidor de desarrollo (`bun run dev`) lo levanta el dueño, no un agente.**
-Si necesitas el sitio corriendo para verificar algo, pídelo y espera.
+**Servidor de desarrollo:** lo levanta el dueño. Excepciones: los agentes de QA (`wave-qa`,
+`functional-qa`) siempre, y los workers si el dueño lo autoriza para una tanda (cada uno en
+su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
+
+**QA contra base local:** `bun run qa:local -- --port <p>` levanta Supabase en Docker
+(migraciones + seed), crea las cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`)
+y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/` es
+privado: en un slot se copia de la carpeta principal (D184). Playwright se corre con `node`.
 
 **Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
 Supabase o Tailwind (cambian rápido).
@@ -108,13 +109,12 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 | `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
 | `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
 | `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
+| `orchestrate` | Llega una lista, o una fase se hace en olas (una ola por sesión) |
+| `wave-qa` | Lo lanza `orchestrate` con la ola mergeada, antes de cerrarla |
+| `design-qa` / `functional-qa` | Al cerrar una pantalla / un flujo completo |
 
-### Subagentes de QA
-
-`design-qa` y `functional-qa` — al cerrar una pantalla completa o un flujo. Corren
-aislados (Playwright real). **Entorno:** en este Windows Playwright y el preview fallan
-a ratos (Chromium colgado al arrancar, `window.innerHeight` = `0`). Si un subagente no
-puede ejecutar, su reporte es revisión de código: vale, marcado como no verificado en navegador.
+**Entorno:** en este Windows Playwright falla a ratos (Chromium colgado, `innerHeight` = 0).
+Si un agente de QA no puede ejecutar, su reporte es revisión de código, marcado como no verificado.
 
 ---
 
@@ -123,12 +123,10 @@ puede ejecutar, su reporte es revisión de código: vale, marcado como no verifi
 - **Cero valores mágicos de color/espaciado/radio/tamaño de letra.** Todo sale de tokens
   (`context/COLORS.md`, `DESIGN_TOKENS.md`, `TYPOGRAPHY.md` — escala `text-caption`…, D178).
   `text-[#6d5ef0]`, `mt-[13px]` o `text-[Xrem]` = falta un token o una decisión.
-- **HeroUI antes que reimplementar** un primitivo (foco/teclado ya resueltos).
-  Los wrappers propios viven en `src/components/ui/` y **conservan su API previa**
-  para no tocar los ~17 consumidores — respeta ese contrato.
-- **Persistencia solo por `src/utils/learning-storage.ts`.** Nunca `window.localStorage`
-  directo desde componentes. Nunca leer/escribir el store de Redux fuera de
-  `store/slices/` — usa los hooks de `src/hooks/`.
+- **HeroUI antes que reimplementar** un primitivo. Los wrappers de `src/components/ui/`
+  **conservan su API previa** (~17 consumidores).
+- **Persistencia solo por `src/utils/learning-storage.ts`**, nunca `localStorage` directo.
+  El store de Redux solo desde `store/slices/`; fuera, los hooks de `src/hooks/`.
 - **WCAG 2.1 AA** mínimo. Contraste 4.5:1 texto normal, foco visible siempre,
   ningún estado solo por color, sin scroll horizontal a 320px.
 - **Cero contenido final inventado** (copy, `alt` real, dominios, precios). Placeholder
