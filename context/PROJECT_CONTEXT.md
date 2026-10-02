@@ -55,7 +55,7 @@ ni un test académico severo.
 - Estado en memoria: **Redux Toolkit** (`src/store/`, slices `auth`/`game`/`theme`)
 - Base de datos / Auth: **Supabase** (`user_learning_data` privada + `leaderboard_entries` pública)
 - Persistencia local: `localStorage` vía `src/utils/learning-storage.ts`
-- Pagos / correo: N/A
+- Pagos: N/A · Correo: solo Supabase Auth (ver "Correos")
 - Despliegue: **Vercel** (ver "Repo y despliegue")
 
 ## Repo y despliegue
@@ -78,6 +78,20 @@ ni un test académico severo.
 
 Detalle de tamaños y archivos: `reference/BRAND-ASSETS.md` del kit.
 
+## Correos
+
+La app no manda correos propios: solo los de Supabase Auth. Google OAuth no manda ninguno;
+no hay recuperación de contraseña ni magic link. Los recordatorios diarios son push (VAPID), no correo.
+
+| Correo | Lo manda | Destinatario | Estado |
+|---|---|---|---|
+| Confirmar cuenta ("Confirm sign up", reenviable desde `EmailConfirmationPending`) | Supabase Auth | jugador que se registra con correo | diseñado (D095, `PHASE_LOG/email-confirmacion.md`); copia local en `supabase/templates/`, se pega a mano en el panel. Aplicado en el panel: por confirmar. Falta en `config.toml` para la base local (P43) |
+
+Remitente: SMTP por defecto de Supabase (solo entrega a miembros del equipo; límite bajo) ·
+SMTP propio y dominio verificado (SPF/DKIM/DMARC): **PENDIENTE** — acción del dueño, necesita
+dominio propio (ver `supabase/templates/INSTRUCCIONES.md` § 3). Detalle:
+`reference/EMAIL-TEMPLATES.md` del kit.
+
 ## Alcance de "páginas"
 
 | "Página" | Ruta | Estado |
@@ -92,6 +106,7 @@ No hay más rutas. Dentro de `/` hay 4 **vistas** que alternan por estado de Red
 - [x] Persistencia de progreso de usuario (local + nube, con merge)
 - [x] Ranking público (leaderboard competitivo "mundo")
 - [x] Formularios con envío real (auth)
+- [x] Correos que manda la app (solo los de Supabase Auth, ver § "Correos")
 - [ ] Pagos / carrito / CMS / multi-idioma — no aplica
 
 ## Track de fases
