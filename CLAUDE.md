@@ -7,6 +7,8 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 **Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
+**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `prompts/ACTUALIZAR-KIT.md`
+del kit) · **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
 
 ---
 
@@ -22,10 +24,10 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 ### Qué está en el repo y qué vive solo en local
 
-En git solo están los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
+En git: `.kit-version` y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
 `DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
-Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, los
+Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
 Claude Design), `.env*` y todo `supabase/` salvo su `README.md` (SQL y edge functions
 son privados). Nunca van a git (ni con `git add -f`).
@@ -53,10 +55,10 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 
 ```bash
 bun install
-bun run build          # sí puedes correr esto
-bunx astro check       # typecheck — sí
-bunx biome check ./src # lint — sí (hoy src/ trae errores previos; en CI no bloquea)
-bun run test           # tests/unit: sync/merge, CHANGELOG, changesets… — sí
+bun run build
+bunx astro check       # typecheck
+bunx biome check ./src # lint (src/ trae errores previos; en CI no bloquea)
+bun run test           # tests/unit
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
 
@@ -87,18 +89,14 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 - Base siempre `main`. Una unidad = una rama = un PR.
 - **Versión (D057–D060, D135):** nadie toca `version`, `CHANGELOG.md` ni `APP_VERSION`
   de `public/sw.js`. Cambio que nota quien juega → `.changeset/<desc>.md` escrito a mano
-  (patch/minor/major; cuerpo = trozo del CHANGELOG en español, lenguaje de jugador,
-  texto plano; formato en `.changeset/README.md`). Es lo que mostrará "Novedades": nada
-  inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
+  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): es lo
+  que muestra "Novedades", nada inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
   lo abre la Action y lo mergea el dueño; ningún agente lo edita ni lo mergea.
-- En **tu rama** puedes commitear y hacer push sin pedir permiso: la aprobación del
-  dueño es la revisión del PR. `git add` solo de los archivos de la unidad, nunca `-A` a ciegas.
-- **Nunca** hagas push a `main`, **nunca** ejecutes `gh pr merge` ni actives auto-merge.
-  El merge lo hace el dueño.
-- Si el dueño pide cambios en el PR: nuevos commits en la misma rama + push. Sin amend
-  ni force-push sobre commits ya empujados.
-- Tras el merge: `git switch main && git pull`. Ojo: si el PR dejó de trackear archivos,
-  el pull los borra del disco — cópialos fuera del repo antes y restáuralos después.
+- En **tu rama** commit y push sin pedir permiso (la aprobación es la revisión del PR).
+  `git add` solo de los archivos de la unidad. Cambios pedidos en el PR: commits nuevos, sin amend.
+- **Nunca** push a `main`, `gh pr merge` ni auto-merge: el merge lo hace el dueño.
+- Tras el merge: `git switch main && git pull` (si el PR dejó de trackear archivos, el pull
+  los borra: cópialos fuera antes).
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historia, ni borrar ramas ajenas.
 - **Skill `git-flow`:** aplica en modo `pr` (ramas, Conventional Commits, changesets §2.1.3,
   prohibiciones). No aplican su pausa antes del commit ni su merge local. Sin `GIT_STATE.md`.
@@ -122,11 +120,9 @@ puede ejecutar, su reporte es revisión de código: vale, marcado como no verifi
 
 ## Reglas no negociables
 
-- **Cero valores mágicos de color/espaciado/radio.** Todo sale de tokens (ver
-  `context/COLORS.md`, `context/DESIGN_TOKENS.md`). `text-[#6d5ef0]` o `mt-[13px]`
-  = o falta un token, o falta registrar una decisión.
-  - Tamaños de letra: escala de `theme.css` (`text-caption`, `text-label`…, D178;
-    tabla en `context/TYPOGRAPHY.md`). Tampoco `text-[Xrem]`.
+- **Cero valores mágicos de color/espaciado/radio/tamaño de letra.** Todo sale de tokens
+  (`context/COLORS.md`, `DESIGN_TOKENS.md`, `TYPOGRAPHY.md` — escala `text-caption`…, D178).
+  `text-[#6d5ef0]`, `mt-[13px]` o `text-[Xrem]` = falta un token o una decisión.
 - **HeroUI antes que reimplementar** un primitivo (foco/teclado ya resueltos).
   Los wrappers propios viven en `src/components/ui/` y **conservan su API previa**
   para no tocar los ~17 consumidores — respeta ese contrato.
@@ -137,10 +133,8 @@ puede ejecutar, su reporte es revisión de código: vale, marcado como no verifi
   ningún estado solo por color, sin scroll horizontal a 320px.
 - **Cero contenido final inventado** (copy, `alt` real, dominios, precios). Placeholder
   marcado + fila en `context/CONTENT_CHECKLIST.md`.
-- **El SW (`public/sw.js`) cachea agresivo.** En dev, tras cada cambio:
-  `serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()))` +
-  `caches.keys().then(k=>k.forEach(c=>caches.delete(c)))` y recargar. También puede
-  servir bundle viejo a usuarios tras un deploy.
+- **El SW (`public/sw.js`) cachea agresivo.** En dev, tras cada cambio: desregistrarlo,
+  borrar `caches` y recargar. También puede servir bundle viejo tras un deploy.
 
 ---
 
@@ -150,3 +144,10 @@ puede ejecutar, su reporte es revisión de código: vale, marcado como no verifi
 - Algo choca con una regla de a11y → gana la regla, se escala.
 - Se encuentra un bug en código ya cerrado → se reporta, no se arregla dentro de la unidad actual.
 - Un archivo quedó sin uso → se señala, **no se borra**.
+
+## Feedback para el kit
+
+Cuando el dueño corrija algo hecho siguiendo el kit, pida lo mismo por segunda vez, haga a
+mano un paso que el kit podría hacer, o el kit no diga qué hacer: fila en
+`context/KIT_FEEDBACK.md` (o +1 en "Veces"). Sin preguntar; una línea de aviso. Si pide
+"el informe para el kit", sigue el formato de ese archivo.

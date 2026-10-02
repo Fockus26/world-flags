@@ -56,7 +56,27 @@ ni un test académico severo.
 - Base de datos / Auth: **Supabase** (`user_learning_data` privada + `leaderboard_entries` pública)
 - Persistencia local: `localStorage` vía `src/utils/learning-storage.ts`
 - Pagos / correo: N/A
-- Despliegue: **PENDIENTE** (aún sin dominio; `astro.config.mjs` `SITE_URL` es placeholder)
+- Despliegue: **Vercel** (ver "Repo y despliegue")
+
+## Repo y despliegue
+
+- Repo: https://github.com/Fockus26/World-Flags (público; "Automatically delete head branches" activo)
+- Vercel: proyecto conectado al repo en la cuenta del dueño (sin `.vercel/` enlazado en local)
+- Producción: https://world-flags-hazel.vercel.app (`SITE_URL`, #52) · Previews: uno por PR
+- DNS gestionado por: no aplica (dominio `*.vercel.app`, sin dominio propio)
+- Mantenimiento: no aplica (app estática; el SW sirve la última versión sin red)
+
+## Assets de marca
+
+| Pieza | Estado | Dónde / nota |
+|---|---|---|
+| Logo | no aplica | No hay logotipo con texto; la marca es el icono |
+| Icono / isotipo | existe | `public/favicon.svg` (bandera estilizada sobre gradiente morado) |
+| Favicon | existe | `public/favicon.svg` |
+| Apple touch icon | existe | `public/apple-touch-icon.png` (+ `pwa-192/512`, `maskable-icon-512x512.png`, `manifest.webmanifest`) |
+| Imagen Open Graph | existe | `public/og-image.png` (#52) |
+
+Detalle de tamaños y archivos: `reference/BRAND-ASSETS.md` del kit.
 
 ## Alcance de "páginas"
 
