@@ -1,0 +1,5 @@
+# D184 · QA · `supabase/` sigue privado; `qa-local.ts` lo copia de la carpeta principal al slot · Pendiente
+
+**Decisión:** las migraciones, `config.toml`, `seed.sql` y las plantillas de `supabase/` siguen fuera de git (como el resto de `supabase/` salvo el README). Cuando `bun run qa:local` corre en un slot del pool (`..\world-flags-wt\wtN`) y falta `supabase/config.toml`, `scripts/qa-local.ts` las copia desde la carpeta principal antes de levantar la pila local. Pendiente hasta que exista el esquema como migración (P42: `supabase link` + `supabase db pull` + `seed.sql`, lo corre el dueño); mientras tanto `qa:local` aborta en vez de probar contra la base real.
+**Por qué:** el repo `Fockus26/World-Flags` es público y el SQL (esquema, RLS, funciones) se decidió privado. El kit 3.4.0 pide las migraciones en el repo para que cualquier slot las tenga; copiarlas igual que los `.env*` da lo mismo sin publicar el esquema.
+**Alternativa descartada:** subir `supabase/migrations` + `config.toml` al repo (publica esquema y políticas RLS); aplazar la base local sin preparar el script (la 3.4.0 quedaría a medias). Elegido por el dueño el 2026-10-02 (kit 3.5.0).

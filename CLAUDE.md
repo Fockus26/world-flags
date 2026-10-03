@@ -7,6 +7,8 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 **Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
+**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `prompts/ACTUALIZAR-KIT.md`
+del kit) · **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
 
 ---
 
@@ -22,10 +24,10 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 ### Qué está en el repo y qué vive solo en local
 
-En git solo están los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
+En git: `.kit-version` y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
 `DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
-Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, los
+Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
 Claude Design), `.env*` y todo `supabase/` salvo su `README.md` (SQL y edge functions
 son privados). Nunca van a git (ni con `git add -f`).
@@ -38,30 +40,31 @@ pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr 
 
 ## Stack
 
-- **Astro 7** (estático: una página `/` que monta **un** árbol React con `client:load`,
-  sin routing multipágina ni SSR en ejecución; el build sí prerenderiza: lo que dependa de
-  la fecha o de `localStorage` va tras `useIsClient`, D179)
-- **React 19** + **TypeScript** estricto · **React Compiler** activo
-  (`babel-plugin-react-compiler`, solo sobre `src/`)
-- **HeroUI v3** (`@heroui/react` + `@heroui/styles`, CSS importado por partes en `global.css`: componente nuevo ⇒ su hoja, D176) como librería de componentes,
-  sobre **Tailwind CSS v4** (CSS-first, sin `tailwind.config`)
-- **Redux Toolkit** para estado en memoria · **Supabase** para auth + sync
-- **Bun** para todo (install / dev / build) — nunca npm/yarn/pnpm
-- **iconoir-react** para iconos · PWA con SW propio (`public/sw.js`)
-- Animaciones: `tw-animate-css` (`animate-in fade-in / slide-in…`, viene con
-  `@heroui/styles`) o transiciones CSS. `framer-motion` **se quitó**: no corría aquí (D006, D177).
+- **Astro 7** estático: `/` monta **un** árbol React (`client:load`). El build prerenderiza:
+  lo que dependa de la fecha o de `localStorage` va tras `useIsClient` (D179)
+- **React 19** + **TypeScript** estricto · **React Compiler** (solo `src/`)
+- **HeroUI v3** (CSS por partes en `global.css`: componente nuevo ⇒ su hoja, D176) sobre
+  **Tailwind CSS v4** (CSS-first) · **Redux Toolkit** · **Supabase** (auth + sync)
+- **Bun** para todo — nunca npm/yarn/pnpm · **iconoir-react** · PWA con SW propio (`public/sw.js`)
+- Animaciones: `tw-animate-css` o transiciones CSS. Sin `framer-motion` (D006, D177).
 
 ```bash
 bun install
-bun run build          # sí puedes correr esto
-bunx astro check       # typecheck — sí
-bunx biome check ./src # lint — sí (hoy src/ trae errores previos; en CI no bloquea)
-bun run test           # tests/unit: sync/merge, CHANGELOG, changesets… — sí
+bun run build
+bunx astro check       # typecheck
+bunx biome check ./src # lint (src/ trae errores previos; en CI no bloquea)
+bun run test           # tests/unit
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
 
-**El servidor de desarrollo (`bun run dev`) lo levanta el dueño, no un agente.**
-Si necesitas el sitio corriendo para verificar algo, pídelo y espera.
+**Servidor de desarrollo:** lo levanta el dueño. Excepciones: los agentes de QA (`wave-qa`,
+`functional-qa`) siempre, y los workers si el dueño lo autoriza para una tanda (cada uno en
+su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
+
+**QA contra base local:** `bun run qa:local -- --port <p>` levanta Supabase en Docker
+(migraciones + seed), crea las cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`)
+y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/` es
+privado: en un slot se copia de la carpeta principal (D184). Playwright se corre con `node`.
 
 **Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
 Supabase o Tailwind (cambian rápido).
@@ -87,18 +90,14 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 - Base siempre `main`. Una unidad = una rama = un PR.
 - **Versión (D057–D060, D135):** nadie toca `version`, `CHANGELOG.md` ni `APP_VERSION`
   de `public/sw.js`. Cambio que nota quien juega → `.changeset/<desc>.md` escrito a mano
-  (patch/minor/major; cuerpo = trozo del CHANGELOG en español, lenguaje de jugador,
-  texto plano; formato en `.changeset/README.md`). Es lo que mostrará "Novedades": nada
-  inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
+  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): es lo
+  que muestra "Novedades", nada inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
   lo abre la Action y lo mergea el dueño; ningún agente lo edita ni lo mergea.
-- En **tu rama** puedes commitear y hacer push sin pedir permiso: la aprobación del
-  dueño es la revisión del PR. `git add` solo de los archivos de la unidad, nunca `-A` a ciegas.
-- **Nunca** hagas push a `main`, **nunca** ejecutes `gh pr merge` ni actives auto-merge.
-  El merge lo hace el dueño.
-- Si el dueño pide cambios en el PR: nuevos commits en la misma rama + push. Sin amend
-  ni force-push sobre commits ya empujados.
-- Tras el merge: `git switch main && git pull`. Ojo: si el PR dejó de trackear archivos,
-  el pull los borra del disco — cópialos fuera del repo antes y restáuralos después.
+- En **tu rama** commit y push sin pedir permiso (la aprobación es la revisión del PR).
+  `git add` solo de los archivos de la unidad. Cambios pedidos en el PR: commits nuevos, sin amend.
+- **Nunca** push a `main`, `gh pr merge` ni auto-merge: el merge lo hace el dueño.
+- Tras el merge: `git switch main && git pull` (si el PR dejó de trackear archivos, el pull
+  los borra: cópialos fuera antes).
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historia, ni borrar ramas ajenas.
 - **Skill `git-flow`:** aplica en modo `pr` (ramas, Conventional Commits, changesets §2.1.3,
   prohibiciones). No aplican su pausa antes del commit ni su merge local. Sin `GIT_STATE.md`.
@@ -110,37 +109,30 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 | `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
 | `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
 | `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
+| `orchestrate` | Llega una lista, o una fase se hace en olas (una ola por sesión) |
+| `wave-qa` | Lo lanza `orchestrate` con la ola mergeada, antes de cerrarla |
+| `design-qa` / `functional-qa` | Al cerrar una pantalla / un flujo completo |
 
-### Subagentes de QA
-
-`design-qa` y `functional-qa` — al cerrar una pantalla completa o un flujo. Corren
-aislados (Playwright real). **Entorno:** en este Windows Playwright y el preview fallan
-a ratos (Chromium colgado al arrancar, `window.innerHeight` = `0`). Si un subagente no
-puede ejecutar, su reporte es revisión de código: vale, marcado como no verificado en navegador.
+**Entorno:** en este Windows Playwright falla a ratos (Chromium colgado, `innerHeight` = 0).
+Si un agente de QA no puede ejecutar, su reporte es revisión de código, marcado como no verificado.
 
 ---
 
 ## Reglas no negociables
 
-- **Cero valores mágicos de color/espaciado/radio.** Todo sale de tokens (ver
-  `context/COLORS.md`, `context/DESIGN_TOKENS.md`). `text-[#6d5ef0]` o `mt-[13px]`
-  = o falta un token, o falta registrar una decisión.
-  - Tamaños de letra: escala de `theme.css` (`text-caption`, `text-label`…, D178;
-    tabla en `context/TYPOGRAPHY.md`). Tampoco `text-[Xrem]`.
-- **HeroUI antes que reimplementar** un primitivo (foco/teclado ya resueltos).
-  Los wrappers propios viven en `src/components/ui/` y **conservan su API previa**
-  para no tocar los ~17 consumidores — respeta ese contrato.
-- **Persistencia solo por `src/utils/learning-storage.ts`.** Nunca `window.localStorage`
-  directo desde componentes. Nunca leer/escribir el store de Redux fuera de
-  `store/slices/` — usa los hooks de `src/hooks/`.
+- **Cero valores mágicos de color/espaciado/radio/tamaño de letra.** Todo sale de tokens
+  (`context/COLORS.md`, `DESIGN_TOKENS.md`, `TYPOGRAPHY.md` — escala `text-caption`…, D178).
+  `text-[#6d5ef0]`, `mt-[13px]` o `text-[Xrem]` = falta un token o una decisión.
+- **HeroUI antes que reimplementar** un primitivo. Los wrappers de `src/components/ui/`
+  **conservan su API previa** (~17 consumidores).
+- **Persistencia solo por `src/utils/learning-storage.ts`**, nunca `localStorage` directo.
+  El store de Redux solo desde `store/slices/`; fuera, los hooks de `src/hooks/`.
 - **WCAG 2.1 AA** mínimo. Contraste 4.5:1 texto normal, foco visible siempre,
   ningún estado solo por color, sin scroll horizontal a 320px.
 - **Cero contenido final inventado** (copy, `alt` real, dominios, precios). Placeholder
   marcado + fila en `context/CONTENT_CHECKLIST.md`.
-- **El SW (`public/sw.js`) cachea agresivo.** En dev, tras cada cambio:
-  `serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()))` +
-  `caches.keys().then(k=>k.forEach(c=>caches.delete(c)))` y recargar. También puede
-  servir bundle viejo a usuarios tras un deploy.
+- **El SW (`public/sw.js`) cachea agresivo.** En dev, tras cada cambio: desregistrarlo,
+  borrar `caches` y recargar. También puede servir bundle viejo tras un deploy.
 
 ---
 
@@ -150,3 +142,10 @@ puede ejecutar, su reporte es revisión de código: vale, marcado como no verifi
 - Algo choca con una regla de a11y → gana la regla, se escala.
 - Se encuentra un bug en código ya cerrado → se reporta, no se arregla dentro de la unidad actual.
 - Un archivo quedó sin uso → se señala, **no se borra**.
+
+## Feedback para el kit
+
+Cuando el dueño corrija algo hecho siguiendo el kit, pida lo mismo por segunda vez, haga a
+mano un paso que el kit podría hacer, o el kit no diga qué hacer: fila en
+`context/KIT_FEEDBACK.md` (o +1 en "Veces"). Sin preguntar; una línea de aviso. Si pide
+"el informe para el kit", sigue el formato de ese archivo.
