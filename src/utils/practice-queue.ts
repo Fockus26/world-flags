@@ -49,6 +49,39 @@ export function decideRequeue(
 	return { requeue, nextState };
 }
 
+/**
+ * Qué pasó ya con una bandera en SM2 durante esta sesión: "lapsed" si lo
+ * último que contó fue un "Otra vez", "passed" si fue un acierto.
+ */
+export type ReviewSessionPhase = "lapsed" | "passed";
+
+export interface ReviewCountDecision {
+	countsForReview: boolean;
+	nextPhase: ReviewSessionPhase | undefined;
+}
+
+/**
+ * Si una calificación de la sesión pasa por SM2 (`calculateNextReview`) o es
+ * solo un paso de aprendizaje, como en Anki (D186). Una bandera avanza como
+ * mucho un paso por sesión: los aciertos repetidos no la adelantan más (dos
+ * "Bien" a un país nuevo no lo mandan a 6 días el mismo día), pero un "Otra
+ * vez" sí cuenta como fallo, y el acierto que llegue después de ese fallo
+ * también. Varios "Otra vez" sin acierto entre medio son un solo fallo.
+ */
+export function decideReviewCount(
+	phase: ReviewSessionPhase | undefined,
+	grade: ReviewGrade,
+): ReviewCountDecision {
+	const gradePhase: ReviewSessionPhase =
+		grade === "again" ? "lapsed" : "passed";
+	const countsForReview = phase !== gradePhase;
+
+	return {
+		countsForReview,
+		nextPhase: countsForReview ? gradePhase : phase,
+	};
+}
+
 const REQUEUE_OFFSET = 3;
 
 /** Reinserta una bandera en la cola, unas posiciones más adelante (no inmediatamente). */

@@ -99,8 +99,12 @@ export function CountriesPractice({
 	const practiceQueue = usePracticeQueue({
 		initialCodes: countries.map((country) => country.code),
 		countryHistory: toGameView(learningData, "countries").countryHistory,
-		onGrade: (code, grade, isFirstAttempt) =>
-			gradeCountryReview(code, grade, "countries", isFirstAttempt),
+		onGrade: (code, grade, isFirstAttempt, countsForReview) => {
+			// Un reencolado puede ser solo un paso de aprendizaje (D186).
+			if (countsForReview) {
+				gradeCountryReview(code, grade, "countries", isFirstAttempt);
+			}
+		},
 		onFinish: () => {
 			const regionBreakdown: Partial<
 				Record<Region, { correct: number; total: number }>

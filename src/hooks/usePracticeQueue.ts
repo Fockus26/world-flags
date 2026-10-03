@@ -3,8 +3,10 @@ import type { CountriesLearningHistory, ReviewGrade } from "@/types/progress";
 import { isCountryLearned } from "@/utils/learning-storage";
 import {
 	decideRequeue,
+	decideReviewCount,
 	insertRequeuedCard,
 	type PracticeCardState,
+	type ReviewSessionPhase,
 } from "@/utils/practice-queue";
 
 interface UsePracticeQueueOptions {
@@ -15,8 +17,17 @@ interface UsePracticeQueueOptions {
 	 * la sesión (aunque luego se repita). Va en la misma llamada — no en un
 	 * callback aparte — para que quien la use pueda resolverlo en un único
 	 * despacho de estado (ver comentario en `useGame.ts`).
+	 *
+	 * `countsForReview` dice si la calificación pasa por SM2 o es un paso de
+	 * aprendizaje de un reencolado que no toca la programación (D186, ver
+	 * `decideReviewCount`). La primera calificación siempre cuenta.
 	 */
-	onGrade: (code: string, grade: ReviewGrade, isFirstAttempt: boolean) => void;
+	onGrade: (
+		code: string,
+		grade: ReviewGrade,
+		isFirstAttempt: boolean,
+		countsForReview: boolean,
+	) => void;
 	onFinish: () => void;
 }
 
@@ -41,6 +52,7 @@ export function usePracticeQueue({
 	const [attemptedCount, setAttemptedCount] = useState(0);
 
 	const cardStateRef = useRef<Record<string, PracticeCardState>>({});
+	const reviewPhaseRef = useRef<Record<string, ReviewSessionPhase>>({});
 	const attemptedCodesRef = useRef<Set<string>>(new Set());
 	const [establishedByCode] = useState<Record<string, boolean>>(() =>
 		Object.fromEntries(
@@ -63,7 +75,13 @@ export function usePracticeQueue({
 			setAttemptedCount((value) => value + 1);
 		}
 
-		onGrade(currentCode, gradeValue, isFirstAttempt);
+		const { countsForReview, nextPhase } = decideReviewCount(
+			reviewPhaseRef.current[currentCode],
+			gradeValue,
+		);
+		if (nextPhase) reviewPhaseRef.current[currentCode] = nextPhase;
+
+		onGrade(currentCode, gradeValue, isFirstAttempt, countsForReview);
 
 		const isEstablished = establishedByCode[currentCode] ?? false;
 		const { requeue, nextState } = decideRequeue(
