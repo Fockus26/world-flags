@@ -32,6 +32,8 @@ export interface ActiveGame {
 	id: string;
 	configuration: GameConfigurationType;
 	countries: Country[];
+	/** Sesión del recorrido por lotes (D185): sus resultados muestran el avance del recorrido. */
+	isLearningPath?: boolean;
 }
 
 /** Cola de práctica diaria: guarda de qué juego son los códigos, para que

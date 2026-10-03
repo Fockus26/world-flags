@@ -42,7 +42,7 @@ function learningDataSelect<Select extends string>(
 }
 
 const LEARNING_DATA_SELECT = learningDataSelect(
-	"profile, country_history, region_game_scores, region_best_times, last_configuration, last_practice_by_country, countries_game, capitals_game, achievements, stats, session_history, daily_reminder, field_updated_at",
+	"profile, country_history, region_game_scores, region_best_times, last_configuration, last_practice_by_country, countries_game, capitals_game, achievements, stats, session_history, daily_reminder, field_updated_at, learning_paths",
 );
 
 /**
@@ -171,6 +171,8 @@ export async function fetchRemoteLearningData(
 			lastConfiguration: data.field_updated_at?.lastConfiguration ?? null,
 		},
 		regionGameScoresUpdatedAt: data.field_updated_at?.regionGameScores ?? {},
+		// `normalizeLearningData` valida la forma: la columna es jsonb libre.
+		learningPaths: data.learning_paths ?? {},
 	});
 }
 

@@ -174,6 +174,60 @@ export interface DailyReminderPreference {
 	answeredAt: string | null;
 }
 
+/** Tamaños de lote que puede elegir quien juega (D185). */
+export const LEARNING_PATH_BATCH_SIZES = [3, 5, 10] as const;
+
+export type LearningPathBatchSize = (typeof LEARNING_PATH_BATCH_SIZES)[number];
+
+/** Orden del recorrido: por continente (y alfabético dentro de cada uno) o al azar. */
+export type LearningPathOrder = "region" | "random";
+
+/**
+ * Lo que lleva cada país de un recorrido. Un país queda consolidado al
+ * acertarlo a la primera en dos días distintos (`passDays`, D185); el
+ * historial SM2 no sirve para eso: una misma sesión puede calificarlo varias
+ * veces y subirle las repeticiones sin cambiar de día.
+ */
+export interface LearningPathCountryProgress {
+	/** Días (YYYY-MM-DD local) con acierto a la primera, ordenados; como mucho 2. */
+	passDays: string[];
+	/** Cuándo se consolidó (ISO); `null` mientras no. */
+	consolidatedAt: string | null;
+}
+
+/**
+ * Un recorrido por lotes (D185): los países de un alcance en un orden fijo,
+ * repartidos en lotes de `batchSize`. Un lote se abre cuando el anterior está
+ * entero consolidado. Lo que no cambia (alcance, orden, lotes) se fija al
+ * crearlo; solo `progress` crece.
+ */
+export interface LearningPath {
+	id: string;
+	createdAt: string;
+	/** Etiqueta del alcance ya resuelta ("Oceanía", "Todo el mundo"…), como `SessionRecord`. */
+	scopeLabel: string;
+	order: LearningPathOrder;
+	batchSize: LearningPathBatchSize;
+	/** Los países por aprender, en el orden del recorrido. Los lotes salen de aquí. */
+	codes: string[];
+	/** Los del alcance que ya se sabían al crearlo (SM2 con 2+ repeticiones): cuentan como consolidados. */
+	knownCodes: string[];
+	progress: Record<string, LearningPathCountryProgress>;
+}
+
+/**
+ * El recorrido de un juego. `updatedAt` cambia solo al crearlo o abandonarlo
+ * (no con cada acierto): con dos dispositivos gana el último que lo creó o lo
+ * abandonó; si los dos tienen el mismo, se suman sus avances.
+ */
+export interface LearningPathSlot {
+	path: LearningPath | null;
+	updatedAt: string;
+}
+
+/** Un recorrido por juego, como mucho. La clave es `string` por lo mismo que en `UnlockedAchievements` (D062). */
+export type LearningPaths = Partial<Record<string, LearningPathSlot>>;
+
 export interface UserLearningData {
 	profile: UserProfile;
 	countryHistory: CountriesLearningHistory;
@@ -193,4 +247,6 @@ export interface UserLearningData {
 	fieldUpdatedAt: FieldUpdatedAt;
 	/** Fechas de las notas por continente de Banderas (D055); las de Países van en `countriesGame`. */
 	regionGameScoresUpdatedAt: Partial<Record<Region, string>>;
+	/** Recorrido por lotes de cada juego (D185). Columna `learning_paths`. */
+	learningPaths: LearningPaths;
 }
