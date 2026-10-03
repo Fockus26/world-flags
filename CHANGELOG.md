@@ -9,6 +9,16 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.7.0] - 2026-10-03
+
+### Añadido
+
+- Aprender por lotes: elige un continente, varios o todo el mundo y apréndelo de
+  a 3, 5 o 10 países, en orden o al azar. Cada país se consolida cuando lo
+  aciertas a la primera en dos días distintos, y al consolidar todo el lote se
+  abre el siguiente. Funciona en Países, Banderas y Capitales, y se sincroniza
+  con tu cuenta.
+
 ## [2.6.2] - 2026-09-29
 
 ### Cambiado

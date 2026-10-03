@@ -73,9 +73,10 @@ export function DailyPractice({
 				// Sin `markPracticed`: la práctica diaria es un scope aparte del
 				// de continentes, y no debe contar como "practicado hoy" para el
 				// candado de continentes. Un reencolado puede ser solo un paso de
-				// aprendizaje (D186).
+				// aprendizaje (D186); la primera calificación siempre cuenta, así
+				// que el acierto a la primera llega igual a los lotes (D185).
 				if (countsForReview) {
-					gradeCountryReview(code, gradeValue, gameType);
+					gradeCountryReview(code, gradeValue, gameType, false, isFirstAttempt);
 				}
 			},
 			onFinish: () =>

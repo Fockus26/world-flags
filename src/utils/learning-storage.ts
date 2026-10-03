@@ -21,6 +21,7 @@ import type {
 	FieldUpdatedAt,
 	GameProgress,
 	LastPracticeByCountry,
+	LearningPath,
 	RegionBestTimes,
 	RegionGameScores,
 	ReviewGrade,
@@ -33,6 +34,11 @@ import type {
 } from "@/types/progress";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 import { getLocalDateString } from "@/utils/date";
+import {
+	mergeLearningPaths,
+	normalizeLearningPaths,
+	registerLearningPathPass,
+} from "@/utils/learning-path";
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 import {
 	calculateNextReview,
@@ -137,6 +143,7 @@ export const DEFAULT_DATA: UserLearningData = {
 	dailyReminder: DEFAULT_DAILY_REMINDER,
 	fieldUpdatedAt: DEFAULT_FIELD_UPDATED_AT,
 	regionGameScoresUpdatedAt: {},
+	learningPaths: {},
 };
 
 function migrateCountryHistory(
@@ -375,6 +382,7 @@ export function normalizeLearningData(
 		dailyReminder: migrateDailyReminder(parsedData.dailyReminder),
 		fieldUpdatedAt: migrateFieldUpdatedAt(parsedData.fieldUpdatedAt),
 		regionGameScoresUpdatedAt: parsedData.regionGameScoresUpdatedAt ?? {},
+		learningPaths: normalizeLearningPaths(parsedData.learningPaths),
 	};
 }
 
@@ -1380,6 +1388,7 @@ function mergeDailyReminder(
  * - `achievements`: unión (nunca se pierde un logro, ni se borra un id
  *   desconocido de una versión más nueva).
  * - `stats` / `sessionHistory`: ver arriba.
+ * - `learningPaths`: ver `mergeLearningPaths` (D185).
  *
  * Idempotente con el mismo `base`: `merge(merge(r, l, b), l, b)` es
  * `merge(r, l, b)`. Es lo que impide que los contadores o las notas se
@@ -1450,6 +1459,10 @@ export function mergeLearningData(
 			lastConfiguration: lastConfiguration.updatedAt,
 		},
 		regionGameScoresUpdatedAt: flags.regionGameScoresUpdatedAt,
+		learningPaths: mergeLearningPaths(
+			remote.learningPaths,
+			local.learningPaths,
+		),
 	};
 }
 
@@ -1944,4 +1957,64 @@ export function getDueCountries(history: CountriesLearningHistory): string[] {
 		(code) =>
 			isCatalogCountryCode(code) && isDue(history[code]?.review ?? null),
 	);
+}
+
+/** El recorrido por lotes en curso de un juego, o `null` (D185). */
+export function getLearningPath(
+	data: UserLearningData,
+	gameType: GameType,
+): LearningPath | null {
+	return data.learningPaths[gameType]?.path ?? null;
+}
+
+/**
+ * Empieza un recorrido (reemplaza el que hubiera) o lo abandona con `null`.
+ * Es lo único que cambia `updatedAt`: con dos dispositivos gana el último
+ * que creó o abandonó (ver `mergeLearningPaths`).
+ */
+export function saveLearningPath(
+	currentData: UserLearningData,
+	gameType: GameType,
+	path: LearningPath | null,
+	now: Date = new Date(),
+): UserLearningData {
+	const updatedData: UserLearningData = {
+		...currentData,
+		learningPaths: {
+			...currentData.learningPaths,
+			[gameType]: { path, updatedAt: now.toISOString() },
+		},
+	};
+
+	saveLearningData(updatedData);
+	return updatedData;
+}
+
+/**
+ * Un acierto a la primera de `countryCode` en `gameType`: si el país está en
+ * el recorrido de ese juego y le faltaba, cuenta para consolidarlo. Sin
+ * recorrido, o sin cambios, devuelve los mismos datos y no guarda nada.
+ */
+export function registerLearningPathAttempt(
+	currentData: UserLearningData,
+	gameType: GameType,
+	countryCode: string,
+	now: Date = new Date(),
+): UserLearningData {
+	const slot = currentData.learningPaths[gameType];
+	if (!slot?.path) return currentData;
+
+	const path = registerLearningPathPass(slot.path, countryCode, now);
+	if (path === slot.path) return currentData;
+
+	const updatedData: UserLearningData = {
+		...currentData,
+		learningPaths: {
+			...currentData.learningPaths,
+			[gameType]: { ...slot, path },
+		},
+	};
+
+	saveLearningData(updatedData);
+	return updatedData;
 }

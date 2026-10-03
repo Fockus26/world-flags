@@ -47,6 +47,7 @@ export function toLearningDataRow(data: UserLearningData): LearningDataRow {
 			lastConfiguration: data.fieldUpdatedAt.lastConfiguration,
 			regionGameScores: data.regionGameScoresUpdatedAt,
 		},
+		learning_paths: data.learningPaths,
 	};
 }
 

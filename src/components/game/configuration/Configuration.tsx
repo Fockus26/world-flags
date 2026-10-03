@@ -30,7 +30,12 @@ import {
 	getWorldBestTime,
 	toGameView,
 } from "@/utils/learning-storage";
-import { getScopeLabel, isEmptyScope } from "@/utils/practice-scope";
+import {
+	getScopeCountryCodes,
+	getScopeLabel,
+	isEmptyScope,
+} from "@/utils/practice-scope";
+import { ConfirmationModal } from "../session/ConfirmationModal";
 import { AchievementsModal } from "./AchievementsModal";
 import {
 	COUNT_BADGE_CLASS,
@@ -41,6 +46,8 @@ import { CountryPickerModal } from "./CountryPickerModal";
 import { ConfigurationModal } from "./configurationModal/ConfigurationModal";
 import { GameTypeToggle } from "./GameTypeToggle";
 import { LeaderboardModal } from "./LeaderboardModal";
+import { LearningPathModal } from "./LearningPathModal";
+import { LearningPathPanel } from "./LearningPathPanel";
 import { RegionSelector } from "./RegionSelector";
 import { StreakPanel } from "./StreakPanel";
 import { UserSummary } from "./UserSummary";
@@ -61,6 +68,10 @@ export function Configuration() {
 		startDailyPractice,
 		getRegionPracticeProgress,
 		isCountryPracticedToday,
+		getLearningPathOverview,
+		createLearningPathFor,
+		abandonLearningPath,
+		startLearningPathSession,
 	} = useGame();
 	const [isConfigurationModalOpen, setIsConfigurationModalOpen] =
 		useState(false);
@@ -68,6 +79,8 @@ export function Configuration() {
 	const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 	const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
 	const [isStreakOpen, setIsStreakOpen] = useState(false);
+	const [isLearningPathModalOpen, setIsLearningPathModalOpen] = useState(false);
+	const [isAbandonPathOpen, setIsAbandonPathOpen] = useState(false);
 	const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
 	const { status, user } = useAuth();
 	const { unseenCount, markAllSeen } = useAchievements();
@@ -111,6 +124,7 @@ export function Configuration() {
 	const dueCount = getDueCountries(gameView.countryHistory).length;
 	const dailyPracticeLabel = `Práctica diaria (${dueCount})`;
 	const title = GAME_TYPE_TITLES[gameType];
+	const learningPath = getLearningPathOverview(gameType);
 
 	function handleMenuAction(action: ConfigurationMenuAction) {
 		if (action === "achievements") setIsAchievementsOpen(true);
@@ -405,6 +419,35 @@ export function Configuration() {
 						</Button>
 					)
 				)}
+
+				{/* Aprender por lotes (D185): sin aprendizaje en curso, el botón
+				    que lo crea; con uno, su avance y lo que toca hoy. */}
+				{isInitialLoad ? (
+					<Skeleton className="shrink-0 rounded-3xl">
+						<Button color="secondary" variant="outline" type="button">
+							Aprender por lotes
+						</Button>
+					</Skeleton>
+				) : learningPath ? (
+					<LearningPathPanel
+						className="shrink-0"
+						path={learningPath.path}
+						status={learningPath.status}
+						onContinue={() => startLearningPathSession(gameType)}
+						onAbandon={() => setIsAbandonPathOpen(true)}
+						onCreateNew={() => setIsLearningPathModalOpen(true)}
+					/>
+				) : (
+					<Button
+						color="secondary"
+						variant="outline"
+						type="button"
+						className="shrink-0"
+						onClick={() => setIsLearningPathModalOpen(true)}
+					>
+						Aprender por lotes
+					</Button>
+				)}
 			</section>
 
 			<LoadingAnnouncer
@@ -461,6 +504,30 @@ export function Configuration() {
 					updateSettings({ scope: { type: "custom", regions, countryCodes } });
 					setBlockedMessage(null);
 				}}
+			/>
+
+			<LearningPathModal
+				isOpen={isLearningPathModalOpen}
+				onClose={() => setIsLearningPathModalOpen(false)}
+				gameType={gameType}
+				scopeLabel={getScopeLabel(scope)}
+				scopeCount={getScopeCountryCodes(countries, scope).length}
+				onCreate={(pathOrder, batchSize) =>
+					createLearningPathFor(gameType, scope, pathOrder, batchSize)
+				}
+			/>
+
+			<ConfirmationModal
+				isOpen={isAbandonPathOpen}
+				onCancel={() => setIsAbandonPathOpen(false)}
+				onConfirm={() => {
+					abandonLearningPath(gameType);
+					setIsAbandonPathOpen(false);
+				}}
+				title="¿Abandonar el aprendizaje por lotes?"
+				description="Se pierde el avance de los lotes. Lo que ya aprendiste sigue en tu progreso y en la práctica diaria."
+				confirmLabel="Sí, abandonar"
+				cancelLabel="Seguir aprendiendo"
 			/>
 
 			<LeaderboardModal
