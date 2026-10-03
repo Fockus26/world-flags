@@ -62,7 +62,7 @@ export function DailyPractice({
 		usePracticeQueue({
 			initialCodes: playableCodes,
 			countryHistory: toGameView(learningData, gameType).countryHistory,
-			onGrade: (code, gradeValue, isFirstAttempt) => {
+			onGrade: (code, gradeValue, isFirstAttempt, countsForReview) => {
 				// Solo la primera vez que aparece cada bandera, y "otra vez" es el
 				// único lapso real: `calculateNextReview` reinicia las repeticiones
 				// justamente ahí y no en "difícil".
@@ -72,8 +72,11 @@ export function DailyPractice({
 
 				// Sin `markPracticed`: la práctica diaria es un scope aparte del
 				// de continentes, y no debe contar como "practicado hoy" para el
-				// candado de continentes.
-				gradeCountryReview(code, gradeValue, gameType);
+				// candado de continentes. Un reencolado puede ser solo un paso de
+				// aprendizaje (D186).
+				if (countsForReview) {
+					gradeCountryReview(code, gradeValue, gameType);
+				}
 			},
 			onFinish: () =>
 				onComplete({
