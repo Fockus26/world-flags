@@ -18,6 +18,8 @@ import {
 } from "@/types/country";
 import type {
 	BestTimeKey,
+	LearningPathBatchSize,
+	LearningPathOrder,
 	ReviewGrade,
 	SessionRecord,
 	UserLearningData,
@@ -25,19 +27,26 @@ import type {
 } from "@/types/progress";
 import { isPlausibleRushTime } from "@/utils/leaderboard-validation";
 import {
+	createLearningPath,
+	getLearningPathStatus,
+} from "@/utils/learning-path";
+import {
 	createSessionRecord,
 	fromGameView,
 	getBestTimeKey,
 	getDueCountries,
+	getLearningPath,
 	getUnpracticedCodesToday,
 	hasPracticedCountryToday,
 	registerCountryAttempt,
 	registerCountryAttempts,
 	registerCountryPracticed,
+	registerLearningPathAttempt,
 	registerRegionBestTime,
 	registerRegionGame,
 	registerSessionOutcome,
 	saveLastConfiguration,
+	saveLearningPath,
 	saveReviewResult,
 	saveUserProfile,
 	toGameView,
@@ -48,6 +57,7 @@ import {
 	getScopeCountryCodes,
 	getScopeLabel,
 	getScopeRegionKey,
+	resolveScopeCountries,
 } from "@/utils/practice-scope";
 import { prepareCountries } from "@/utils/prepare-countries";
 import { calculateScore } from "@/utils/score";
@@ -139,8 +149,14 @@ export function useGame() {
 	const isCountryPracticedToday = (countryCode: string, gameType: GameType) =>
 		hasPracticedCountryToday(toGameView(learningData, gameType), countryCode);
 
+	/**
+	 * `isLearningPath`: la sesión del recorrido por lotes (D185). Arma su
+	 * propio alcance, así que no se guarda como la última configuración (no
+	 * debe pisar lo que quien juega tiene seleccionado).
+	 */
 	const startGame = (
 		requestedConfiguration: GameConfigurationType,
+		{ isLearningPath = false }: { isLearningPath?: boolean } = {},
 	): boolean => {
 		// El modo competitivo ("rush") siempre es difícil y aleatorio: no son
 		// ajustables, así que se fuerzan acá sin importar qué haya quedado
@@ -185,18 +201,21 @@ export function useGame() {
 
 		// Se recuerda la selección tal como la pidió el usuario (no la
 		// recortada), para que la próxima vez vea marcado lo que eligió.
-		const updatedData = saveLastConfiguration(
-			getCurrentLearningData(),
-			configuration,
-		);
+		if (!isLearningPath) {
+			const updatedData = saveLastConfiguration(
+				getCurrentLearningData(),
+				configuration,
+			);
 
-		dispatch(setLearningData(updatedData));
+			dispatch(setLearningData(updatedData));
+		}
 
 		dispatch(
 			setActiveGame({
 				id: crypto.randomUUID(),
 				configuration: effectiveConfiguration,
 				countries: prepareCountries(countries, effectiveConfiguration),
+				...(isLearningPath && { isLearningPath }),
 			}),
 		);
 
@@ -219,10 +238,14 @@ export function useGame() {
 		// completado de un alcance crea la marca, no la bate.
 		const isNewRecord =
 			previousBest !== undefined && result.elapsedMs < previousBest;
+		const isLearningPath = store.getState().game.activeGame?.isLearningPath;
+		const stamped: GameResult = isLearningPath
+			? { ...result, isLearningPath }
+			: result;
 
 		dispatch(
 			setLastResult(
-				result.mode === "competitive" ? { ...result, isNewRecord } : result,
+				stamped.mode === "competitive" ? { ...stamped, isNewRecord } : stamped,
 			),
 		);
 		dispatch(setActiveGame(null));
@@ -312,6 +335,13 @@ export function useGame() {
 			return;
 		}
 
+		// "Seguir recorrido": lo que toque hoy del lote en curso, no el
+		// mismo alcance (sus países ya quedaron practicados hoy).
+		if (lastResult.isLearningPath) {
+			if (!startLearningPathSession(lastResult.gameType)) exitGame();
+			return;
+		}
+
 		const started = startGame({
 			scope: lastResult.scope,
 			order: learningData.lastConfiguration?.order ?? "random",
@@ -387,13 +417,16 @@ export function useGame() {
 	/**
 	 * `markPracticed` se resuelve en el mismo despacho (no en uno aparte):
 	 * calificar la primera vez que aparece un país en la sesión también lo
-	 * marca como practicado hoy.
+	 * marca como practicado hoy. `isFirstAttempt` (por defecto, lo mismo que
+	 * `markPracticed`: en las partidas van juntos; la práctica diaria lo pasa
+	 * aparte) decide si un acierto cuenta para el recorrido por lotes (D185).
 	 */
 	const gradeCountryReview = (
 		countryCode: string,
 		grade: ReviewGrade,
 		gameType: GameType,
 		markPracticed = false,
+		isFirstAttempt = markPracticed,
 	) => {
 		const current = getCurrentLearningData();
 
@@ -407,9 +440,18 @@ export function useGame() {
 			view = registerCountryPracticed(view, countryCode);
 		}
 
-		dispatch(
-			setLearningData(fromGameView(current, touchActiveDay(view), gameType)),
-		);
+		let updatedData = fromGameView(current, touchActiveDay(view), gameType);
+
+		// "Otra vez" es el único fallo (el mismo criterio que cuenta los aciertos).
+		if (isFirstAttempt && grade !== "again") {
+			updatedData = registerLearningPathAttempt(
+				updatedData,
+				gameType,
+				countryCode,
+			);
+		}
+
+		dispatch(setLearningData(updatedData));
 	};
 
 	const startDailyPractice = (gameType: GameType) => {
@@ -457,6 +499,78 @@ export function useGame() {
 		dispatch(setDailyPracticeQueue(null));
 	};
 
+	/** El recorrido en curso de `gameType` y su estado de hoy, o `null` (D185). */
+	// Del selector (no de `getCurrentLearningData`): se pinta en la
+	// configuración, y React Compiler solo recalcula lo que depende del render.
+	const getLearningPathOverview = (gameType: GameType) => {
+		const data = learningData;
+		const path = getLearningPath(data, gameType);
+		if (!path) return null;
+
+		const view = toGameView(data, gameType);
+		const status = getLearningPathStatus(path, {
+			isPracticedToday: (code) => hasPracticedCountryToday(view, code),
+		});
+
+		return { path, status };
+	};
+
+	const createLearningPathFor = (
+		gameType: GameType,
+		scope: PracticeScope,
+		order: LearningPathOrder,
+		batchSize: LearningPathBatchSize,
+	) => {
+		const current = getCurrentLearningData();
+		const path = createLearningPath({
+			id: crypto.randomUUID(),
+			countries: resolveScopeCountries(countries, scope),
+			scopeLabel: getScopeLabel(scope),
+			order,
+			batchSize,
+			countryHistory: toGameView(current, gameType).countryHistory,
+		});
+
+		dispatch(setLearningData(saveLearningPath(current, gameType, path)));
+	};
+
+	const abandonLearningPath = (gameType: GameType) => {
+		dispatch(
+			setLearningData(
+				saveLearningPath(getCurrentLearningData(), gameType, null),
+			),
+		);
+	};
+
+	/**
+	 * Una sesión de práctica con lo que toca hoy del lote en curso. Usa los
+	 * ajustes de práctica de quien juega (orden, temporizador, dificultad),
+	 * siempre en modo práctica: el recorrido califica con repetición espaciada.
+	 */
+	const startLearningPathSession = (gameType: GameType): boolean => {
+		const overview = getLearningPathOverview(gameType);
+		if (!overview || overview.status.todayCodes.length === 0) return false;
+
+		const last = getCurrentLearningData().lastConfiguration;
+
+		return startGame(
+			{
+				scope: {
+					type: "custom",
+					regions: [],
+					countryCodes: overview.status.todayCodes,
+				},
+				order: last?.order ?? "alphabetical",
+				timerDuration: last?.timerDuration ?? DEFAULT_TIMER_DURATION,
+				timerEnabled: last?.timerEnabled ?? false,
+				difficulty: last?.difficulty ?? "hard",
+				mode: "practice",
+				gameType,
+			},
+			{ isLearningPath: true },
+		);
+	};
+
 	const saveProfile = (profile: UserProfile) => {
 		const updatedData = saveUserProfile(getCurrentLearningData(), profile);
 
@@ -491,5 +605,9 @@ export function useGame() {
 		updateSettings,
 		getRegionPracticeProgress,
 		isCountryPracticedToday,
+		getLearningPathOverview,
+		createLearningPathFor,
+		abandonLearningPath,
+		startLearningPathSession,
 	};
 }

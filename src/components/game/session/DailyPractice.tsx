@@ -73,7 +73,7 @@ export function DailyPractice({
 				// Sin `markPracticed`: la práctica diaria es un scope aparte del
 				// de continentes, y no debe contar como "practicado hoy" para el
 				// candado de continentes.
-				gradeCountryReview(code, gradeValue, gameType);
+				gradeCountryReview(code, gradeValue, gameType, false, isFirstAttempt);
 			},
 			onFinish: () =>
 				onComplete({

@@ -1,6 +1,7 @@
 import { Trophy } from "iconoir-react";
 import { Button } from "@/components/ui/Button";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useGame } from "@/hooks/useGame";
 import { useTheme } from "@/hooks/useTheme";
 import { GAME_TYPE_NOUNS, type GameResult } from "@/types/country";
 import { formatElapsedTime } from "@/utils/learning-storage";
@@ -187,6 +188,15 @@ function PracticeResults({
 
 export function Results({ result, onRestart, onExit }: ResultsProps) {
 	const scopeLabel = getScopeLabel(result.scope);
+	const { getLearningPathOverview } = useGame();
+	// Sesión de aprender por lotes (D185): en vez del alcance (unos países
+	// sueltos), el avance del aprendizaje; y "repetir" es seguir con lo que
+	// toque hoy, si queda algo.
+	const learningPath = result.isLearningPath
+		? getLearningPathOverview(result.gameType)
+		: null;
+	const learningPathTodayCount = learningPath?.status.todayCodes.length ?? 0;
+	const canRestart = !learningPath || learningPathTodayCount > 0;
 
 	return (
 		<section className="relative flex max-h-full w-[min(100%,38rem)] flex-col items-center overflow-auto rounded-2xl border border-surface-border bg-surface p-4 text-center shadow-xl sm:p-[clamp(1.5rem,4vh,2.5rem)]">
@@ -196,24 +206,44 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 				<PracticeResults result={result} />
 			)}
 
-			{result.scope.type !== "world" && (
+			{learningPath ? (
 				<p className="mt-3 mb-0 text-body-sm text-text-placeholder">
-					Esto se guardó para <strong>{scopeLabel}</strong>.
+					Aprender por lotes · <strong>{learningPath.path.scopeLabel}</strong>:{" "}
+					{learningPath.status.isComplete
+						? "¡completado!"
+						: `lote ${(learningPath.status.currentBatchIndex ?? 0) + 1} de ${learningPath.status.batchCount}`}
+					, {learningPath.status.consolidatedCount} de{" "}
+					{learningPath.status.totalCountries} consolidados.
+					{!learningPath.status.isComplete &&
+						learningPathTodayCount === 0 &&
+						" Vuelve mañana para seguir."}
 				</p>
+			) : (
+				result.scope.type !== "world" && (
+					<p className="mt-3 mb-0 text-body-sm text-text-placeholder">
+						Esto se guardó para <strong>{scopeLabel}</strong>.
+					</p>
+				)
 			)}
 
 			{/* Los avisos de logro ya no van aquí: salen como snackbar
 			    (`AchievementToasts`, montado en `FlagGame`) en el momento en que
 			    se desbloquean, incluso a mitad de partida. */}
 
-			<div className="mt-6 grid w-full max-w-md grid-cols-2 gap-3 sm:mt-8">
+			<div
+				className={`mt-6 grid w-full max-w-md gap-3 sm:mt-8 ${canRestart ? "grid-cols-2" : "grid-cols-1"}`}
+			>
 				<Button color="neutral" type="button" onClick={onExit}>
 					Volver al inicio
 				</Button>
 
-				<Button color="primary" type="button" onClick={onRestart}>
-					Repetir práctica
-				</Button>
+				{canRestart && (
+					<Button color="primary" type="button" onClick={onRestart}>
+						{learningPath
+							? `Seguir aprendiendo (${learningPathTodayCount})`
+							: "Repetir práctica"}
+					</Button>
+				)}
 			</div>
 		</section>
 	);
