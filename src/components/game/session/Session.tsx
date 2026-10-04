@@ -133,8 +133,12 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		initialCodes: countries.map((country) => country.code),
 		// El historial del juego en curso: cada juego repasa lo suyo (D061).
 		countryHistory: toGameView(learningData, gameType).countryHistory,
-		onGrade: (code, grade, isFirstAttempt) =>
-			gradeCountryReview(code, grade, gameType, isFirstAttempt),
+		onGrade: (code, grade, isFirstAttempt, countsForReview) => {
+			// Un reencolado puede ser solo un paso de aprendizaje (D186).
+			if (countsForReview) {
+				gradeCountryReview(code, grade, gameType, isFirstAttempt);
+			}
+		},
 		onFinish: () => {
 			const regionBreakdown: Partial<
 				Record<Region, { correct: number; total: number }>
