@@ -11,8 +11,11 @@ interface LearningPathPanelProps {
 	className?: string;
 }
 
+// Texto en `secondary-hover`, no en `secondary` (D192): `#b34bd1` da 3,86:1
+// sobre el fondo de página en claro. Como el reposo ya es el tono hover, el
+// hover se marca con subrayado.
 const linkButtonClass =
-	"shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-caption font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover";
+	"shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-caption font-bold text-secondary-hover underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover";
 
 /**
  * El aprendizaje por lotes en curso (D185), en la pantalla de inicio: en qué

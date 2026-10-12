@@ -24,7 +24,7 @@
 | accent-foreground | `#ffffff` | texto sobre relleno `--accent` (opción marcada de `OptionTile`, primitivos HeroUI). 4,66:1. Antes `#f7f6ff` = 4,34:1, fallaba AA (D106) |
 | primary-hover | `#5b4bdb` | |
 | primary-soft | `#ecebfe` | fondos suaves, botón `soft` |
-| secondary | `#b34bd1` | acentos secundarios (botón "Práctica diaria", enlaces del picker) |
+| secondary | `#b34bd1` · hover `#9b3ab8` | acentos secundarios: fondo del botón "Práctica diaria", bordes, barra de progreso, casillas del picker. **Como texto falla AA** (4,34:1 sobre blanco, 3,86:1 sobre `background`, 3,81:1 sobre `surface-hover`): el texto morado va en `secondary-hover` (5,69 / 5,07 / 5,00:1; D187, D192) |
 | background (`--background`) | `#f2f1f8` | fondo de página (gris lavanda) |
 | surface (`--app-color-surface` / `--surface`) | `#ffffff` | tarjetas, modales |
 | surface-hover | `#f1eff9` | |
@@ -77,6 +77,11 @@
 - `RegionOption` (grid de continentes): el color por puntuación (`utils/score.ts`)
   se usa para el **borde izquierdo, el anillo de selección y la casilla** — NUNCA
   para el texto (fallaba 2.2–2.7:1). El nombre/contador van en `text-surface-soft` fijo.
+- **`secondary` no sirve como texto sobre claro** (D192): enlaces y botones de solo texto
+  en morado van en `text-secondary-hover`, y como ese ya es el tono hover, el hover se
+  marca con subrayado (o con fondo, como la cabecera del picker, D187). En oscuro los dos
+  pasan de sobra (`secondary` 8,22:1 y `secondary-hover` 10,27:1 sobre `surface`). El token
+  `secondary` no se cambia: lo usan fondos, bordes y la barra de progreso (≥3:1 no texto).
 - El texto danger como `text` variant (`#e0435f` sobre blanco = 4.09:1) queda al
   filo; si vuelve a aparecer un fallo, subir a `--color-danger-hover` (`#c22e49`).
 - Los logros desbloqueados (`AchievementsModal`, `AchievementToasts`) van en
