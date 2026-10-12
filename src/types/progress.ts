@@ -210,7 +210,11 @@ export interface LearningPath {
 	batchSize: LearningPathBatchSize;
 	/** Los países por aprender, en el orden del recorrido. Los lotes salen de aquí. */
 	codes: string[];
-	/** Los del alcance que ya se sabían al crearlo (SM2 con 2+ repeticiones): cuentan como consolidados. */
+	/**
+	 * Los del alcance que ya se sabían (SM2 con 2+ repeticiones y su continente
+	 * en 10/10, D189): cuentan como consolidados. Se recalcula al leer y solo
+	 * puede encoger (`reconcileLearningPathKnown`).
+	 */
 	knownCodes: string[];
 	progress: Record<string, LearningPathCountryProgress>;
 }
