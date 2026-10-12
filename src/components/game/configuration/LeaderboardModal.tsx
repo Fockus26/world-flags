@@ -22,6 +22,7 @@ import {
 	isNetworkFailure,
 	type LeaderboardEntry,
 } from "@/utils/cloud-storage";
+import { leaderboardCache } from "@/utils/leaderboard-cache";
 import { formatElapsedTime } from "@/utils/learning-storage";
 import { GameTypeToggle } from "./GameTypeToggle";
 import { UserAvatar } from "./UserAvatar";
@@ -195,10 +196,11 @@ function readDemoParam(): string | null {
 }
 
 /**
- * Pide el ranking de un scope. En desarrollo con `?demo-ranking` lo sirve
- * `leaderboard-demo.ts` (30 personas falsas, sin tocar la base). El `import()`
- * va dentro de la condición de `DEV`: en producción la rama entera se elimina
- * y el archivo de la demo no se empaqueta.
+ * Pide el ranking de un scope, a través de la caché de 60 s (D188). En
+ * desarrollo con `?demo-ranking` lo sirve `leaderboard-demo.ts` (30 personas
+ * falsas, sin tocar la base) y no pasa por la caché. El `import()` va dentro
+ * de la condición de `DEV`: en producción la rama entera se elimina y el
+ * archivo de la demo no se empaqueta.
  */
 function loadLeaderboard(scope: string): Promise<LeaderboardEntry[]> {
 	if (import.meta.env.DEV) {
@@ -211,7 +213,17 @@ function loadLeaderboard(scope: string): Promise<LeaderboardEntry[]> {
 		}
 	}
 
-	return fetchLeaderboard(scope);
+	return leaderboardCache.load(scope, fetchLeaderboard);
+}
+
+/**
+ * El ranking del scope si ya está en la caché (D188): se pinta al instante,
+ * sin skeleton. La demo de desarrollo no usa la caché.
+ */
+function peekLeaderboard(scope: string): LeaderboardEntry[] | null {
+	if (import.meta.env.DEV && readDemoParam() !== null) return null;
+
+	return leaderboardCache.peek(scope);
 }
 
 function LeaderboardRow({
@@ -392,6 +404,16 @@ export function LeaderboardModal({
 		// Sin conexión ni se intenta; al volver, este efecto se repite solo
 		// (`isOnline` en las dependencias) y el ranking aparece.
 		if (!isOnline) {
+			announceRegion();
+			return;
+		}
+
+		// Visto hace menos de un minuto (D188): sin petición ni skeleton. El
+		// anuncio del cambio de continente sale igual.
+		const cached = peekLeaderboard(scope);
+
+		if (cached) {
+			setEntries(cached);
 			announceRegion();
 			return;
 		}

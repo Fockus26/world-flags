@@ -10,6 +10,8 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 import { setAuthState } from "@/store/slices/authSlice";
 
+import { leaderboardCache } from "@/utils/leaderboard-cache";
+
 function applySession(dispatch: AppDispatch, session: Session | null) {
 	dispatch(
 		setAuthState({
@@ -25,9 +27,21 @@ export function AuthEffects() {
 	const status = useAppSelector((state) => state.auth.status);
 
 	useEffect(() => {
+		// Cuenta de la última sesión vista: `onAuthStateChange` también avisa
+		// al refrescar el token, y eso no es cambiar de sesión.
+		let lastUserId: string | null | undefined;
+
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((_event, session) => {
+			const userId = session?.user.id ?? null;
+
+			// Al entrar o salir el ranking se vuelve a pedir (D188).
+			if (lastUserId !== undefined && userId !== lastUserId) {
+				leaderboardCache.clear();
+			}
+
+			lastUserId = userId;
 			applySession(dispatch, session);
 		});
 
