@@ -7,6 +7,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useSandboxRuntime } from "@/hooks/useSandboxRuntime";
 import type { GameMode } from "@/types/country";
 import { TutorialModeChoice, TutorialSettings } from "./TutorialSettings";
+import { isLostFocusEscape } from "./tutorial-escape";
 import { TUTORIAL_STEPS, TUTORIAL_TEXTS } from "./tutorial-script";
 
 const HEADING_ID = "tutorial-step-title";
@@ -121,6 +122,31 @@ export function Tutorial({ onClose }: TutorialProps) {
 			}, 0);
 		};
 	}, []);
+
+	/**
+	 * Escape cierra también con el foco perdido (D193). El de React Aria solo
+	 * se entera si el foco está dentro del diálogo, y en la partida de ejemplo
+	 * responder una tarjeta lo deja en `<body>`. Mismo efecto que "Saltar
+	 * tutorial": `onClose` lo marca como visto.
+	 */
+	useEffect(() => {
+		function handleKeyDown(event: KeyboardEvent) {
+			if (
+				isLostFocusEscape({
+					key: event.key,
+					defaultPrevented: event.defaultPrevented,
+					activeElement: document.activeElement,
+					body: document.body,
+				})
+			) {
+				event.preventDefault();
+				onClose();
+			}
+		}
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
 
 	const step = TUTORIAL_STEPS[stepIndex];
 	const isPlaying = sandbox.state.gameId !== null;
