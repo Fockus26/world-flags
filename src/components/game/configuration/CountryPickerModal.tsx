@@ -50,9 +50,16 @@ function CountryCheckbox({
 	// en una fila de la rejilla con un nombre en dos líneas las demás casillas
 	// siguen a la misma altura. Con tres o más líneas, "…" al final de la
 	// segunda.
+	//
+	// Área de clic (D187): la etiqueta llena su celda de la rejilla, que ya no
+	// tiene `gap` (la separación es su propio padding), así no queda hueco
+	// muerto entre opciones. En móvil (por debajo de `sm`) mide 44 px y centra
+	// casilla y nombre: todas las celdas de una fila miden lo mismo, así que
+	// las casillas siguen a la misma altura aunque un nombre ocupe dos líneas.
+	// Desde `sm` vuelve a la alineación de arriba de D169.
 	return (
 		<label
-			className={`relative flex min-w-0 items-start gap-1.5 py-0.5 text-label leading-snug ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer"}`}
+			className={`relative flex min-h-11 min-w-0 items-center gap-1.5 rounded-sm px-1.5 text-label leading-snug transition-colors sm:min-h-0 sm:items-start sm:py-1 ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer hover:bg-surface-hover"}`}
 		>
 			<input
 				type="checkbox"
@@ -63,7 +70,7 @@ function CountryCheckbox({
 			/>
 			<span
 				aria-hidden="true"
-				className="relative mt-px flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
+				className="relative flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] sm:mt-px peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
 			/>
 			<span className="line-clamp-2 min-w-0 wrap-break-word">
 				{label}
@@ -199,7 +206,7 @@ export function CountryPickerModal({
 					<button
 						type="button"
 						onClick={clearAll}
-						className="shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-caption font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
+						className="shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-caption font-bold text-secondary-hover underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
 					>
 						Limpiar todo ({selectedCatalogCount})
 					</button>
@@ -221,12 +228,18 @@ export function CountryPickerModal({
 							key={region}
 							className="shrink-0 overflow-hidden rounded-md border border-surface-border"
 						>
-							<div className="flex items-center gap-2 bg-surface-hover px-2.5 py-2">
+							{/* Área de clic (D187): sin padding en la fila; el botón de
+							    desplegar la ocupa entera (alto completo y desde el borde
+							    izquierdo hasta "Ninguno"/"Todos"), y estos también llegan
+							    de arriba abajo. 44 px en móvil. El anillo de foco va por
+							    dentro (`-outline-offset-2`): la sección recorta lo que
+							    sale de su borde. */}
+							<div className="flex items-stretch bg-surface-hover">
 								<button
 									type="button"
 									onClick={() => toggleRegionExpanded(region)}
 									aria-expanded={isExpanded}
-									className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
+									className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent py-2 pr-2 pl-2.5 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-surface-soft sm:min-h-9"
 								>
 									<NavArrowDown
 										className={`size-4 shrink-0 text-text-placeholder transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
@@ -241,11 +254,11 @@ export function CountryPickerModal({
 											: regionCodes.length}
 									</span>
 								</button>
-								<div className="flex shrink-0 items-center gap-2">
+								<div className="flex shrink-0 items-stretch">
 									{selectedCount > 0 && (
 										<button
 											type="button"
-											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-tiny font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
+											className="flex cursor-pointer items-center border-0 bg-transparent px-2.5 text-tiny font-bold text-secondary-hover transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
 											onClick={() => toggleAllInRegion(regionCodes, true)}
 										>
 											Ninguno
@@ -254,7 +267,7 @@ export function CountryPickerModal({
 									{!allSelected && (
 										<button
 											type="button"
-											className="cursor-pointer rounded-sm border-0 bg-transparent p-0.5 text-tiny font-bold text-secondary transition-colors hover:text-secondary-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-hover"
+											className="flex cursor-pointer items-center border-0 bg-transparent px-2.5 text-tiny font-bold text-secondary-hover transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
 											onClick={() => toggleAllInRegion(regionCodes, false)}
 										>
 											Todos
@@ -265,7 +278,7 @@ export function CountryPickerModal({
 
 							{isExpanded && (
 								<div className="overflow-hidden motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-200">
-									<div className="grid max-h-56 grid-cols-2 gap-x-3 gap-y-0.5 overflow-y-auto px-2.5 py-2 min-[30rem]:grid-cols-3">
+									<div className="grid max-h-56 grid-cols-2 overflow-y-auto p-1 min-[30rem]:grid-cols-3">
 										{regionCountries.map((country) => (
 											<CountryCheckbox
 												key={country.code}
