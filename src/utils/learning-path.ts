@@ -1,3 +1,4 @@
+import { countries as catalog } from "@/data/countries";
 import { type Country, REGIONS } from "@/types/country";
 import type {
 	CountriesLearningHistory,
@@ -7,10 +8,12 @@ import type {
 	LearningPathOrder,
 	LearningPathSlot,
 	LearningPaths,
+	RegionGameScores,
 } from "@/types/progress";
 import { LEARNING_PATH_BATCH_SIZES } from "@/types/progress";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 import { getLocalDateString } from "@/utils/date";
+import { calculateRegionAverage } from "@/utils/learning-storage";
 import { shuffle } from "@/utils/shuffle";
 
 /**
@@ -24,8 +27,20 @@ export const PASS_DAYS_TO_CONSOLIDATE = 2;
 
 export const DEFAULT_LEARNING_PATH_BATCH_SIZE: LearningPathBatchSize = 5;
 
-/** Repeticiones SM2 a partir de las cuales un país ya se sabía al crear el recorrido. */
+/** Repeticiones SM2 a partir de las cuales un país puede darse por sabido. */
 const KNOWN_MIN_REPETITIONS = 2;
+
+/**
+ * Nota del continente (la media de sus últimas partidas) que hace falta,
+ * además de las repeticiones, para dar un país por sabido (D189): las
+ * repeticiones solas no bastan (D185, y antes del #67 los reencolados de una
+ * partida también las sumaban).
+ */
+const KNOWN_REGION_AVERAGE = 10;
+
+const CATALOG_BY_CODE: ReadonlyMap<string, Country> = new Map(
+	catalog.map((country) => [country.code, country]),
+);
 
 const spanishCollator = new Intl.Collator("es", { sensitivity: "base" });
 
@@ -37,15 +52,60 @@ function sortByRegionThenName(countries: readonly Country[]): Country[] {
 	);
 }
 
-interface CreateLearningPathOptions {
+/** Lo que decide si un país ya se sabe: el historial SM2 y las notas por continente del juego. */
+export interface LearningPathKnownCriteria {
+	countryHistory: CountriesLearningHistory;
+	regionGameScores: RegionGameScores;
+}
+
+/** Ya sabido = SM2 con 2+ repeticiones y su continente en 10/10 (D189). Sin nota, no. */
+function isKnownCountry(
+	country: Country,
+	{ countryHistory, regionGameScores }: LearningPathKnownCriteria,
+): boolean {
+	const repetitions = countryHistory[country.code]?.review?.repetitions ?? 0;
+
+	return (
+		repetitions >= KNOWN_MIN_REPETITIONS &&
+		calculateRegionAverage(regionGameScores[country.region]) ===
+			KNOWN_REGION_AVERAGE
+	);
+}
+
+/**
+ * Añade `added` a los países por aprender según el orden del recorrido: al
+ * azar, al final; por continente, todo reordenado por continente y nombre
+ * (lo que el catálogo no conoce queda al final, en su orden).
+ */
+function addLearnableCodes(
+	order: LearningPathOrder,
+	codes: readonly string[],
+	added: readonly string[],
+): string[] {
+	const all = [...codes, ...added];
+	if (order === "random") return all;
+
+	const inCatalog: Country[] = [];
+	const unknown: string[] = [];
+	for (const code of all) {
+		const country = CATALOG_BY_CODE.get(code);
+		if (country) inCatalog.push(country);
+		else unknown.push(code);
+	}
+
+	return [
+		...sortByRegionThenName(inCatalog).map((country) => country.code),
+		...unknown,
+	];
+}
+
+interface CreateLearningPathOptions extends LearningPathKnownCriteria {
 	id: string;
 	/** Los países del alcance, ya resueltos (`resolveScopeCountries`). */
 	countries: readonly Country[];
 	scopeLabel: string;
 	order: LearningPathOrder;
 	batchSize: LearningPathBatchSize;
-	/** El historial SM2 del juego: lo que ya se sabe no entra en los lotes. */
-	countryHistory: CountriesLearningHistory;
 	now?: Date;
 }
 
@@ -56,6 +116,7 @@ export function createLearningPath({
 	order,
 	batchSize,
 	countryHistory,
+	regionGameScores,
 	now = new Date(),
 }: CreateLearningPathOptions): LearningPath {
 	const ordered =
@@ -65,10 +126,10 @@ export function createLearningPath({
 	const knownCodes: string[] = [];
 
 	for (const country of ordered) {
-		const repetitions = countryHistory[country.code]?.review?.repetitions ?? 0;
-		(repetitions >= KNOWN_MIN_REPETITIONS ? knownCodes : codes).push(
-			country.code,
-		);
+		(isKnownCountry(country, { countryHistory, regionGameScores })
+			? knownCodes
+			: codes
+		).push(country.code);
 	}
 
 	return {
@@ -80,6 +141,37 @@ export function createLearningPath({
 		codes,
 		knownCodes,
 		progress: {},
+	};
+}
+
+/**
+ * Recalcula los ya sabidos de un recorrido con la regla de hoy (D189): los
+ * que ya no la cumplen pasan a los lotes (con su progreso, si lo tenían).
+ * Solo degrada, nunca promueve: un país que llega a 10/10 después no sale de
+ * los lotes, para que estos no se muevan. Lo que el catálogo no conoce se
+ * deja como está. Idempotente; devuelve el mismo objeto si no cambia nada.
+ */
+export function reconcileLearningPathKnown(
+	path: LearningPath,
+	criteria: LearningPathKnownCriteria,
+): LearningPath {
+	const demoted = path.knownCodes.filter((code) => {
+		const country = CATALOG_BY_CODE.get(code);
+		return country !== undefined && !isKnownCountry(country, criteria);
+	});
+	if (demoted.length === 0) return path;
+
+	const demotedSet = new Set(demoted);
+	const learnable = new Set(path.codes);
+
+	return {
+		...path,
+		codes: addLearnableCodes(
+			path.order,
+			path.codes,
+			demoted.filter((code) => !learnable.has(code)),
+		),
+		knownCodes: path.knownCodes.filter((code) => !demotedSet.has(code)),
 	};
 }
 
@@ -240,9 +332,30 @@ function mergeSlot(
 			]),
 		].sort();
 
+		// Ya sabido solo si lo es en los dos lados: el recalculo solo degrada
+		// (D189), así que un dispositivo sin recalcular no lo deshace.
+		const localKnown = new Set(local.path.knownCodes);
+		const knownCodes = remote.path.knownCodes.filter((code) =>
+			localKnown.has(code),
+		);
+		const knownSet = new Set(knownCodes);
+		const remoteLearnable = new Set(remote.path.codes);
+		const added = [
+			...new Set([
+				...local.path.codes,
+				...remote.path.knownCodes,
+				...local.path.knownCodes,
+			]),
+		].filter((code) => !remoteLearnable.has(code) && !knownSet.has(code));
+
 		return {
 			path: {
 				...remote.path,
+				codes:
+					added.length > 0
+						? addLearnableCodes(remote.path.order, remote.path.codes, added)
+						: remote.path.codes,
+				knownCodes,
 				progress: Object.fromEntries(
 					codes.map((code) => [
 						code,
@@ -266,7 +379,7 @@ function mergeSlot(
 
 /**
  * Por juego: el mismo recorrido en los dos lados suma avances (unión de días
- * de acierto); recorridos distintos, gana el último creado o abandonado. Las
+ * de acierto, intersección de ya sabidos); recorridos distintos, gana el último creado o abandonado. Las
  * claves salen ordenadas: la sincronización compara `JSON.stringify`.
  */
 export function mergeLearningPaths(

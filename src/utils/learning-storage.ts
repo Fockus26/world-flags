@@ -37,6 +37,7 @@ import { getLocalDateString } from "@/utils/date";
 import {
 	mergeLearningPaths,
 	normalizeLearningPaths,
+	reconcileLearningPathKnown,
 	registerLearningPathPass,
 } from "@/utils/learning-path";
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
@@ -1991,9 +1992,56 @@ export function saveLearningPath(
 }
 
 /**
+ * El recorrido de `gameType` con los ya sabidos recalculados con su historial
+ * y sus notas por continente (D189). No cambia `updatedAt` (no es crear ni
+ * abandonar) ni guarda. Sin recorrido o sin cambios, `null`.
+ */
+function reconcileStoredLearningPath(
+	data: UserLearningData,
+	gameType: GameType,
+): LearningPath | null {
+	const path = data.learningPaths[gameType]?.path;
+	if (!path) return null;
+
+	const view = toGameView(data, gameType);
+	const reconciled = reconcileLearningPathKnown(path, {
+		countryHistory: view.countryHistory,
+		regionGameScores: view.regionGameScores,
+	});
+
+	return reconciled === path ? null : reconciled;
+}
+
+/**
+ * Guarda el recalculo de los ya sabidos del recorrido de `gameType` (D189),
+ * si cambia algo. Sin cambios, devuelve los mismos datos y no guarda nada.
+ */
+export function reconcileLearningPath(
+	currentData: UserLearningData,
+	gameType: GameType,
+): UserLearningData {
+	const slot = currentData.learningPaths[gameType];
+	const path = reconcileStoredLearningPath(currentData, gameType);
+	if (!slot || !path) return currentData;
+
+	const updatedData: UserLearningData = {
+		...currentData,
+		learningPaths: {
+			...currentData.learningPaths,
+			[gameType]: { ...slot, path },
+		},
+	};
+
+	saveLearningData(updatedData);
+	return updatedData;
+}
+
+/**
  * Un acierto a la primera de `countryCode` en `gameType`: si el país está en
- * el recorrido de ese juego y le faltaba, cuenta para consolidarlo. Sin
- * recorrido, o sin cambios, devuelve los mismos datos y no guarda nada.
+ * el recorrido de ese juego y le faltaba, cuenta para consolidarlo. Antes se
+ * recalculan los ya sabidos (D189): un país que deja de serlo vuelve a los
+ * lotes y este acierto ya le cuenta. Sin recorrido, o sin cambios, devuelve
+ * los mismos datos y no guarda nada.
  */
 export function registerLearningPathAttempt(
 	currentData: UserLearningData,
@@ -2004,7 +2052,9 @@ export function registerLearningPathAttempt(
 	const slot = currentData.learningPaths[gameType];
 	if (!slot?.path) return currentData;
 
-	const path = registerLearningPathPass(slot.path, countryCode, now);
+	const reconciled =
+		reconcileStoredLearningPath(currentData, gameType) ?? slot.path;
+	const path = registerLearningPathPass(reconciled, countryCode, now);
 	if (path === slot.path) return currentData;
 
 	const updatedData: UserLearningData = {

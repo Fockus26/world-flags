@@ -29,6 +29,7 @@ import { isPlausibleRushTime } from "@/utils/leaderboard-validation";
 import {
 	createLearningPath,
 	getLearningPathStatus,
+	reconcileLearningPathKnown,
 } from "@/utils/learning-path";
 import {
 	createSessionRecord,
@@ -38,6 +39,7 @@ import {
 	getLearningPath,
 	getUnpracticedCodesToday,
 	hasPracticedCountryToday,
+	reconcileLearningPath,
 	registerCountryAttempt,
 	registerCountryAttempts,
 	registerCountryPracticed,
@@ -504,10 +506,17 @@ export function useGame() {
 	// configuración, y React Compiler solo recalcula lo que depende del render.
 	const getLearningPathOverview = (gameType: GameType) => {
 		const data = learningData;
-		const path = getLearningPath(data, gameType);
-		if (!path) return null;
+		const stored = getLearningPath(data, gameType);
+		if (!stored) return null;
 
 		const view = toGameView(data, gameType);
+		// Los ya sabidos con la regla de hoy (D189). Se guarda al empezar una
+		// sesión del recorrido o al acertar (`registerLearningPathAttempt`),
+		// no aquí: esto corre en cada render.
+		const path = reconcileLearningPathKnown(stored, {
+			countryHistory: view.countryHistory,
+			regionGameScores: view.regionGameScores,
+		});
 		const status = getLearningPathStatus(path, {
 			isPracticedToday: (code) => hasPracticedCountryToday(view, code),
 		});
@@ -522,13 +531,15 @@ export function useGame() {
 		batchSize: LearningPathBatchSize,
 	) => {
 		const current = getCurrentLearningData();
+		const view = toGameView(current, gameType);
 		const path = createLearningPath({
 			id: crypto.randomUUID(),
 			countries: resolveScopeCountries(countries, scope),
 			scopeLabel: getScopeLabel(scope),
 			order,
 			batchSize,
-			countryHistory: toGameView(current, gameType).countryHistory,
+			countryHistory: view.countryHistory,
+			regionGameScores: view.regionGameScores,
 		});
 
 		dispatch(setLearningData(saveLearningPath(current, gameType, path)));
@@ -551,7 +562,12 @@ export function useGame() {
 		const overview = getLearningPathOverview(gameType);
 		if (!overview || overview.status.todayCodes.length === 0) return false;
 
-		const last = getCurrentLearningData().lastConfiguration;
+		// Lo que se va a jugar sale del recorrido recalculado: que quede guardado.
+		const current = getCurrentLearningData();
+		const reconciled = reconcileLearningPath(current, gameType);
+		if (reconciled !== current) dispatch(setLearningData(reconciled));
+
+		const last = reconciled.lastConfiguration;
 
 		return startGame(
 			{

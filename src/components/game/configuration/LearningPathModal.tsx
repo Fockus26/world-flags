@@ -85,8 +85,8 @@ export function LearningPathModal({
 			>
 				Aprende de a pocos {noun}. Un país queda consolidado cuando lo aciertas
 				a la primera en dos días distintos; cuando todo el lote está
-				consolidado, se abre el siguiente. Lo que ya sabías cuenta como
-				consolidado.
+				consolidado, se abre el siguiente. Lo que ya sabías (con su continente
+				en 10/10) cuenta como consolidado.
 			</p>
 
 			<div className="flex flex-col gap-5">
