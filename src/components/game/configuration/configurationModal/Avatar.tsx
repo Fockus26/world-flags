@@ -1,7 +1,14 @@
+import { DiceFive } from "iconoir-react";
 import { useState } from "react";
+import { IconButton } from "@/components/ui/IconButton";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import type { AvatarStyle } from "@/types/progress";
-import { AVATAR_SEEDS, getAvatarUrl } from "@/utils/avatar";
+import {
+	AVATAR_SEEDS,
+	createRandomAvatarSeeds,
+	getAvatarUrl,
+	withSelectedAvatarSeed,
+} from "@/utils/avatar";
 
 interface AvatarProps {
 	avatarStyle: AvatarStyle;
@@ -42,9 +49,52 @@ function AvatarOptionImage({ src, number }: { src: string; number: number }) {
 export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
 	// Al volver la red se remontan las imágenes para reintentar las que fallaron.
 	const { isOnline } = useSyncStatus();
+	// Tanda visible (D190): estado local, no se persiste. Tirar el dado no
+	// toca el perfil; solo elegir una opción lo cambia. El elegido se mete en
+	// la tanda al crearla (así elegir otro no corre las casillas) y otra vez
+	// al pintar, por si cambia desde fuera (sync).
+	const [seeds, setSeeds] = useState<readonly string[]>(() =>
+		withSelectedAvatarSeed(AVATAR_SEEDS, value),
+	);
+	const [rolls, setRolls] = useState(0);
+	const visibleSeeds = withSelectedAvatarSeed(seeds, value);
+
+	function handleRoll() {
+		setSeeds(
+			withSelectedAvatarSeed(
+				createRandomAvatarSeeds(AVATAR_SEEDS.length),
+				value,
+			),
+		);
+		setRolls((current) => current + 1);
+	}
 
 	return (
 		<div className="flex flex-col gap-2">
+			<div className="flex items-center justify-end">
+				<IconButton
+					type="button"
+					color="neutral"
+					variant="text"
+					aria-label="Mostrar otros avatares"
+					onClick={handleRoll}
+				>
+					{/* Una vuelta por tirada; con movimiento reducido no hay transición
+					    y, al ser vueltas enteras, el icono no cambia. */}
+					<DiceFive
+						aria-hidden="true"
+						className="size-6 motion-safe:transition-transform motion-safe:duration-300"
+						style={{ transform: `rotate(${rolls * 360}deg)` }}
+					/>
+				</IconButton>
+			</div>
+
+			{/* Anuncio breve de la tirada. El espacio duro alterno hace que el
+			    texto cambie en cada tirada para que se vuelva a leer. */}
+			<p role="status" className="sr-only">
+				{rolls > 0 && `Nuevos avatares${rolls % 2 === 0 ? "\u00A0" : ""}`}
+			</p>
+
 			{!isOnline && (
 				<p className="m-0 flex items-start gap-2 text-caption text-surface-soft">
 					<span aria-hidden="true">📡</span>
@@ -56,7 +106,7 @@ export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
 			)}
 
 			<div className="grid grid-cols-4 gap-3">
-				{AVATAR_SEEDS.map((seed, index) => {
+				{visibleSeeds.map((seed, index) => {
 					const isSelected = value === seed;
 					const src = getAvatarUrl(avatarStyle, seed);
 
@@ -68,7 +118,8 @@ export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
 							type="button"
 							key={seed}
 							onClick={() => onChange(seed)}
-							aria-label={`Seleccionar avatar ${seed}`}
+							// Por posición: los seeds aleatorios no se leen bien en voz alta.
+							aria-label={`Seleccionar avatar ${index + 1}`}
 							aria-pressed={isSelected}
 						>
 							<AvatarOptionImage
