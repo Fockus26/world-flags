@@ -9,6 +9,25 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.7.1] - 2026-10-12
+
+### Cambiado
+
+- El ranking abre al instante si lo acabas de ver: durante un minuto, volver a
+  abrirlo o ir y volver entre continentes no lo descarga de nuevo. Al subir una
+  marca nueva, cambiar tu nombre o avatar, o entrar y salir de tu cuenta, se
+  vuelve a pedir para que veas siempre tu tiempo al día.
+
+### Corregido
+
+- Aprender por lotes ya no da por sabidos los países de un continente donde tu
+  nota no es 10/10; los recorridos que salían completados se reabren con esos
+  países en sus lotes.
+- Cuando una bandera vuelve a salir en la misma sesión, acertarla otra vez ya no
+  la manda días más adelante como si la hubieras repasado en días distintos: en
+  cada sesión avanza como mucho un paso. Fallarla en la repetición sí cuenta, y
+  varios "Otra vez" seguidos cuentan como un solo fallo.
+
 ## [2.7.0] - 2026-10-03
 
 ### Añadido
