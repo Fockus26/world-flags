@@ -6,6 +6,7 @@ import {
 	type UserLearningData,
 	type UserProfile,
 } from "@/types/progress";
+import { leaderboardCache } from "./leaderboard-cache";
 import {
 	isLeaderboardTimeRejected,
 	type LeaderboardUploadResult,
@@ -465,6 +466,9 @@ export async function syncLeaderboardProfile(
 		return false;
 	}
 
+	// Tus filas cambiaron de nombre o avatar en todos los scopes (D188).
+	leaderboardCache.clear();
+
 	return true;
 }
 
@@ -523,6 +527,9 @@ export async function upsertLeaderboardEntry(
 
 		return "failed";
 	}
+
+	// Que al abrir el ranking se vea ya la marca nueva, no la de la caché (D188).
+	leaderboardCache.invalidate(scope);
 
 	return "uploaded";
 }
