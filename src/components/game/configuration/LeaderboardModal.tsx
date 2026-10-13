@@ -371,15 +371,28 @@ export function LeaderboardModal({
 
 	// Cada vez que se abre el modal, arranca en el juego activo en ese
 	// momento en la configuración — no se queda pegado a lo último que se
-	// vio en una apertura anterior.
-	useEffect(() => {
-		if (isOpen) {
+	// vio en una apertura anterior. Se ajusta durante el render y no en un
+	// efecto (D198): con un efecto, el de carga corría en el mismo commit con
+	// el juego y el continente de la apertura anterior y, con la caché
+	// vencida, pedía ese scope de más antes del bueno.
+	const openKey = isOpen ? `${defaultGameType}:${defaultRegion}` : null;
+	const [lastOpenKey, setLastOpenKey] = useState(openKey);
+
+	if (openKey !== lastOpenKey) {
+		setLastOpenKey(openKey);
+
+		if (openKey !== null) {
 			setGameType(defaultGameType);
 			setRegion(defaultRegion);
 			setRegionAnnouncement("");
-			announceRegionRef.current = false;
 		}
-	}, [isOpen, defaultGameType, defaultRegion]);
+	}
+
+	// El anuncio pendiente es una ref: se olvida en un efecto, que corre antes
+	// que el de carga (va antes en el componente).
+	useEffect(() => {
+		if (openKey !== null) announceRegionRef.current = false;
+	}, [openKey]);
 
 	// Un scope por juego (D033), por regla de castigo (D076) y por continente (D137).
 	const scope = getLeaderboardScope(gameType, region);
@@ -408,35 +421,59 @@ export function LeaderboardModal({
 			return;
 		}
 
+		// Solo vale la respuesta de la última petición: si se recarga con la
+		// carga inicial en vuelo, esa puede llegar después y traer la marca vieja.
+		let latestRequest = 0;
+		/** Ya se ven filas: un fallo al recargar deja las de antes, sin aviso. */
+		let hasRows = false;
+
+		const request = () => {
+			const id = ++latestRequest;
+
+			loadLeaderboard(scope)
+				.then((result) => {
+					if (cancelled || id !== latestRequest) return;
+					hasRows = true;
+					setEntries(result);
+					announceRegion();
+				})
+				.catch((fetchError: unknown) => {
+					if (cancelled || id !== latestRequest || hasRows) return;
+					announceRegion();
+
+					if (isNetworkFailure(fetchError)) {
+						setIsOffline(true);
+					} else {
+						setError(
+							"No se pudo cargar el ranking. Intenta de nuevo más tarde.",
+						);
+					}
+				});
+		};
+
+		// Si se sube tu marca (o cambias de nombre) con el ranking abierto, la
+		// caché avisa y se vuelve a pedir (D198), sin skeleton: lo que se ve se
+		// queda hasta que llega lo nuevo. Sin anuncio: la lista se pone al día
+		// sola, sin que nadie haya pedido nada.
+		const unsubscribe = leaderboardCache.subscribe((changed) => {
+			if (changed === null || changed === scope) request();
+		});
+
 		// Visto hace menos de un minuto (D188): sin petición ni skeleton. El
 		// anuncio del cambio de continente sale igual.
 		const cached = peekLeaderboard(scope);
 
 		if (cached) {
+			hasRows = true;
 			setEntries(cached);
 			announceRegion();
-			return;
+		} else {
+			request();
 		}
-
-		loadLeaderboard(scope)
-			.then((result) => {
-				if (cancelled) return;
-				setEntries(result);
-				announceRegion();
-			})
-			.catch((fetchError: unknown) => {
-				if (cancelled) return;
-				announceRegion();
-
-				if (isNetworkFailure(fetchError)) {
-					setIsOffline(true);
-				} else {
-					setError("No se pudo cargar el ranking. Intenta de nuevo más tarde.");
-				}
-			});
 
 		return () => {
 			cancelled = true;
+			unsubscribe();
 		};
 	}, [isOpen, scope, region, isOnline]);
 

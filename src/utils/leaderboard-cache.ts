@@ -12,6 +12,8 @@ import type { LeaderboardEntry } from "@/utils/cloud-storage";
  * nunca vea su tiempo viejo justo después de batirlo: al subir una marca se
  * borra ese scope (`upsertLeaderboardEntry`), y al cambiar nombre o avatar
  * (`syncLeaderboardProfile`) o de sesión (`AuthEffects`) se vacía entera.
+ * Quien tenga el ranking a la vista se suscribe (`subscribe`) para enterarse
+ * y volver a pedirlo sin que haya que reabrirlo (D198).
  */
 
 /** Cuánto vale una respuesta del ranking antes de volver a pedirla. */
@@ -38,7 +40,16 @@ export interface LeaderboardCache {
 	invalidate(scope: string): void;
 	/** Olvida todos los scopes. */
 	clear(): void;
+	/**
+	 * Avisa a `listener` cada vez que se invalida un scope (con ese scope) o se
+	 * vacía la caché (con `null`: todos). Devuelve la función que deja de
+	 * avisar.
+	 */
+	subscribe(listener: LeaderboardCacheListener): () => void;
 }
+
+/** Recibe el scope invalidado, o `null` si se vació la caché entera. */
+export type LeaderboardCacheListener = (scope: string | null) => void;
 
 export function createLeaderboardCache({
 	now = Date.now,
@@ -49,6 +60,13 @@ export function createLeaderboardCache({
 } = {}): LeaderboardCache {
 	const cached = new Map<string, CachedLeaderboard>();
 	const inFlight = new Map<string, Promise<LeaderboardEntry[]>>();
+	const listeners = new Set<LeaderboardCacheListener>();
+
+	// Sobre una copia: un oyente que se da de baja al recibir el aviso no
+	// salta al siguiente.
+	function notify(scope: string | null) {
+		for (const listener of [...listeners]) listener(scope);
+	}
 
 	function peek(scope: string): LeaderboardEntry[] | null {
 		const hit = cached.get(scope);
@@ -101,10 +119,19 @@ export function createLeaderboardCache({
 		invalidate(scope) {
 			cached.delete(scope);
 			inFlight.delete(scope);
+			notify(scope);
 		},
 		clear() {
 			cached.clear();
 			inFlight.clear();
+			notify(null);
+		},
+		subscribe(listener) {
+			listeners.add(listener);
+
+			return () => {
+				listeners.delete(listener);
+			};
 		},
 	};
 }

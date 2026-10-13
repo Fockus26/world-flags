@@ -1,7 +1,8 @@
 /**
  * Caché del ranking (D188): un scope visto hace menos de 60 s no se vuelve a
  * pedir, dos aperturas seguidas comparten la petición, un error no se guarda
- * y subir una marca o cambiar de perfil/sesión la invalida.
+ * y subir una marca o cambiar de perfil/sesión la invalida. Quien se
+ * suscribe se entera de cada invalidación (D198).
  */
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
@@ -143,5 +144,88 @@ describe("leaderboard-cache", () => {
 
 		assert.deepEqual(calls, [WORLD]);
 		assert.equal(cache.peek(WORLD), fresh);
+	});
+
+	test("invalidar avisa a los suscritos con ese scope", async () => {
+		const { cache, fetcher } = setup();
+		const seen: (string | null)[] = [];
+
+		await cache.load(WORLD, fetcher);
+		cache.subscribe((scope) => seen.push(scope));
+		cache.invalidate(WORLD);
+		cache.invalidate(EUROPE);
+
+		assert.deepEqual(seen, [WORLD, EUROPE]);
+	});
+
+	test("vaciar avisa con null: todos los scopes", () => {
+		const { cache } = setup();
+		const seen: (string | null)[] = [];
+
+		cache.subscribe((scope) => seen.push(scope));
+		cache.clear();
+
+		assert.deepEqual(seen, [null]);
+	});
+
+	test("cargar y caducar no avisan", async () => {
+		const { cache, fetcher, advance } = setup();
+		const seen: (string | null)[] = [];
+
+		cache.subscribe((scope) => seen.push(scope));
+		await cache.load(WORLD, fetcher);
+		advance(LEADERBOARD_CACHE_TTL_MS);
+		cache.peek(WORLD);
+
+		assert.deepEqual(seen, []);
+	});
+
+	test("tras darse de baja no llegan más avisos", () => {
+		const { cache } = setup();
+		const seen: (string | null)[] = [];
+		const other: (string | null)[] = [];
+
+		const unsubscribe = cache.subscribe((scope) => seen.push(scope));
+		cache.subscribe((scope) => other.push(scope));
+		cache.invalidate(WORLD);
+		unsubscribe();
+		cache.invalidate(WORLD);
+
+		assert.deepEqual(seen, [WORLD]);
+		assert.deepEqual(other, [WORLD, WORLD]);
+	});
+
+	test("darse de baja dentro del aviso no salta al siguiente", () => {
+		const { cache } = setup();
+		const seen: string[] = [];
+
+		const unsubscribe = cache.subscribe(() => {
+			seen.push("a");
+			unsubscribe();
+		});
+		cache.subscribe(() => seen.push("b"));
+		cache.invalidate(WORLD);
+		cache.invalidate(WORLD);
+
+		assert.deepEqual(seen, ["a", "b", "b"]);
+	});
+
+	test("al recibir el aviso, recargar pide la marca nueva", async () => {
+		const { cache, fetcher, calls } = setup();
+		const reloaded: LeaderboardEntry[][] = [];
+
+		const first = await cache.load(WORLD, fetcher);
+		cache.subscribe((scope) => {
+			if (scope === WORLD) {
+				cache.load(WORLD, fetcher).then((entries) => reloaded.push(entries));
+			}
+		});
+		cache.invalidate(WORLD);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		assert.deepEqual(calls, [WORLD, WORLD]);
+		assert.equal(reloaded.length, 1);
+		assert.notEqual(reloaded[0], first);
+		assert.equal(cache.peek(WORLD), reloaded[0]);
 	});
 });
