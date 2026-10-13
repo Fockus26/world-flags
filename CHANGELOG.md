@@ -9,6 +9,22 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.8.2] - 2026-10-13
+
+### Corregido
+
+- Si abres el ranking justo después de batir tu marca, tu tiempo nuevo aparece
+  en cuanto se guarda, sin tener que cerrarlo y volver a abrirlo.
+- En Países, la sesión ya no se queda trabada cuando la última bandera vuelve a
+  salir sola: se puede calificar otra vez y la sesión termina y se guarda.
+- Con el temporizador activo, una bandera que vuelve a salir enseguida empieza
+  con el tiempo completo en lugar de seguir con lo que le quedaba (o saltarse
+  sola si se había agotado).
+- Al compartir el enlace del juego, la vista previa muestra el nombre Banderas
+  del Mundo, una descripción al día y la imagen carga más rápido.
+- Los avisos de la app (recordatorio diario y actualización obligatoria) llaman
+  al juego Banderas del Mundo.
+
 ## [2.8.1] - 2026-10-13
 
 ### Cambiado
