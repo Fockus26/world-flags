@@ -96,3 +96,38 @@ export function insertRequeuedCard(
 
 	return next;
 }
+
+/**
+ * Estado de la cola de una sesión. `queue[0]` es la tarjeta en pantalla;
+ * `turn` sube en cada calificación, aunque la tarjeta siguiente sea la misma.
+ * Quien muestra la tarjeta reinicia su estado por turno y no por código: una
+ * bandera reencolada sin nada detrás (`insertRequeuedCard([], code)`) vuelve
+ * a salir enseguida con el mismo código, y un reinicio atado al código no
+ * corría — la sesión de Países se quedaba sin poder calificar (P55, D194).
+ */
+export interface PracticeQueueState {
+	queue: readonly string[];
+	turn: number;
+}
+
+export interface PracticeQueueStep {
+	state: PracticeQueueState;
+	/** La tarjeta calificada era la última y no se reencola: fin de la sesión. */
+	finished: boolean;
+}
+
+/** Avanza la cola tras calificar la tarjeta actual (`state.queue[0]`). */
+export function advancePracticeQueue(
+	state: PracticeQueueState,
+	requeue: boolean,
+): PracticeQueueStep {
+	const [currentCode, ...rest] = state.queue;
+	if (currentCode === undefined) return { state, finished: true };
+
+	const queue = requeue ? insertRequeuedCard(rest, currentCode) : rest;
+
+	return {
+		state: { queue, turn: state.turn + 1 },
+		finished: queue.length === 0,
+	};
+}

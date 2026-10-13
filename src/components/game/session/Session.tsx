@@ -116,11 +116,13 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	// abandonar, para que esas esperas no cuenten como tiempo de carrera.
 	const isClockPausedRef = useRef(false);
 	const exitModalOpenedAtRef = useRef<number | null>(null);
-	// Código de la bandera a la que pertenece el `timeLeft` actual: al avanzar
-	// de bandera, el efecto del cronómetro necesita reiniciar el conteo en el
-	// mismo pase en el que detecta el cambio, antes de evaluar si expiró —
-	// si no, lee el `timeLeft` viejo (0) de la bandera anterior y salta dos.
-	const timerCodeRef = useRef<string | null>(null);
+	// Clave (código + turno de la cola) de la bandera a la que pertenece el
+	// `timeLeft` actual: al avanzar de bandera, el efecto del cronómetro
+	// necesita reiniciar el conteo en el mismo pase en el que detecta el
+	// cambio, antes de evaluar si expiró — si no, lee el `timeLeft` viejo (0)
+	// de la bandera anterior y salta dos. Con el turno, una bandera reencolada
+	// que vuelve enseguida con el mismo código también arranca de cero (D194).
+	const timerKeyRef = useRef<string | null>(null);
 	// Qué admite la tarjeta actual: responderla ("idle") o calificarla
 	// ("answered"). `answerStatus` no sirve de guarda: un manejador lee el
 	// valor de su render, así que dos Enter seguidos, o dos pulsaciones de
@@ -223,9 +225,10 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		// cronómetro se quedaría congelado desde el inicio. Usar el valor
 		// calculado también evita el problema original (leer el `timeLeft` de
 		// la bandera anterior y disparar un segundo skip).
-		const isNewCard = timerCodeRef.current !== practiceQueue.currentCode;
+		const timerKey = `${practiceQueue.currentCode}:${practiceQueue.turn}`;
+		const isNewCard = timerKeyRef.current !== timerKey;
 		if (isNewCard) {
-			timerCodeRef.current = practiceQueue.currentCode;
+			timerKeyRef.current = timerKey;
 			setTimeLeft(timerDuration);
 		}
 		const effectiveTimeLeft = isNewCard ? timerDuration : timeLeft;
@@ -242,6 +245,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		isTimedPractice,
 		timerDuration,
 		practiceQueue.currentCode,
+		practiceQueue.turn,
 		timeLeft,
 		answerStatus,
 		isExitModalOpen,

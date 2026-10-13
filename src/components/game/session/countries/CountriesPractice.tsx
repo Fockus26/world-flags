@@ -89,7 +89,9 @@ export function CountriesPractice({
 	const exitModalOpenedAtRef = useRef<number | null>(null);
 	// Evita que un tecleo 1-4 repetido rápido dispare dos calificaciones para
 	// la misma tarjeta (hallazgo pre-existente en el rush de banderas; acá se
-	// evita desde el principio). Se libera al cambiar de tarjeta.
+	// evita desde el principio). Se libera en cada turno de la cola, no al
+	// cambiar de código: la última bandera reencolada vuelve con el mismo
+	// código y el guard se quedaba tomado (P55, D194).
 	const isGradingRef = useRef(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
@@ -157,13 +159,14 @@ export function CountriesPractice({
 		}
 	}, []);
 
-	// Tarjeta nueva: pistas y guard de calificación arrancan de cero.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: se depende de practiceQueue.currentCode a propósito para disparar el reinicio al cambiar de tarjeta, aunque el cuerpo no lo lea directamente
+	// Turno nuevo (aunque sea la misma bandera reencolada, D194): pistas y
+	// guard de calificación arrancan de cero.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: se depende de practiceQueue.turn a propósito para disparar el reinicio en cada tarjeta, aunque el cuerpo no lo lea directamente
 	useEffect(() => {
 		setHintLetters(0);
 		setHintAnnouncement("");
 		isGradingRef.current = false;
-	}, [practiceQueue.currentCode]);
+	}, [practiceQueue.turn]);
 
 	// Lleva el hueco objetivo a la vista al cambiar de tarjeta — el resto del
 	// tablero puede ser más alto que lo visible (continentes grandes).
@@ -185,7 +188,7 @@ export function CountriesPractice({
 	const timeLeft = useCardCountdown({
 		enabled: isTimedPractice,
 		duration: timerDuration,
-		cardCode: practiceQueue.currentCode,
+		cardKey: `${practiceQueue.currentCode}:${practiceQueue.turn}`,
 		isPaused: answerStatus !== "idle" || isExitModalOpen,
 		onExpire: handleSkip,
 	});

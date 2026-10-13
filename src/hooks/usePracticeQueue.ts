@@ -2,10 +2,11 @@ import { useRef, useState } from "react";
 import type { CountriesLearningHistory, ReviewGrade } from "@/types/progress";
 import { isCountryLearned } from "@/utils/learning-storage";
 import {
+	advancePracticeQueue,
 	decideRequeue,
 	decideReviewCount,
-	insertRequeuedCard,
 	type PracticeCardState,
+	type PracticeQueueState,
 	type ReviewSessionPhase,
 } from "@/utils/practice-queue";
 
@@ -43,7 +44,12 @@ export function usePracticeQueue({
 	onFinish,
 }: UsePracticeQueueOptions) {
 	const [totalCount] = useState(initialCodes.length);
-	const [queue, setQueue] = useState<string[]>(initialCodes);
+	// Cola y turno juntos: avanzan en el mismo despacho (ver
+	// `advancePracticeQueue`).
+	const [queueState, setQueueState] = useState<PracticeQueueState>(() => ({
+		queue: initialCodes,
+		turn: 0,
+	}));
 	// Los códigos (no solo cuántos): la tarjeta cloze de Países los marca en
 	// el tablero y los cuenta en el encabezado de cada continente.
 	const [completedCodes, setCompletedCodes] = useState<ReadonlySet<string>>(
@@ -63,7 +69,7 @@ export function usePracticeQueue({
 		),
 	);
 
-	const currentCode = queue[0] ?? null;
+	const currentCode = queueState.queue[0] ?? null;
 
 	function grade(gradeValue: ReviewGrade) {
 		if (!currentCode) return;
@@ -91,25 +97,33 @@ export function usePracticeQueue({
 		);
 		cardStateRef.current[currentCode] = nextState;
 
-		const rest = queue.slice(1);
-
-		if (requeue) {
-			setQueue(insertRequeuedCard(rest, currentCode));
-			return;
+		if (!requeue) {
+			setCompletedCodes((previous) => new Set(previous).add(currentCode));
 		}
 
-		setCompletedCodes((previous) => new Set(previous).add(currentCode));
+		const { state: nextQueueState, finished } = advancePracticeQueue(
+			queueState,
+			requeue,
+		);
 
-		if (rest.length === 0) {
+		// Al terminar la cola se deja como está: la última tarjeta sigue en
+		// pantalla hasta que `onFinish` desmonta la sesión.
+		if (finished) {
 			onFinish();
 			return;
 		}
 
-		setQueue(rest);
+		setQueueState(nextQueueState);
 	}
 
 	return {
 		currentCode,
+		/**
+		 * Sube en cada calificación. El estado de la tarjeta en pantalla
+		 * (guardas, pistas, temporizador) se reinicia por turno: una bandera
+		 * reencolada puede volver enseguida con el mismo `currentCode` (D194).
+		 */
+		turn: queueState.turn,
 		totalCount,
 		completedCount: completedCodes.size,
 		completedCodes,
