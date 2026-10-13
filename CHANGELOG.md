@@ -9,6 +9,13 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.8.1] - 2026-10-13
+
+### Cambiado
+
+- Los botones Todos y Ninguno del selector de países ya no saltan al cambiar y
+  se ven más discretos.
+
 ## [2.8.0] - 2026-10-13
 
 ### Añadido
