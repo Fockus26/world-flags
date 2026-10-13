@@ -9,6 +9,19 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.8.0] - 2026-10-13
+
+### Añadido
+
+- Nuevo botón de dado para ver más avatares en tu perfil.
+
+### Corregido
+
+- Mejor contraste en algunos enlaces de color morado.
+- En el selector de países ya puedes tocar en cualquier parte de la fila del
+  continente o del país.
+- Ya puedes cerrar el tutorial con la tecla Escape.
+
 ## [2.7.1] - 2026-10-12
 
 ### Cambiado
