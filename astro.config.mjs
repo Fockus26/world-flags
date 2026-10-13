@@ -31,7 +31,7 @@ export default defineConfig({
 		// esto, Vite las descubre de forma perezosa y reoptimiza a mitad de
 		// carga -> 504 "Outdated Optimize Dep" y la isla no hidrata.
 		optimizeDeps: {
-			include: ["react", "react-dom", "@heroui/react", "react-aria-components", "framer-motion"],
+			include: ["react", "react-dom", "@heroui/react", "react-aria-components"],
 		},
 	},
 });

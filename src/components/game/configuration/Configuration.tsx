@@ -348,10 +348,18 @@ export function Configuration() {
 							min-[44rem]:text-3xl
 						"
 					>
+						{/* El skeleton es `aria-hidden` y su texto, invisible: sin el
+						    `sr-only`, el HTML prerenderizado (siempre en carga) traía un
+						    `h1` sin texto legible (D197). Lleva el título del juego por
+						    defecto; la sección está `inert` mientras carga, así que el
+						    lector no lo oye hasta que llega el real. */}
 						{isInitialLoad ? (
-							<Skeleton shape="line" className="w-fit max-w-full">
-								{title}
-							</Skeleton>
+							<>
+								<span className="sr-only">{title}</span>
+								<Skeleton shape="line" className="w-fit max-w-full">
+									{title}
+								</Skeleton>
+							</>
 						) : (
 							title
 						)}
