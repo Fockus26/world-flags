@@ -5,8 +5,13 @@ interface UseCardCountdownOptions {
 	enabled: boolean;
 	/** Segundos con los que arranca cada tarjeta nueva. */
 	duration: number;
-	/** Identifica la tarjeta actual: al cambiar, el conteo se reinicia. */
-	cardCode: string | null;
+	/**
+	 * Identifica la tarjeta en pantalla: al cambiar, el conteo se reinicia.
+	 * Código + turno de la cola, no solo el código: una bandera reencolada
+	 * puede volver enseguida con el mismo código y debe empezar con el
+	 * tiempo completo (D194).
+	 */
+	cardKey: string | null;
 	/** El conteo se congela mientras esto sea `true` (respuesta ya calificada, modal abierto…). */
 	isPaused: boolean;
 	/** Se llama cuando el tiempo llega a 0 en la tarjeta actual. */
@@ -23,16 +28,16 @@ interface UseCardCountdownOptions {
 export function useCardCountdown({
 	enabled,
 	duration,
-	cardCode,
+	cardKey,
 	isPaused,
 	onExpire,
 }: UseCardCountdownOptions): number {
 	const [timeLeft, setTimeLeft] = useState<number>(duration);
-	// Código de la tarjeta a la que pertenece el `timeLeft` actual: al avanzar
+	// Clave de la tarjeta a la que pertenece el `timeLeft` actual: al avanzar
 	// de tarjeta, el efecto necesita reiniciar el conteo en el mismo pase en
 	// el que detecta el cambio, antes de evaluar si expiró — si no, lee el
 	// `timeLeft` viejo (0) de la tarjeta anterior y salta dos.
-	const cardCodeRef = useRef<string | null>(null);
+	const cardKeyRef = useRef<string | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: onExpire estabilizado por React Compiler (ver docs/components.md)
 	useEffect(() => {
@@ -48,9 +53,9 @@ export function useCardCountdown({
 		// quedaría congelado desde el inicio. Usar el valor calculado también
 		// evita el problema original (leer el `timeLeft` de la tarjeta
 		// anterior y disparar un segundo "saltar").
-		const isNewCard = cardCodeRef.current !== cardCode;
+		const isNewCard = cardKeyRef.current !== cardKey;
 		if (isNewCard) {
-			cardCodeRef.current = cardCode;
+			cardKeyRef.current = cardKey;
 			setTimeLeft(duration);
 		}
 		const effectiveTimeLeft = isNewCard ? duration : timeLeft;
@@ -63,7 +68,7 @@ export function useCardCountdown({
 			setTimeLeft((currentValue) => currentValue - 1);
 		}, 1000);
 		return () => window.clearTimeout(timeoutId);
-	}, [enabled, duration, cardCode, timeLeft, isPaused]);
+	}, [enabled, duration, cardKey, timeLeft, isPaused]);
 
 	return timeLeft;
 }
