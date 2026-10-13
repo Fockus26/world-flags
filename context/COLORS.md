@@ -24,7 +24,7 @@
 | accent-foreground | `#ffffff` | texto sobre relleno `--accent` (opción marcada de `OptionTile`, primitivos HeroUI). 4,66:1. Antes `#f7f6ff` = 4,34:1, fallaba AA (D106) |
 | primary-hover | `#5b4bdb` | |
 | primary-soft | `#ecebfe` | fondos suaves, botón `soft` |
-| secondary | `#b34bd1` · hover `#9b3ab8` | acentos secundarios: fondo del botón "Práctica diaria", bordes, barra de progreso, casillas del picker. **Como texto falla AA** (4,34:1 sobre blanco, 3,86:1 sobre `background`, 3,81:1 sobre `surface-hover`): el texto morado va en `secondary-hover` (5,69 / 5,07 / 5,00:1; D187, D192) |
+| secondary | `#b34bd1` · hover `#9b3ab8` | acentos secundarios: bordes, barra de progreso, casillas del picker. **Como texto falla AA** (4,34:1 sobre blanco, 3,86:1 sobre `background`, 3,81:1 sobre `surface-hover`): el texto morado va en `secondary-hover` (5,69 / 5,07 / 5,00:1; D187, D192). Tampoco sirve de relleno con texto blanco: el botón `contained` ("Práctica diaria") pinta `secondary-hover` (D195) |
 | background (`--background`) | `#f2f1f8` | fondo de página (gris lavanda) |
 | surface (`--app-color-surface` / `--surface`) | `#ffffff` | tarjetas, modales |
 | surface-hover | `#f1eff9` | |
@@ -35,13 +35,13 @@
 | field-border | `#817bab` | borde de input: 3,92:1 sobre blanco, 3,49:1 sobre `background`, 3,00:1 sobre `field-background` (D174; antes `#9c96c4`, 2,77:1) |
 | success | `#1fa971` · soft `#e3f8ee` · hover `#178a5c` | correcto, "Bien"/"Fácil". **Como texto da 2.71:1 y falla AA** — igual que `primary`, usar `success-hover` para texto/icono con acento y reservar `success` para fondo/borde |
 | warning | `#d97a13` · soft `#fdf0dc` | "Difícil" |
-| danger | `#e0435f` · soft `#fde8ec` | incorrecto, "Otra vez", "Cerrar"/"Abandonar" |
+| danger | `#e0435f` · hover `#c22e49` · soft `#fde8ec` | incorrecto, "Otra vez", "Cerrar"/"Abandonar". Blanco encima da 4,08:1: el botón `contained` ("Sí, abandonar", "Cerrar sesión") pinta `danger-hover` (5,55:1; D195) |
 | neutral | `#57536b` · soft `#eeedf6` | botones neutros, "Cancelar" |
 | medal-gold / -silver / -bronze | `#835600` · soft `#fcefc7` / `#545d6e` · soft `#e9edf3` / `#8f481e` · soft `#f9e4d6` | podio del ranking (D147): el tono vale como texto, icono y borde (≥4,5:1 sobre su soft, el modal y `primary-soft`); el soft es el fondo de la fila |
 | overlay (`--overlay`) | `#ffffff` | **fondo** de modal/popover/tooltip de HeroUI (opaco) |
 | skeleton (`--surface-tertiary`) | = `surface-border` (`#e2dff1`) | relleno del `Skeleton` de HeroUI (al 70 %, brillo al 100 %). Puenteado con `var()`, no es un color nuevo — en oscuro sale `#34304a` solo (D043) |
 | backdrop (`--backdrop`) | `rgb(28 20 46 / 55%)` | scrim tras el modal |
-| btn-contained-fg | `#ffffff` | texto de botones `contained` (blanco en claro) |
+| btn-contained-fg | `#ffffff` | texto de botones `contained` (blanco en claro). `secondary` y `danger` contained rellenan con su `-hover` (D195) |
 | selection.bg / selection.text | PENDIENTE | `::selection` (hoy el del navegador). Unidad en `plans/pendientes.md` (P39); contraste ≥ 4,5:1 |
 
 ## Dark mode (roles principales)
@@ -84,6 +84,23 @@
   `secondary` no se cambia: lo usan fondos, bordes y la barra de progreso (≥3:1 no texto).
 - El texto danger como `text` variant (`#e0435f` sobre blanco = 4.09:1) queda al
   filo; si vuelve a aparecer un fallo, subir a `--color-danger-hover` (`#c22e49`).
+- **Botón `contained` de `secondary` y `danger`** (D195): el relleno en reposo es el token
+  `-hover` y el hover/pulsado lo oscurece con `color-mix(in oklab, <-hover> 86%, black)`,
+  como `success`. Texto `btn-contained-fg`:
+
+  | Color | Tema | Reposo | Hover/pulsado |
+  |---|---|---|---|
+  | secondary | claro (blanco) | `#9b3ab8` 5,69:1 (antes `#b34bd1` 4,34:1) | `#7e2e96` 7,73:1 |
+  | secondary | oscuro (`#14121f`) | `#eab8f0` 11,10:1 (antes 8,89:1) | `#bf96c4` 7,37:1 |
+  | danger | claro (blanco) | `#c22e49` 5,55:1 (antes `#e0435f` 4,08:1) | `#9e243a` 7,59:1 |
+  | danger | oscuro (`#14121f`) | `#f6a0b1` 9,31:1 (antes 6,74:1) | `#c98290` 6,23:1 |
+
+  En oscuro el hover deja de aclarar y pasa a oscurecer (el texto es oscuro): sigue
+  ≥6,2:1. Las variantes `soft`/`outline`/`text` no cambian.
+- **Nota de Resultados** (`getScoreColor` sobre `getScoreBackgroundColor`, D196): en oscuro
+  el color es L 68 % salvo cuando no llega a 4,8:1 contra su fondo, que se aclara lo justo
+  (hoy solo la nota 1: L 70 %, 4,88:1; antes 4,57:1). En claro **no cambia** y las notas
+  3–10 fallan como texto (2,1–3,8:1): pendiente escalado en D196.
 - Los logros desbloqueados (`AchievementsModal`, `AchievementToasts`) van en
   verde por fondo/borde/icono — nunca por texto: `success` sobre `success-soft`
   da 2.71:1 en claro. El nombre se queda en `text-surface-soft`, el icono en
