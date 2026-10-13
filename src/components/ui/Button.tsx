@@ -45,7 +45,16 @@ export interface ButtonProps {
  */
 const brand: Record<
 	ButtonColor,
-	{ base: string; hover: string; soft: string }
+	{
+		base: string;
+		hover: string;
+		soft: string;
+		/**
+		 * Relleno propio de `contained` cuando el base no da 4,5:1 con
+		 * `--btn-contained-fg` (D195). Sin él, `contained` usa `base`/`hover`.
+		 */
+		contained?: { base: string; hover: string };
+	}
 > = {
 	primary: {
 		base: "var(--color-primary)",
@@ -56,11 +65,24 @@ const brand: Record<
 		base: "var(--color-secondary)",
 		hover: "var(--color-secondary-hover)",
 		soft: "var(--color-secondary-soft)",
+		// D195: blanco sobre `secondary` = 4,34:1 en claro. El relleno pasa
+		// al `-hover` (5,69:1) y el hover/pressed lo oscurece como `success`
+		// (claro 7,74:1; oscuro, texto oscuro, 11,10 → 7,38:1).
+		contained: {
+			base: "var(--color-secondary-hover)",
+			hover: "color-mix(in oklab, var(--color-secondary-hover) 86%, black)",
+		},
 	},
 	danger: {
 		base: "var(--color-danger)",
 		hover: "var(--color-danger-hover)",
 		soft: "var(--color-danger-soft)",
+		// D195: blanco sobre `danger` = 4,08:1 en claro → `-hover` (5,55:1);
+		// hover/pressed 7,58:1 (oscuro 9,31 → 6,24:1).
+		contained: {
+			base: "var(--color-danger-hover)",
+			hover: "color-mix(in oklab, var(--color-danger-hover) 86%, black)",
+		},
 	},
 	warning: {
 		base: "var(--color-warning)",
@@ -105,14 +127,16 @@ function colorVars(color: ButtonColor, variant: ButtonVariant): CSSProperties {
 	} as Record<string, string>;
 
 	switch (variant) {
-		case "contained":
+		case "contained": {
+			const solid = c.contained ?? c;
 			Object.assign(style, {
-				"--button-bg": c.base,
-				"--button-bg-hover": c.hover,
-				"--button-bg-pressed": c.hover,
+				"--button-bg": solid.base,
+				"--button-bg-hover": solid.hover,
+				"--button-bg-pressed": solid.hover,
 				"--button-fg": "var(--btn-contained-fg)",
 			});
 			break;
+		}
 		case "soft":
 			// Hover/press: se ahonda el tinte suave (sin llegar al color pleno),
 			// así el texto `readableFg` mantiene contraste AA en todos los
