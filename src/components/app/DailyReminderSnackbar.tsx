@@ -27,7 +27,7 @@ const EXPLANATIONS: Record<ExplainedResult, Explanation> = {
 	denied: {
 		emoji: "🔕",
 		title: "Las notificaciones están bloqueadas",
-		body: "Este navegador no deja que World Flags te mande avisos. Para activarlos, abre los permisos del sitio (el icono junto a la dirección web), permite las notificaciones y pulsa «Reintentar».",
+		body: "Este navegador no deja que Banderas del Mundo te mande avisos. Para activarlos, abre los permisos del sitio (el icono junto a la dirección web), permite las notificaciones y pulsa «Reintentar».",
 		canRetry: true,
 	},
 	failed: {
@@ -39,13 +39,13 @@ const EXPLANATIONS: Record<ExplainedResult, Explanation> = {
 	"ios-needs-install": {
 		emoji: "📲",
 		title: "Instala la app para recibir avisos",
-		body: "En iPhone y iPad los avisos solo funcionan con World Flags instalada: en Safari, toca Compartir y luego «Añadir a pantalla de inicio», y ábrela desde ahí.",
+		body: "En iPhone y iPad los avisos solo funcionan con Banderas del Mundo instalada: en Safari, toca Compartir y luego «Añadir a pantalla de inicio», y ábrela desde ahí.",
 		canRetry: false,
 	},
 	"insecure-context": {
 		emoji: "🔒",
 		title: "Los avisos necesitan una conexión segura",
-		body: "El navegador solo permite avisos en páginas con https. Abre World Flags desde su dirección segura para activarlos.",
+		body: "El navegador solo permite avisos en páginas con https. Abre Banderas del Mundo desde su dirección segura para activarlos.",
 		canRetry: false,
 	},
 	unsupported: {

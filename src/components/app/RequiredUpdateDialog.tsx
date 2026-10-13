@@ -5,7 +5,7 @@ import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 
 const TITLE = "Hay que actualizar";
 const DESCRIPTION =
-	"Esta versión de World Flags ya no es compatible. Actualiza para seguir jugando; tu progreso guardado se conserva.";
+	"Esta versión de Banderas del Mundo ya no es compatible. Actualiza para seguir jugando; tu progreso guardado se conserva.";
 const ACTION = "Actualizar";
 const ACTION_PENDING = "Actualizando…";
 

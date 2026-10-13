@@ -58,7 +58,7 @@ self.addEventListener("message", (event) => {
 // Recordatorio diario: la Edge Function `send-daily-reminders` manda un push
 // con `{ title, body }` en el payload JSON.
 self.addEventListener("push", (event) => {
-	let payload = { title: "World Flags", body: "Tienes un recordatorio nuevo." };
+	let payload = { title: "Banderas del Mundo", body: "Tienes un recordatorio nuevo." };
 
 	try {
 		if (event.data) payload = { ...payload, ...event.data.json() };
