@@ -80,6 +80,60 @@ function CountryCheckbox({
 	);
 }
 
+const REGION_BULK_LABELS = ["Ninguno", "Todos"] as const;
+
+interface RegionBulkButtonProps {
+	label: (typeof REGION_BULK_LABELS)[number];
+	/** Nombre del continente, para el nombre accesible. */
+	regionName: string;
+	onPress: () => void;
+}
+
+/**
+ * "Ninguno"/"Todos" de la cabecera de un continente (D191). Las dos palabras
+ * se apilan en la misma celda de un `grid` y la que no toca queda
+ * `invisible` (fuera del nombre accesible), así los dos botones miden lo que
+ * la más larga y al cambiar uno por otro la fila no salta.
+ *
+ * Tenues en reposo: `font-semibold` y `text-placeholder` (4,71:1 sobre
+ * `surface-hover` en claro, 5,89:1 en oscuro). Con el puntero encima vuelve
+ * el acento (`secondary-hover`, 5,69:1 sobre `surface` en claro) junto con
+ * el fondo, así el hover no depende solo del color.
+ *
+ * Nombre accesible con el continente (WCAG 2.4.6): con ocho filas, ocho
+ * "Todos" iguales no se distinguen en la lista de botones del lector. Empieza
+ * por la palabra visible para cumplir también "etiqueta en el nombre" (2.5.3).
+ */
+function RegionBulkButton({
+	label,
+	regionName,
+	onPress,
+}: RegionBulkButtonProps) {
+	const accessibleName =
+		label === "Todos"
+			? `Todos: marcar los países de ${regionName}`
+			: `Ninguno: desmarcar los países de ${regionName}`;
+
+	return (
+		<button
+			type="button"
+			aria-label={accessibleName}
+			className="grid cursor-pointer place-items-center border-0 bg-transparent px-2.5 text-tiny font-semibold text-text-placeholder transition-colors hover:bg-surface hover:text-secondary-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
+			onClick={onPress}
+		>
+			{REGION_BULK_LABELS.map((word) => (
+				<span
+					key={word}
+					className={`col-start-1 row-start-1${word === label ? "" : " invisible"}`}
+					aria-hidden={word === label ? undefined : true}
+				>
+					{word}
+				</span>
+			))}
+		</button>
+	);
+}
+
 export function CountryPickerModal({
 	isOpen,
 	onClose,
@@ -239,6 +293,12 @@ export function CountryPickerModal({
 									type="button"
 									onClick={() => toggleRegionExpanded(region)}
 									aria-expanded={isExpanded}
+									// El contador sin palabras se leía pegado al nombre ("Europa45").
+									aria-label={`${REGION_LABELS[region]}, ${
+										selectedCount > 0
+											? `${selectedCount} de ${regionCodes.length} países elegidos`
+											: `${regionCodes.length} países`
+									}`}
 									className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent py-2 pr-2 pl-2.5 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-surface-soft sm:min-h-9"
 								>
 									<NavArrowDown
@@ -256,22 +316,18 @@ export function CountryPickerModal({
 								</button>
 								<div className="flex shrink-0 items-stretch">
 									{selectedCount > 0 && (
-										<button
-											type="button"
-											className="flex cursor-pointer items-center border-0 bg-transparent px-2.5 text-tiny font-bold text-secondary-hover transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
-											onClick={() => toggleAllInRegion(regionCodes, true)}
-										>
-											Ninguno
-										</button>
+										<RegionBulkButton
+											label="Ninguno"
+											regionName={REGION_LABELS[region]}
+											onPress={() => toggleAllInRegion(regionCodes, true)}
+										/>
 									)}
 									{!allSelected && (
-										<button
-											type="button"
-											className="flex cursor-pointer items-center border-0 bg-transparent px-2.5 text-tiny font-bold text-secondary-hover transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
-											onClick={() => toggleAllInRegion(regionCodes, false)}
-										>
-											Todos
-										</button>
+										<RegionBulkButton
+											label="Todos"
+											regionName={REGION_LABELS[region]}
+											onPress={() => toggleAllInRegion(regionCodes, false)}
+										/>
 									)}
 								</div>
 							</div>
