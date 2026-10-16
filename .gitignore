@@ -34,9 +34,10 @@ pnpm-debug.log*
 /blob-report/
 /.playwright/
 
-# supabase: esquema SQL y edge functions son privados (solo se sube el README)
-/supabase/*
-!/supabase/README.md
+# supabase: va en git (D199); solo lo local de la CLI
+/supabase/.temp/
+/supabase/.branches/
+/supabase/.env*
 
 # context volátil: vive solo en local (se suben solo los documentos fijos)
 /context/CURRENT_PHASE.md
@@ -52,3 +53,10 @@ pnpm-debug.log*
 # salidas de Claude Design (en cualquier carpeta)
 *.dc.html
 **/design-canvas/
+
+# PR screenshots (web-agent-kit)
+.pr-shots/
+.pr-shots.json
+
+# QA scripts y logs (web-agent-kit)
+.qa/

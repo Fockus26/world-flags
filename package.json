@@ -13,8 +13,13 @@
 		"format": "biome format ./src --write",
 		"lint": "biome check ./src --write",
 		"test": "bun test ./tests/unit",
+		"test:related": "bun scripts/test-related.ts",
 		"test:e2e": "playwright test",
-		"qa:local": "node scripts/qa-local.ts"
+		"shots": "node scripts/pr-screenshots.ts .pr-shots.json",
+		"shots:publish": "bash scripts/publish-pr-shots.sh .pr-shots",
+		"qa:local": "node scripts/qa-local.ts",
+		"context:backup": "bash scripts/context-backup.sh",
+		"context:restore": "bash scripts/context-backup.sh --restore"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.10",
@@ -33,10 +38,12 @@
 		"typescript": "^5.9.2"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.14.0",
 		"@biomejs/biome": "2.5.7",
 		"@changesets/cli": "^3.0.3",
 		"@playwright/test": "^1.63.0",
 		"@tailwindcss/vite": "^4.3.3",
+		"@types/bun": "^1.4.3",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.4",
 		"babel-plugin-react-compiler": "^1.0.0",

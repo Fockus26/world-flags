@@ -43,6 +43,7 @@
 | backdrop (`--backdrop`) | `rgb(28 20 46 / 55%)` | scrim tras el modal |
 | btn-contained-fg | `#ffffff` | texto de botones `contained` (blanco en claro). `secondary` y `danger` contained rellenan con su `-hover` (D195) |
 | selection.bg / selection.text | PENDIENTE | `::selection` (hoy el del navegador). Unidad en `plans/pendientes.md` (P39); contraste ≥ 4,5:1 |
+| scrollbar.thumb / scrollbar.track | `--color-surface-border` (hover `--color-primary-border`) / transparente | scrollbar global (`global.css`), con tokens existentes. Contraste del thumb ≥ 3:1 sin medir |
 
 ## Dark mode (roles principales)
 
@@ -62,6 +63,7 @@
 | medal-gold / -silver / -bronze | `#f2c94c` · soft `#3a3015` / `#c5ccd8` · soft `#2c2f3d` / `#eba273` · soft `#3e2619` |
 | backdrop | `rgb(8 6 16 / 70%)` |
 | selection.bg / selection.text | PENDIENTE (P39) |
+| scrollbar.thumb / scrollbar.track | `--color-surface-border` (hover `--color-primary-border`) / transparente — se repinta con el tema; contraste ≥ 3:1 sin medir |
 
 ## Notas de contraste
 
