@@ -9,6 +9,15 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.8.3] - 2026-10-13
+
+### Corregido
+
+- Los botones "Práctica diaria" y "Sí, abandonar" tienen un color más oscuro
+  para que su texto se lea mejor.
+- En el tema oscuro, la nota baja de los resultados se lee mejor sobre su
+  círculo rojo.
+
 ## [2.8.2] - 2026-10-13
 
 ### Corregido
