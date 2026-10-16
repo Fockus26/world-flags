@@ -7,8 +7,8 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 **Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
-**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `prompts/ACTUALIZAR-KIT.md`
-del kit) · **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
+**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `/kit-update`) ·
+**Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
 
 ---
 
@@ -24,13 +24,13 @@ del kit) · **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por
 
 ### Qué está en el repo y qué vive solo en local
 
-En git: `.kit-version` y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
+En git: `.kit-version`, `supabase/` (D199) y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
 `DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
-Claude Design), `.env*` y todo `supabase/` salvo su `README.md` (SQL y edge functions
-son privados). Nunca van a git (ni con `git add -f`).
+Claude Design) y `.env*`; respaldo: `bun run context:backup`. Nunca van a git (ni con
+`git add -f`).
 Los slots del pool de worktrees (`orchestrate`, `..\world-flags-wt\wtN`, D136) traen los
 `.env*` copiados, pero **no** `context/` local: se lee (y actualiza) en la carpeta
 principal, `C:\Users\Admin\Documents\Work\world-flags\`. Un subagente en un slot que no
@@ -63,8 +63,8 @@ su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 
 **QA contra base local:** `bun run qa:local -- --port <p>` levanta Supabase en Docker
 (migraciones + seed), crea las cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`)
-y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/` es
-privado: en un slot se copia de la carpeta principal (D184). Playwright se corre con `node`.
+y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/`
+va en git (D199). Playwright se corre con `node`.
 
 **Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
 Supabase o Tailwind (cambian rápido).
@@ -147,5 +147,4 @@ Si un agente de QA no puede ejecutar, su reporte es revisión de código, marcad
 
 Cuando el dueño corrija algo hecho siguiendo el kit, pida lo mismo por segunda vez, haga a
 mano un paso que el kit podría hacer, o el kit no diga qué hacer: fila en
-`context/KIT_FEEDBACK.md` (o +1 en "Veces"). Sin preguntar; una línea de aviso. Si pide
-"el informe para el kit", sigue el formato de ese archivo.
+`context/KIT_FEEDBACK.md` (o +1 en "Veces"). Sin preguntar; una línea de aviso. Se envía al kit con `/kit-feedback`.
