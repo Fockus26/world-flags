@@ -1,0 +1,10 @@
+⚠️ Copy provisional (CONTENT_CHECKLIST.md #32). Pega en "Subject" solo la línea elegida.
+
+Asunto (recomendado):
+Confirma tu correo para empezar en World Flags
+
+Alternativa:
+World Flags: confirma tu correo y guarda tu progreso
+
+Nota: sin emojis en el asunto a propósito (la guía de entregabilidad de Supabase
+recomienda asuntos cortos y sin emojis en los correos de autenticación).

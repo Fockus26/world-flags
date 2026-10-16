@@ -1,0 +1,32 @@
+-- Aprender por lotes (rama `feat/recorrido-por-lotes`, D185): el aprendizaje
+-- por lotes en curso de cada juego, en una columna nueva.
+--
+-- `learning_paths` -> {
+--   "<gameType>": {
+--     "path": {
+--       "id", "createdAt", "scopeLabel", "order": "region"|"random",
+--       "batchSize": 3|5|10, "codes": [...], "knownCodes": [...],
+--       "progress": { "<code>": { "passDays": ["YYYY-MM-DD"], "consolidatedAt": "<ISO>"|null } }
+--     } | null,
+--     "updatedAt": "<ISO>"
+--   }
+-- }
+--
+-- RLS es por fila, no por columna: las políticas de `user_learning_data`
+-- cubren la columna nueva sin tocarlas.
+--
+-- Correr este script una sola vez en el SQL Editor de Supabase
+-- (https://supabase.com/dashboard/project/_/sql/new).
+--
+-- IMPORTANTE: correrlo ANTES de mergear y desplegar el cliente que lo usa. Si
+-- el cliente pide esta columna y todavía no existe, el `select` de
+-- `fetchRemoteLearningData` falla con error de servidor: toda cuenta
+-- autenticada se queda en modo `local` con el aviso "No se pudo sincronizar"
+-- y no sube nada hasta que la columna exista (D044/D050; mismo riesgo que
+-- `capitals-game.sql`).
+--
+-- Los clientes viejos (SW en caché) no se ven afectados: no piden la columna
+-- y, al subir, enumeran las suyas, así que tampoco la pisan.
+
+alter table public.user_learning_data
+	add column if not exists learning_paths jsonb not null default '{}'::jsonb;

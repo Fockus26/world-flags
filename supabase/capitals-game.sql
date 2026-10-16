@@ -1,0 +1,41 @@
+-- Modo de juego "Capitales" (rama `feat/modo-capitales`, D061): progreso de
+-- aprendizaje separado del de Banderas y del de Países.
+--
+-- Banderas sigue viviendo en las columnas de siempre (`country_history`,
+-- `region_game_scores`, `region_best_times`, `last_practice_by_country`);
+-- Países, en `countries_game` (`countries-game.sql`). Capitales guarda su
+-- propio historial de repetición espaciada, notas de práctica, mejores tiempos
+-- de rush y candado de "practicado hoy" en una única columna nueva, con la
+-- misma forma que `countries_game`:
+--
+-- `capitals_game` -> {
+--   "countryHistory": { "<code>": { "review": {...} | null } },
+--   "regionGameScores": { "<region>": [n, n, n] },
+--   "regionBestTimes": { "<region|world>": ms },
+--   "lastPracticeByCountry": { "<code>": "YYYY-MM-DD" },
+--   "regionGameScoresUpdatedAt": { "<region>": "<ISO>" }
+-- }
+--
+-- Lo compartido entre juegos (perfil, última configuración, logros,
+-- estadísticas, historial de sesiones) no se toca. El ranking de Capitales usa
+-- la tabla `leaderboard_entries` que ya existe, con scope `capitals:world`: su
+-- PK `(user_id, scope)` y `scope text` lo admiten sin cambios.
+--
+-- RLS es por fila, no por columna: las políticas que ya tenga
+-- `user_learning_data` cubren la columna nueva sin tocarlas.
+--
+-- Correr este script una sola vez en el SQL Editor de Supabase
+-- (https://supabase.com/dashboard/project/_/sql/new).
+--
+-- IMPORTANTE: correrlo ANTES de desplegar el cliente que lo usa. Si el cliente
+-- pide esta columna y todavía no existe, el `select` de
+-- `fetchRemoteLearningData` falla con error de servidor: toda cuenta
+-- autenticada se queda en modo `local` con el aviso "No se pudo sincronizar"
+-- y no sube nada hasta que la columna exista (D044/D050; mismo riesgo que
+-- `achievements.sql`, `countries-game.sql` y `field-updated-at.sql`).
+--
+-- Los clientes viejos (SW en caché) no se ven afectados: no piden la columna
+-- y, al subir, enumeran las suyas, así que tampoco la pisan.
+
+alter table public.user_learning_data
+	add column if not exists capitals_game jsonb not null default '{}'::jsonb;

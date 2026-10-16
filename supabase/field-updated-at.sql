@@ -1,0 +1,31 @@
+-- Modo offline (rama `feat/modo-offline`, D055): fecha del último cambio de
+-- los campos que no la tienen dentro del propio valor, para que al juntar dos
+-- dispositivos gane el cambio más reciente.
+--
+-- `field_updated_at` -> {
+--   "profile": "<ISO>" | null,              -- nombre y avatar
+--   "lastConfiguration": "<ISO>" | null,    -- continentes marcados, modo…
+--   "regionGameScores": { "<region>": "<ISO>" }  -- notas por continente (Banderas)
+-- }
+--
+-- Las fechas de las notas del modo Países van dentro de `countries_game`
+-- (`regionGameScoresUpdatedAt`), que ya es jsonb: no necesitan columna.
+--
+-- Una fila anterior queda con `{}`: el cliente lo lee como "sin fechas" y, para
+-- esos campos, decide contra la base de sincronización del dispositivo (D049)
+-- hasta que se vuelvan a cambiar. No hace falta rellenar nada.
+--
+-- RLS es por fila, no por columna: las políticas que ya tenga
+-- `user_learning_data` cubren la columna nueva sin tocarlas.
+--
+-- Correr este script una sola vez en el SQL Editor de Supabase
+-- (https://supabase.com/dashboard/project/_/sql/new).
+--
+-- IMPORTANTE: correrlo ANTES de desplegar el cliente que lo usa. Si el cliente
+-- pide esta columna y todavía no existe, el `select` de
+-- `fetchRemoteLearningData` falla con error de servidor: la app se queda en modo
+-- `local` con el aviso "No se pudo sincronizar" y no sube nada hasta que la
+-- columna exista (mismo riesgo que `achievements.sql` y `countries-game.sql`).
+
+alter table public.user_learning_data
+	add column if not exists field_updated_at jsonb not null default '{}'::jsonb;
