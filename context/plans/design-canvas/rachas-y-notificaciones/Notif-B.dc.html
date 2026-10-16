@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Silkscreen:wght@400;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: #6d5ef0; }
+    a:hover { color: #5b4bdb; }
+    .pixel { font-family: "Silkscreen", "Courier New", monospace; }
+    .chip { cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; }
+    .chip:active { transform: scale(0.98); }
+  </style>
+</helmet>
+
+<div style="min-height: 100%; width: 100%; background: {{pageBg}}; display: flex; justify-content: center; padding: 20px 16px 28px;">
+  <div style="width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 18px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="pixel" style="font-size: 11px; letter-spacing: 0.06em; color: {{primary}};">2 - TARJETA EN LA PANTALLA</span>
+      <span style="font-size: 12px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">El permiso se pide dentro de la tarjeta de configuración, con la hora ya elegida antes de aceptar. Toca una hora para cambiarla.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">a · Primera vez, con la versión nueva encima</span>
+
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+
+        <div style="display: flex; align-items: center; gap: 10px; border-radius: 12px; background: {{secondarySoft}}; border: 1px solid {{secondaryEdge}}; padding: 8px 10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{secondaryIcon}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"></path>
+            <path d="M20 4v4h-4"></path>
+            <path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"></path>
+            <path d="M4 20v-4h4"></path>
+          </svg>
+          <span style="flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; color: {{textMain}};">Versión nueva lista</span>
+          <div style="height: 30px; padding: 0 12px; border-radius: 30px; background: {{secondary}}; display: flex; align-items: center; flex-shrink: 0;">
+            <span style="font-size: 12px; font-weight: 500; color: {{btnFg}};">Actualizar</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 52px; height: 52px; border-radius: 999px; background: {{primarySoft}}; flex-shrink: 0;"></div>
+          <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <strong style="font-size: 16px; font-weight: 700; color: {{textMain}};">Explorador</strong>
+              <span style="font-size: 11.2px; font-weight: 600; color: {{textMuted}};">Invitado</span>
+            </div>
+            <span style="font-size: 11.5px; font-weight: 600; color: {{textMuted}};">14% · 27/196</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
+            <div style="width: 32px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px;">🏅</div>
+            <div style="width: 32px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px;">🏆</div>
+            <div style="width: 32px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px;">📍</div>
+          </div>
+        </div>
+
+        <div style="border-radius: 16px; background: {{primarySoft}}; border: 1px solid {{primaryEdge}}; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{primaryIcon}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;">
+              <path d="M18 9a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6z"></path>
+              <path d="M10 19a2 2 0 0 0 4 0"></path>
+            </svg>
+            <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px;">
+              <strong style="font-size: 14.4px; font-weight: 700; color: {{textMain}};">Que no se te pase la práctica</strong>
+              <span style="font-size: 12.5px; font-weight: 500; color: {{textMuted}}; line-height: 1.4;">Un aviso al día cuando tengas banderas vencidas. Nada más.</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{textMuted}}" stroke-width="2.2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 3px;">
+              <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+            <sc-for list="{{horas}}" as="hora" hint-placeholder-count="4">
+              <div class="chip" onClick="{{hora.pick}}" style="min-height: 40px; border-radius: 12px; border: {{hora.border}}; background: {{hora.bg}}; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 12px; font-weight: 700; color: {{hora.color}};">{{hora.label}}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 40px; border-radius: 36px; background: {{primary}}; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 14px; font-weight: 500; color: {{btnFg}};">{{ctaLabel}}</span>
+            </div>
+            <div style="height: 36px; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 13px; font-weight: 500; color: {{neutralText}};">No, gracias</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 24px; font-weight: 800; color: {{textMain}}; line-height: 1.15;">Aprende los países del mundo</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">b · Ya aceptado: la tarjeta se encoge a una fila</span>
+
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{primaryIcon}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <path d="M18 9a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6z"></path>
+          <path d="M10 19a2 2 0 0 0 4 0"></path>
+        </svg>
+        <span style="flex: 1; min-width: 0; font-size: 12.8px; font-weight: 600; color: {{textMain}};">Te aviso todos los días a las <strong style="font-weight: 800;">{{horaElegida}}</strong></span>
+        <span style="font-size: 12.5px; font-weight: 700; color: {{primaryIcon}}; flex-shrink: 0;">Cambiar</span>
+      </div>
+      <span style="font-size: 11px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">La notificación que llega al teléfono es la misma de la propuesta 1: la pinta el sistema operativo.</span>
+    </div>
+
+    <div style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.5;">Copy provisional, pendiente de tu aprobación. Si se elige esta ruta, va como fila nueva en CONTENT_CHECKLIST.md.</div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "theme": {"editor": "enum", "options": ["Claro", "Oscuro"], "default": "Claro", "section": "Tema"},
+  "$preview": {"width": 390, "height": 1000}
+}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { hora: "20:00" };
+  }
+
+  renderVals() {
+    const isDark = (this.props.theme ?? "Claro") === "Oscuro";
+
+    const p = isDark
+      ? {
+          pageBg: "#14121f", surface: "#1b1930", surfaceBorder: "#34304a",
+          textMain: "#f1eefc", textMuted: "#a29cc0",
+          primary: "#9b8bff", primarySoft: "#2c2650", primaryEdge: "#4b4180", primaryIcon: "#b9adff",
+          secondary: "#e19bec", secondarySoft: "#3a1f45", secondaryEdge: "#5c3566", secondaryIcon: "#edb9f5",
+          fieldBg: "#2b2740", fieldBorder: "#6f6a94",
+          btnFg: "#14121f", neutralText: "#c8c4dc"
+        }
+      : {
+          pageBg: "#f2f1f8", surface: "#ffffff", surfaceBorder: "#e2dff1",
+          textMain: "#1c1b2e", textMuted: "#6b6880",
+          primary: "#6d5ef0", primarySoft: "#ecebfe", primaryEdge: "#cfc8fb", primaryIcon: "#5b4bdb",
+          secondary: "#b34bd1", secondarySoft: "#f6e9fb", secondaryEdge: "#e6c6f2", secondaryIcon: "#9a34b8",
+          fieldBg: "#ffffff", fieldBorder: "#9c96c4",
+          btnFg: "#ffffff", neutralText: "#3f3b52"
+        };
+
+    const horas = ["09:00", "14:00", "20:00", "Otra"].map((label) => {
+      const selected = label === this.state.hora;
+
+      return {
+        label,
+        bg: selected ? p.primary : p.fieldBg,
+        border: selected ? "1px solid " + p.primary : "1px solid " + p.fieldBorder,
+        color: selected ? p.btnFg : p.textMain,
+        pick: () => this.setState({ hora: label })
+      };
+    });
+
+    return {
+      pageBg: p.pageBg,
+      surface: p.surface,
+      surfaceBorder: p.surfaceBorder,
+      textMain: p.textMain,
+      textMuted: p.textMuted,
+      primary: p.primary,
+      primarySoft: p.primarySoft,
+      primaryEdge: p.primaryEdge,
+      primaryIcon: p.primaryIcon,
+      secondary: p.secondary,
+      secondarySoft: p.secondarySoft,
+      secondaryEdge: p.secondaryEdge,
+      secondaryIcon: p.secondaryIcon,
+      btnFg: p.btnFg,
+      neutralText: p.neutralText,
+      horas,
+      horaElegida: this.state.hora === "Otra" ? "la hora que elijas" : this.state.hora,
+      ctaLabel: this.state.hora === "Otra" ? "Elegir hora y activar" : "Avísame a las " + this.state.hora
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1545 @@
+[
+ {
+  "code": "ca",
+  "name": "Canadá",
+  "region": "north-america",
+  "principal": "Ottawa",
+  "accepted": []
+ },
+ {
+  "code": "us",
+  "name": "Estados Unidos",
+  "region": "north-america",
+  "principal": "Washington D. C.",
+  "accepted": [
+   "Washington"
+  ]
+ },
+ {
+  "code": "mx",
+  "name": "México",
+  "region": "north-america",
+  "principal": "Ciudad de México",
+  "accepted": [
+   "México"
+  ]
+ },
+ {
+  "code": "bz",
+  "name": "Belice",
+  "region": "central-america",
+  "principal": "Belmopán",
+  "accepted": []
+ },
+ {
+  "code": "cr",
+  "name": "Costa Rica",
+  "region": "central-america",
+  "principal": "San José",
+  "accepted": []
+ },
+ {
+  "code": "sv",
+  "name": "El Salvador",
+  "region": "central-america",
+  "principal": "San Salvador",
+  "accepted": []
+ },
+ {
+  "code": "gt",
+  "name": "Guatemala",
+  "region": "central-america",
+  "principal": "Ciudad de Guatemala",
+  "accepted": [
+   "Guatemala"
+  ]
+ },
+ {
+  "code": "hn",
+  "name": "Honduras",
+  "region": "central-america",
+  "principal": "Tegucigalpa",
+  "accepted": []
+ },
+ {
+  "code": "ni",
+  "name": "Nicaragua",
+  "region": "central-america",
+  "principal": "Managua",
+  "accepted": []
+ },
+ {
+  "code": "pa",
+  "name": "Panamá",
+  "region": "central-america",
+  "principal": "Panamá",
+  "accepted": [
+   "Ciudad de Panamá"
+  ]
+ },
+ {
+  "code": "ag",
+  "name": "Antigua y Barbuda",
+  "region": "caribbean",
+  "principal": "Saint John’s",
+  "accepted": [
+   "St. John's"
+  ]
+ },
+ {
+  "code": "bs",
+  "name": "Bahamas",
+  "region": "caribbean",
+  "principal": "Nassau",
+  "accepted": [
+   "Nasáu"
+  ]
+ },
+ {
+  "code": "bb",
+  "name": "Barbados",
+  "region": "caribbean",
+  "principal": "Bridgetown",
+  "accepted": []
+ },
+ {
+  "code": "cu",
+  "name": "Cuba",
+  "region": "caribbean",
+  "principal": "La Habana",
+  "accepted": [
+   "Habana"
+  ]
+ },
+ {
+  "code": "dm",
+  "name": "Dominica",
+  "region": "caribbean",
+  "principal": "Roseau",
+  "accepted": []
+ },
+ {
+  "code": "gd",
+  "name": "Granada",
+  "region": "caribbean",
+  "principal": "Saint George’s",
+  "accepted": [
+   "St. George's"
+  ]
+ },
+ {
+  "code": "ht",
+  "name": "Haití",
+  "region": "caribbean",
+  "principal": "Puerto Príncipe",
+  "accepted": [
+   "Port-au-Prince"
+  ]
+ },
+ {
+  "code": "jm",
+  "name": "Jamaica",
+  "region": "caribbean",
+  "principal": "Kingston",
+  "accepted": []
+ },
+ {
+  "code": "do",
+  "name": "República Dominicana",
+  "region": "caribbean",
+  "principal": "Santo Domingo",
+  "accepted": []
+ },
+ {
+  "code": "kn",
+  "name": "San Cristóbal y Nieves",
+  "region": "caribbean",
+  "principal": "Basseterre",
+  "accepted": []
+ },
+ {
+  "code": "vc",
+  "name": "San Vicente y las Granadinas",
+  "region": "caribbean",
+  "principal": "Kingstown",
+  "accepted": []
+ },
+ {
+  "code": "lc",
+  "name": "Santa Lucía",
+  "region": "caribbean",
+  "principal": "Castries",
+  "accepted": []
+ },
+ {
+  "code": "tt",
+  "name": "Trinidad y Tobago",
+  "region": "caribbean",
+  "principal": "Puerto España",
+  "accepted": [
+   "Port of Spain"
+  ]
+ },
+ {
+  "code": "ar",
+  "name": "Argentina",
+  "region": "south-america",
+  "principal": "Buenos Aires",
+  "accepted": []
+ },
+ {
+  "code": "bo",
+  "name": "Bolivia",
+  "region": "south-america",
+  "principal": "Sucre",
+  "accepted": [
+   "La Paz"
+  ],
+  "note": "Sucre es la capital constitucional; La Paz, la sede del Gobierno.",
+  "decide": "capital doble"
+ },
+ {
+  "code": "br",
+  "name": "Brasil",
+  "region": "south-america",
+  "principal": "Brasilia",
+  "accepted": []
+ },
+ {
+  "code": "cl",
+  "name": "Chile",
+  "region": "south-america",
+  "principal": "Santiago",
+  "accepted": [
+   "Santiago de Chile"
+  ],
+  "note": "El Congreso está en Valparaíso.",
+  "decide": "Valparaíso NO vale (sede del Congreso, ninguna fuente la llama capital)"
+ },
+ {
+  "code": "co",
+  "name": "Colombia",
+  "region": "south-america",
+  "principal": "Bogotá",
+  "accepted": []
+ },
+ {
+  "code": "ec",
+  "name": "Ecuador",
+  "region": "south-america",
+  "principal": "Quito",
+  "accepted": []
+ },
+ {
+  "code": "gy",
+  "name": "Guyana",
+  "region": "south-america",
+  "principal": "Georgetown",
+  "accepted": []
+ },
+ {
+  "code": "py",
+  "name": "Paraguay",
+  "region": "south-america",
+  "principal": "Asunción",
+  "accepted": []
+ },
+ {
+  "code": "pe",
+  "name": "Perú",
+  "region": "south-america",
+  "principal": "Lima",
+  "accepted": []
+ },
+ {
+  "code": "sr",
+  "name": "Surinam",
+  "region": "south-america",
+  "principal": "Paramaribo",
+  "accepted": []
+ },
+ {
+  "code": "uy",
+  "name": "Uruguay",
+  "region": "south-america",
+  "principal": "Montevideo",
+  "accepted": []
+ },
+ {
+  "code": "ve",
+  "name": "Venezuela",
+  "region": "south-america",
+  "principal": "Caracas",
+  "accepted": []
+ },
+ {
+  "code": "al",
+  "name": "Albania",
+  "region": "europe",
+  "principal": "Tirana",
+  "accepted": []
+ },
+ {
+  "code": "de",
+  "name": "Alemania",
+  "region": "europe",
+  "principal": "Berlín",
+  "accepted": []
+ },
+ {
+  "code": "ad",
+  "name": "Andorra",
+  "region": "europe",
+  "principal": "Andorra la Vieja",
+  "accepted": [
+   "Andorra la Vella"
+  ]
+ },
+ {
+  "code": "at",
+  "name": "Austria",
+  "region": "europe",
+  "principal": "Viena",
+  "accepted": []
+ },
+ {
+  "code": "be",
+  "name": "Bélgica",
+  "region": "europe",
+  "principal": "Bruselas",
+  "accepted": []
+ },
+ {
+  "code": "by",
+  "name": "Bielorrusia",
+  "region": "europe",
+  "principal": "Minsk",
+  "accepted": []
+ },
+ {
+  "code": "ba",
+  "name": "Bosnia y Herzegovina",
+  "region": "europe",
+  "principal": "Sarajevo",
+  "accepted": []
+ },
+ {
+  "code": "bg",
+  "name": "Bulgaria",
+  "region": "europe",
+  "principal": "Sofía",
+  "accepted": []
+ },
+ {
+  "code": "va",
+  "name": "Ciudad del Vaticano",
+  "region": "europe",
+  "principal": "Ciudad del Vaticano",
+  "accepted": [
+   "Vaticano"
+  ],
+  "note": "La Santa Sede no tiene capital; la Ciudad del Vaticano es la del Estado."
+ },
+ {
+  "code": "hr",
+  "name": "Croacia",
+  "region": "europe",
+  "principal": "Zagreb",
+  "accepted": []
+ },
+ {
+  "code": "dk",
+  "name": "Dinamarca",
+  "region": "europe",
+  "principal": "Copenhague",
+  "accepted": []
+ },
+ {
+  "code": "sk",
+  "name": "Eslovaquia",
+  "region": "europe",
+  "principal": "Bratislava",
+  "accepted": []
+ },
+ {
+  "code": "si",
+  "name": "Eslovenia",
+  "region": "europe",
+  "principal": "Liubliana",
+  "accepted": []
+ },
+ {
+  "code": "es",
+  "name": "España",
+  "region": "europe",
+  "principal": "Madrid",
+  "accepted": []
+ },
+ {
+  "code": "ee",
+  "name": "Estonia",
+  "region": "europe",
+  "principal": "Tallin",
+  "accepted": []
+ },
+ {
+  "code": "fi",
+  "name": "Finlandia",
+  "region": "europe",
+  "principal": "Helsinki",
+  "accepted": []
+ },
+ {
+  "code": "fr",
+  "name": "Francia",
+  "region": "europe",
+  "principal": "París",
+  "accepted": []
+ },
+ {
+  "code": "gr",
+  "name": "Grecia",
+  "region": "europe",
+  "principal": "Atenas",
+  "accepted": []
+ },
+ {
+  "code": "hu",
+  "name": "Hungría",
+  "region": "europe",
+  "principal": "Budapest",
+  "accepted": []
+ },
+ {
+  "code": "ie",
+  "name": "Irlanda",
+  "region": "europe",
+  "principal": "Dublín",
+  "accepted": []
+ },
+ {
+  "code": "is",
+  "name": "Islandia",
+  "region": "europe",
+  "principal": "Reikiavik",
+  "accepted": []
+ },
+ {
+  "code": "it",
+  "name": "Italia",
+  "region": "europe",
+  "principal": "Roma",
+  "accepted": []
+ },
+ {
+  "code": "xk",
+  "name": "Kosovo",
+  "region": "europe",
+  "principal": "Pristina",
+  "accepted": [
+   "Prishtina"
+  ],
+  "decide": "Kosovo no figura en la lista de la UE; principal de Wikidata y Wikipedia"
+ },
+ {
+  "code": "lv",
+  "name": "Letonia",
+  "region": "europe",
+  "principal": "Riga",
+  "accepted": []
+ },
+ {
+  "code": "li",
+  "name": "Liechtenstein",
+  "region": "europe",
+  "principal": "Vaduz",
+  "accepted": []
+ },
+ {
+  "code": "lt",
+  "name": "Lituania",
+  "region": "europe",
+  "principal": "Vilna",
+  "accepted": []
+ },
+ {
+  "code": "lu",
+  "name": "Luxemburgo",
+  "region": "europe",
+  "principal": "Luxemburgo",
+  "accepted": [
+   "Ciudad de Luxemburgo"
+  ]
+ },
+ {
+  "code": "mk",
+  "name": "Macedonia del Norte",
+  "region": "europe",
+  "principal": "Skopie",
+  "accepted": [
+   "Escopia"
+  ]
+ },
+ {
+  "code": "mt",
+  "name": "Malta",
+  "region": "europe",
+  "principal": "La Valeta",
+  "accepted": [
+   "Valeta"
+  ]
+ },
+ {
+  "code": "md",
+  "name": "Moldavia",
+  "region": "europe",
+  "principal": "Chisináu",
+  "accepted": []
+ },
+ {
+  "code": "mc",
+  "name": "Mónaco",
+  "region": "europe",
+  "principal": "Mónaco",
+  "accepted": []
+ },
+ {
+  "code": "me",
+  "name": "Montenegro",
+  "region": "europe",
+  "principal": "Podgorica",
+  "accepted": [],
+  "note": "Cetiña es la antigua capital real.",
+  "decide": "Cetiña NO vale (antigua capital real, sede de la Presidencia)"
+ },
+ {
+  "code": "no",
+  "name": "Noruega",
+  "region": "europe",
+  "principal": "Oslo",
+  "accepted": []
+ },
+ {
+  "code": "nl",
+  "name": "Países Bajos",
+  "region": "europe",
+  "principal": "Ámsterdam",
+  "accepted": [],
+  "note": "La Haya es la sede del Gobierno, pero la capital es Ámsterdam.",
+  "decide": "La Haya NO vale (sede del Gobierno; ni la UE ni Wikidata la llaman capital)"
+ },
+ {
+  "code": "pl",
+  "name": "Polonia",
+  "region": "europe",
+  "principal": "Varsovia",
+  "accepted": []
+ },
+ {
+  "code": "pt",
+  "name": "Portugal",
+  "region": "europe",
+  "principal": "Lisboa",
+  "accepted": []
+ },
+ {
+  "code": "gb",
+  "name": "Reino Unido",
+  "region": "europe",
+  "principal": "Londres",
+  "accepted": []
+ },
+ {
+  "code": "cz",
+  "name": "República Checa",
+  "region": "europe",
+  "principal": "Praga",
+  "accepted": []
+ },
+ {
+  "code": "ro",
+  "name": "Rumanía",
+  "region": "europe",
+  "principal": "Bucarest",
+  "accepted": []
+ },
+ {
+  "code": "ru",
+  "name": "Rusia",
+  "region": "europe",
+  "principal": "Moscú",
+  "accepted": []
+ },
+ {
+  "code": "sm",
+  "name": "San Marino",
+  "region": "europe",
+  "principal": "San Marino",
+  "accepted": [
+   "Ciudad de San Marino"
+  ]
+ },
+ {
+  "code": "rs",
+  "name": "Serbia",
+  "region": "europe",
+  "principal": "Belgrado",
+  "accepted": []
+ },
+ {
+  "code": "se",
+  "name": "Suecia",
+  "region": "europe",
+  "principal": "Estocolmo",
+  "accepted": []
+ },
+ {
+  "code": "ch",
+  "name": "Suiza",
+  "region": "europe",
+  "principal": "Berna",
+  "accepted": [],
+  "note": "Suiza no nombra capital oficial: Berna es la «ciudad federal»."
+ },
+ {
+  "code": "ua",
+  "name": "Ucrania",
+  "region": "europe",
+  "principal": "Kiev",
+  "accepted": []
+ },
+ {
+  "code": "au",
+  "name": "Australia",
+  "region": "oceania",
+  "principal": "Camberra",
+  "accepted": [
+   "Canberra"
+  ]
+ },
+ {
+  "code": "fj",
+  "name": "Fiyi",
+  "region": "oceania",
+  "principal": "Suva",
+  "accepted": []
+ },
+ {
+  "code": "mh",
+  "name": "Islas Marshall",
+  "region": "oceania",
+  "principal": "Majuro",
+  "accepted": []
+ },
+ {
+  "code": "sb",
+  "name": "Islas Salomón",
+  "region": "oceania",
+  "principal": "Honiara",
+  "accepted": []
+ },
+ {
+  "code": "ki",
+  "name": "Kiribati",
+  "region": "oceania",
+  "principal": "Tarawa",
+  "accepted": [
+   "Tarawa Sur"
+  ]
+ },
+ {
+  "code": "fm",
+  "name": "Micronesia",
+  "region": "oceania",
+  "principal": "Palikir",
+  "accepted": []
+ },
+ {
+  "code": "nr",
+  "name": "Nauru",
+  "region": "oceania",
+  "principal": "Yaren",
+  "accepted": [],
+  "note": "Nauru no tiene capital oficial: el Gobierno está en el distrito de Yaren."
+ },
+ {
+  "code": "nz",
+  "name": "Nueva Zelanda",
+  "region": "oceania",
+  "principal": "Wellington",
+  "accepted": []
+ },
+ {
+  "code": "pw",
+  "name": "Palaos",
+  "region": "oceania",
+  "principal": "Melekeok",
+  "accepted": [
+   "Ngerulmud"
+  ],
+  "note": "El Gobierno está en Ngerulmud, en el estado de Melekeok."
+ },
+ {
+  "code": "pg",
+  "name": "Papúa Nueva Guinea",
+  "region": "oceania",
+  "principal": "Port Moresby",
+  "accepted": [
+   "Puerto Moresby"
+  ]
+ },
+ {
+  "code": "ws",
+  "name": "Samoa",
+  "region": "oceania",
+  "principal": "Apia",
+  "accepted": []
+ },
+ {
+  "code": "to",
+  "name": "Tonga",
+  "region": "oceania",
+  "principal": "Nukualofa",
+  "accepted": []
+ },
+ {
+  "code": "tv",
+  "name": "Tuvalu",
+  "region": "oceania",
+  "principal": "Funafuti",
+  "accepted": []
+ },
+ {
+  "code": "vu",
+  "name": "Vanuatu",
+  "region": "oceania",
+  "principal": "Port Vila",
+  "accepted": []
+ },
+ {
+  "code": "af",
+  "name": "Afganistán",
+  "region": "asia",
+  "principal": "Kabul",
+  "accepted": []
+ },
+ {
+  "code": "sa",
+  "name": "Arabia Saudita",
+  "region": "asia",
+  "principal": "Riad",
+  "accepted": []
+ },
+ {
+  "code": "am",
+  "name": "Armenia",
+  "region": "asia",
+  "principal": "Ereván",
+  "accepted": [
+   "Yereván"
+  ]
+ },
+ {
+  "code": "az",
+  "name": "Azerbaiyán",
+  "region": "asia",
+  "principal": "Bakú",
+  "accepted": []
+ },
+ {
+  "code": "bh",
+  "name": "Baréin",
+  "region": "asia",
+  "principal": "Manama",
+  "accepted": []
+ },
+ {
+  "code": "bd",
+  "name": "Bangladés",
+  "region": "asia",
+  "principal": "Daca",
+  "accepted": [
+   "Dacca",
+   "Dhaka"
+  ]
+ },
+ {
+  "code": "bn",
+  "name": "Brunéi",
+  "region": "asia",
+  "principal": "Bandar Seri Begawan",
+  "accepted": []
+ },
+ {
+  "code": "bt",
+  "name": "Bután",
+  "region": "asia",
+  "principal": "Timbu",
+  "accepted": []
+ },
+ {
+  "code": "kh",
+  "name": "Camboya",
+  "region": "asia",
+  "principal": "Nom Pen",
+  "accepted": [
+   "Phnom Penh"
+  ]
+ },
+ {
+  "code": "qa",
+  "name": "Catar",
+  "region": "asia",
+  "principal": "Doha",
+  "accepted": []
+ },
+ {
+  "code": "cn",
+  "name": "China",
+  "region": "asia",
+  "principal": "Pekín",
+  "accepted": [
+   "Beijing"
+  ]
+ },
+ {
+  "code": "cy",
+  "name": "Chipre",
+  "region": "asia",
+  "principal": "Nicosia",
+  "accepted": []
+ },
+ {
+  "code": "kp",
+  "name": "Corea del Norte",
+  "region": "asia",
+  "principal": "Pionyang",
+  "accepted": []
+ },
+ {
+  "code": "kr",
+  "name": "Corea del Sur",
+  "region": "asia",
+  "principal": "Seúl",
+  "accepted": []
+ },
+ {
+  "code": "ae",
+  "name": "Emiratos Árabes Unidos",
+  "region": "asia",
+  "principal": "Abu Dabi",
+  "accepted": [
+   "Abu Dhabi"
+  ]
+ },
+ {
+  "code": "ph",
+  "name": "Filipinas",
+  "region": "asia",
+  "principal": "Manila",
+  "accepted": []
+ },
+ {
+  "code": "ge",
+  "name": "Georgia",
+  "region": "asia",
+  "principal": "Tiflis",
+  "accepted": [
+   "Tbilisi"
+  ]
+ },
+ {
+  "code": "in",
+  "name": "India",
+  "region": "asia",
+  "principal": "Nueva Deli",
+  "accepted": [
+   "Nueva Delhi"
+  ]
+ },
+ {
+  "code": "id",
+  "name": "Indonesia",
+  "region": "asia",
+  "principal": "Yakarta",
+  "accepted": [
+   "Jakarta"
+  ],
+  "note": "Hay una nueva capital designada, Nusantara, todavía sin traslado oficial.",
+  "decide": "Nusantara NO vale (designada por ley; Wikipedia: aún no es la capital)"
+ },
+ {
+  "code": "iq",
+  "name": "Irak",
+  "region": "asia",
+  "principal": "Bagdad",
+  "accepted": []
+ },
+ {
+  "code": "ir",
+  "name": "Irán",
+  "region": "asia",
+  "principal": "Teherán",
+  "accepted": []
+ },
+ {
+  "code": "il",
+  "name": "Israel",
+  "region": "asia",
+  "principal": "Jerusalén",
+  "accepted": [],
+  "note": "(nota neutral a redactar por el dueño)",
+  "decide": "DECIDIDO (dueño, opción B): Jerusalén con nota neutra. Falta aprobar la nota"
+ },
+ {
+  "code": "jp",
+  "name": "Japón",
+  "region": "asia",
+  "principal": "Tokio",
+  "accepted": []
+ },
+ {
+  "code": "jo",
+  "name": "Jordania",
+  "region": "asia",
+  "principal": "Amán",
+  "accepted": [
+   "Ammán"
+  ]
+ },
+ {
+  "code": "kz",
+  "name": "Kazajistán",
+  "region": "asia",
+  "principal": "Astaná",
+  "accepted": [],
+  "note": "Se llamó Nur-Sultán entre 2019 y 2022.",
+  "decide": "Nur-Sultán NO vale (nombre anterior)"
+ },
+ {
+  "code": "kg",
+  "name": "Kirguistán",
+  "region": "asia",
+  "principal": "Biskek",
+  "accepted": []
+ },
+ {
+  "code": "kw",
+  "name": "Kuwait",
+  "region": "asia",
+  "principal": "Kuwait",
+  "accepted": [
+   "Ciudad de Kuwait"
+  ]
+ },
+ {
+  "code": "la",
+  "name": "Laos",
+  "region": "asia",
+  "principal": "Vientián",
+  "accepted": []
+ },
+ {
+  "code": "lb",
+  "name": "Líbano",
+  "region": "asia",
+  "principal": "Beirut",
+  "accepted": []
+ },
+ {
+  "code": "my",
+  "name": "Malasia",
+  "region": "asia",
+  "principal": "Kuala Lumpur",
+  "accepted": [
+   "Putrajaya"
+  ],
+  "note": "Kuala Lumpur es la capital constitucional; Putrajaya, la sede del Gobierno.",
+  "decide": "capital doble"
+ },
+ {
+  "code": "mv",
+  "name": "Maldivas",
+  "region": "asia",
+  "principal": "Malé",
+  "accepted": []
+ },
+ {
+  "code": "mn",
+  "name": "Mongolia",
+  "region": "asia",
+  "principal": "Ulán Bator",
+  "accepted": []
+ },
+ {
+  "code": "mm",
+  "name": "Myanmar",
+  "region": "asia",
+  "principal": "Naipyidó",
+  "accepted": [
+   "Naypyidaw",
+   "Nay Pyi Taw",
+   "Nepidó"
+  ],
+  "note": "Es la capital desde 2005; antes lo era Rangún.",
+  "decide": "Rangún NO vale (antigua capital)"
+ },
+ {
+  "code": "np",
+  "name": "Nepal",
+  "region": "asia",
+  "principal": "Katmandú",
+  "accepted": []
+ },
+ {
+  "code": "om",
+  "name": "Omán",
+  "region": "asia",
+  "principal": "Mascate",
+  "accepted": []
+ },
+ {
+  "code": "pk",
+  "name": "Pakistán",
+  "region": "asia",
+  "principal": "Islamabad",
+  "accepted": [],
+  "decide": "Rawalpindi NO vale (Wikidata la arrastra de 1958-1967; Wikipedia: capital provisional)"
+ },
+ {
+  "code": "ps",
+  "name": "Palestina",
+  "region": "asia",
+  "principal": "Jerusalén Este",
+  "accepted": [
+   "Ramala",
+   "Jerusalén Oriental"
+  ],
+  "note": "(nota neutral a redactar por el dueño)",
+  "decide": "DECIDIDO (dueño): se muestra Jerusalén Este; vale también Ramala. Falta aprobar la nota"
+ },
+ {
+  "code": "sg",
+  "name": "Singapur",
+  "region": "asia",
+  "principal": "Singapur",
+  "accepted": [
+   "Ciudad de Singapur"
+  ]
+ },
+ {
+  "code": "sy",
+  "name": "Siria",
+  "region": "asia",
+  "principal": "Damasco",
+  "accepted": []
+ },
+ {
+  "code": "lk",
+  "name": "Sri Lanka",
+  "region": "asia",
+  "principal": "Sri Jayawardenapura Kotte",
+  "accepted": [
+   "Colombo",
+   "Sri Jayawardenepura Kotte"
+  ],
+  "note": "Sri Jayawardenapura Kotte es la capital administrativa; Colombo, la comercial.",
+  "decide": "capital doble"
+ },
+ {
+  "code": "th",
+  "name": "Tailandia",
+  "region": "asia",
+  "principal": "Bangkok",
+  "accepted": [
+   "Bancoc"
+  ]
+ },
+ {
+  "code": "tw",
+  "name": "Taiwán",
+  "region": "asia",
+  "principal": "Taipéi",
+  "accepted": [
+   "Taipei"
+  ]
+ },
+ {
+  "code": "tj",
+  "name": "Tayikistán",
+  "region": "asia",
+  "principal": "Dusambé",
+  "accepted": []
+ },
+ {
+  "code": "tl",
+  "name": "Timor Oriental",
+  "region": "asia",
+  "principal": "Dili",
+  "accepted": []
+ },
+ {
+  "code": "tm",
+  "name": "Turkmenistán",
+  "region": "asia",
+  "principal": "Asjabad",
+  "accepted": [
+   "Asgabad",
+   "Ashjabad"
+  ]
+ },
+ {
+  "code": "tr",
+  "name": "Turquía",
+  "region": "asia",
+  "principal": "Ankara",
+  "accepted": []
+ },
+ {
+  "code": "uz",
+  "name": "Uzbekistán",
+  "region": "asia",
+  "principal": "Taskent",
+  "accepted": []
+ },
+ {
+  "code": "vn",
+  "name": "Vietnam",
+  "region": "asia",
+  "principal": "Hanoi",
+  "accepted": [
+   "Hanói"
+  ]
+ },
+ {
+  "code": "ye",
+  "name": "Yemen",
+  "region": "asia",
+  "principal": "Saná",
+  "accepted": [
+   "Adén"
+  ],
+  "note": "Adén es la capital provisional del Gobierno reconocido desde 2015.",
+  "decide": "capital doble de facto; ver §5.3"
+ },
+ {
+  "code": "ao",
+  "name": "Angola",
+  "region": "africa",
+  "principal": "Luanda",
+  "accepted": []
+ },
+ {
+  "code": "dz",
+  "name": "Argelia",
+  "region": "africa",
+  "principal": "Argel",
+  "accepted": []
+ },
+ {
+  "code": "bj",
+  "name": "Benín",
+  "region": "africa",
+  "principal": "Porto Novo",
+  "accepted": [
+   "Cotonú"
+  ],
+  "note": "Porto Novo es la capital oficial; Cotonú, la sede del Gobierno.",
+  "decide": "capital doble"
+ },
+ {
+  "code": "bw",
+  "name": "Botsuana",
+  "region": "africa",
+  "principal": "Gaborone",
+  "accepted": []
+ },
+ {
+  "code": "bf",
+  "name": "Burkina Faso",
+  "region": "africa",
+  "principal": "Uagadugu",
+  "accepted": [
+   "Uagadugú"
+  ]
+ },
+ {
+  "code": "bi",
+  "name": "Burundi",
+  "region": "africa",
+  "principal": "Guitega",
+  "accepted": [
+   "Gitega"
+  ],
+  "note": "Es la capital política desde 2019; Buyumbura, la económica.",
+  "decide": "Buyumbura NO vale (capital económica)"
+ },
+ {
+  "code": "cv",
+  "name": "Cabo Verde",
+  "region": "africa",
+  "principal": "Praia",
+  "accepted": []
+ },
+ {
+  "code": "cm",
+  "name": "Camerún",
+  "region": "africa",
+  "principal": "Yaundé",
+  "accepted": [
+   "Yaoundé"
+  ]
+ },
+ {
+  "code": "td",
+  "name": "Chad",
+  "region": "africa",
+  "principal": "Yamena",
+  "accepted": []
+ },
+ {
+  "code": "km",
+  "name": "Comoras",
+  "region": "africa",
+  "principal": "Moroni",
+  "accepted": []
+ },
+ {
+  "code": "ci",
+  "name": "Costa de Marfil",
+  "region": "africa",
+  "principal": "Yamusukro",
+  "accepted": [],
+  "note": "Abiyán es la capital económica y el centro administrativo.",
+  "decide": "Abiyán NO vale (la UE: «centro administrativo»; WD no la registra como capital)"
+ },
+ {
+  "code": "eg",
+  "name": "Egipto",
+  "region": "africa",
+  "principal": "El Cairo",
+  "accepted": []
+ },
+ {
+  "code": "er",
+  "name": "Eritrea",
+  "region": "africa",
+  "principal": "Asmara",
+  "accepted": []
+ },
+ {
+  "code": "sz",
+  "name": "Esuatini",
+  "region": "africa",
+  "principal": "Babane",
+  "accepted": [
+   "Mbabane",
+   "Lobamba"
+  ],
+  "note": "Babane (Mbabane) es la capital administrativa; Lobamba, la real y legislativa.",
+  "decide": "capital doble"
+ },
+ {
+  "code": "et",
+  "name": "Etiopía",
+  "region": "africa",
+  "principal": "Adís Abeba",
+  "accepted": []
+ },
+ {
+  "code": "ga",
+  "name": "Gabón",
+  "region": "africa",
+  "principal": "Libreville",
+  "accepted": []
+ },
+ {
+  "code": "gm",
+  "name": "Gambia",
+  "region": "africa",
+  "principal": "Banjul",
+  "accepted": []
+ },
+ {
+  "code": "gh",
+  "name": "Ghana",
+  "region": "africa",
+  "principal": "Acra",
+  "accepted": [
+   "Accra"
+  ]
+ },
+ {
+  "code": "gn",
+  "name": "Guinea",
+  "region": "africa",
+  "principal": "Conakri",
+  "accepted": [
+   "Conakry"
+  ]
+ },
+ {
+  "code": "gw",
+  "name": "Guinea-Bisáu",
+  "region": "africa",
+  "principal": "Bisáu",
+  "accepted": [
+   "Bissau"
+  ]
+ },
+ {
+  "code": "gq",
+  "name": "Guinea Ecuatorial",
+  "region": "africa",
+  "principal": "Ciudad de la Paz",
+  "accepted": [],
+  "note": "Malabo fue la capital hasta enero de 2026.",
+  "decide": "DECIDIDO (dueño): Malabo no vale; la nota lo explica"
+ },
+ {
+  "code": "ke",
+  "name": "Kenia",
+  "region": "africa",
+  "principal": "Nairobi",
+  "accepted": []
+ },
+ {
+  "code": "ls",
+  "name": "Lesoto",
+  "region": "africa",
+  "principal": "Maseru",
+  "accepted": []
+ },
+ {
+  "code": "lr",
+  "name": "Liberia",
+  "region": "africa",
+  "principal": "Monrovia",
+  "accepted": []
+ },
+ {
+  "code": "ly",
+  "name": "Libia",
+  "region": "africa",
+  "principal": "Trípoli",
+  "accepted": []
+ },
+ {
+  "code": "mg",
+  "name": "Madagascar",
+  "region": "africa",
+  "principal": "Antananarivo",
+  "accepted": []
+ },
+ {
+  "code": "mw",
+  "name": "Malaui",
+  "region": "africa",
+  "principal": "Lilongüe",
+  "accepted": []
+ },
+ {
+  "code": "ml",
+  "name": "Malí",
+  "region": "africa",
+  "principal": "Bamako",
+  "accepted": []
+ },
+ {
+  "code": "ma",
+  "name": "Marruecos",
+  "region": "africa",
+  "principal": "Rabat",
+  "accepted": []
+ },
+ {
+  "code": "mu",
+  "name": "Mauricio",
+  "region": "africa",
+  "principal": "Port Louis",
+  "accepted": []
+ },
+ {
+  "code": "mr",
+  "name": "Mauritania",
+  "region": "africa",
+  "principal": "Nuakchot",
+  "accepted": []
+ },
+ {
+  "code": "mz",
+  "name": "Mozambique",
+  "region": "africa",
+  "principal": "Maputo",
+  "accepted": []
+ },
+ {
+  "code": "na",
+  "name": "Namibia",
+  "region": "africa",
+  "principal": "Windhoek",
+  "accepted": []
+ },
+ {
+  "code": "ne",
+  "name": "Níger",
+  "region": "africa",
+  "principal": "Niamey",
+  "accepted": []
+ },
+ {
+  "code": "ng",
+  "name": "Nigeria",
+  "region": "africa",
+  "principal": "Abuya",
+  "accepted": []
+ },
+ {
+  "code": "cf",
+  "name": "República Centroafricana",
+  "region": "africa",
+  "principal": "Bangui",
+  "accepted": []
+ },
+ {
+  "code": "cg",
+  "name": "República del Congo",
+  "region": "africa",
+  "principal": "Brazzaville",
+  "accepted": []
+ },
+ {
+  "code": "cd",
+  "name": "República Democrática del Congo",
+  "region": "africa",
+  "principal": "Kinsasa",
+  "accepted": []
+ },
+ {
+  "code": "rw",
+  "name": "Ruanda",
+  "region": "africa",
+  "principal": "Kigali",
+  "accepted": []
+ },
+ {
+  "code": "st",
+  "name": "Santo Tomé y Príncipe",
+  "region": "africa",
+  "principal": "Santo Tomé",
+  "accepted": []
+ },
+ {
+  "code": "sn",
+  "name": "Senegal",
+  "region": "africa",
+  "principal": "Dakar",
+  "accepted": []
+ },
+ {
+  "code": "sc",
+  "name": "Seychelles",
+  "region": "africa",
+  "principal": "Victoria",
+  "accepted": []
+ },
+ {
+  "code": "sl",
+  "name": "Sierra Leona",
+  "region": "africa",
+  "principal": "Freetown",
+  "accepted": []
+ },
+ {
+  "code": "so",
+  "name": "Somalia",
+  "region": "africa",
+  "principal": "Mogadiscio",
+  "accepted": []
+ },
+ {
+  "code": "za",
+  "name": "Sudáfrica",
+  "region": "africa",
+  "principal": "Pretoria",
+  "accepted": [
+   "Ciudad del Cabo",
+   "Bloemfontein",
+   "Tshwane"
+  ],
+  "note": "Pretoria es la capital administrativa; Ciudad del Cabo, la legislativa, y Bloemfontein, la judicial.",
+  "decide": "capital triple"
+ },
+ {
+  "code": "sd",
+  "name": "Sudán",
+  "region": "africa",
+  "principal": "Jartum",
+  "accepted": [
+   "Kartum"
+  ]
+ },
+ {
+  "code": "ss",
+  "name": "Sudán del Sur",
+  "region": "africa",
+  "principal": "Yuba",
+  "accepted": [
+   "Juba"
+  ]
+ },
+ {
+  "code": "tz",
+  "name": "Tanzania",
+  "region": "africa",
+  "principal": "Dodoma",
+  "accepted": [],
+  "note": "Muchas instituciones siguen en Dar es-Salaam, la antigua capital.",
+  "decide": "Dar es-Salaam NO vale (antigua capital)"
+ },
+ {
+  "code": "tg",
+  "name": "Togo",
+  "region": "africa",
+  "principal": "Lomé",
+  "accepted": []
+ },
+ {
+  "code": "tn",
+  "name": "Túnez",
+  "region": "africa",
+  "principal": "Túnez",
+  "accepted": []
+ },
+ {
+  "code": "ug",
+  "name": "Uganda",
+  "region": "africa",
+  "principal": "Kampala",
+  "accepted": []
+ },
+ {
+  "code": "dj",
+  "name": "Yibuti",
+  "region": "africa",
+  "principal": "Yibuti",
+  "accepted": [
+   "Ciudad de Yibuti",
+   "Djibouti"
+  ]
+ },
+ {
+  "code": "zm",
+  "name": "Zambia",
+  "region": "africa",
+  "principal": "Lusaka",
+  "accepted": []
+ },
+ {
+  "code": "zw",
+  "name": "Zimbabue",
+  "region": "africa",
+  "principal": "Harare",
+  "accepted": []
+ }
+]

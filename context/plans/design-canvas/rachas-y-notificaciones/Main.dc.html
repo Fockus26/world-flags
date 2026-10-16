@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Silkscreen:wght@400;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: #6d5ef0; }
+    a:hover { color: #5b4bdb; }
+    .pixel { font-family: "Silkscreen", "Courier New", monospace; }
+    .marcador { cursor: pointer; transition: transform 150ms ease; }
+    .marcador:active { transform: scale(0.99); }
+    @media (prefers-reduced-motion: reduce) { .marcador { transition: none; } }
+  </style>
+</helmet>
+
+<div style="min-height: 100%; width: 100%; background: {{pageBg}}; display: flex; justify-content: center; padding: 20px 16px 28px;">
+  <div style="width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="pixel" style="font-size: 11px; letter-spacing: 0.06em; color: {{primary}};">A - MARCADOR ARCADE</span>
+      <span style="font-size: 12px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">Tira fija dentro de la tarjeta de configuración. No suma un icono a la fila de arriba. Toca el marcador para recorrer los tres estados.</span>
+    </div>
+
+    <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="min-width: 0; flex: 1; display: flex; align-items: center; gap: 12px; border-radius: 999px; padding-right: 16px;">
+          <div style="width: 52px; height: 52px; border-radius: 999px; background: {{primarySoft}}; flex-shrink: 0;"></div>
+          <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <strong style="font-size: 16px; font-weight: 700; color: {{textMain}};">Explorador</strong>
+              <span style="font-size: 11.2px; font-weight: 600; color: {{textMuted}};">Invitado</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="height: 6px; flex: 1; border-radius: 10px; background: {{surfaceHover}}; overflow: hidden;">
+                <div style="width: 14%; height: 100%; border-radius: 10px; background: {{textMain}};"></div>
+              </div>
+              <span style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; white-space: nowrap;">14% · 27/196</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
+          <div style="width: 36px; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 17px;">🏅</div>
+          <div style="width: 36px; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 17px;">🏆</div>
+          <div style="width: 36px; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 17px;">📍</div>
+        </div>
+      </div>
+
+      <div class="marcador" onClick="{{cycle}}" style="position: relative; overflow: hidden; border-radius: 12px; background: {{panelBg}}; border: 1px solid {{panelBorder}}; padding: 10px 12px; display: flex; align-items: center; gap: 12px;">
+        <div style="position: absolute; inset: 0; pointer-events: none; background-image: {{scanlines}};"></div>
+
+        <div style="position: relative; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0;">
+          <span class="pixel" style="font-size: 9px; letter-spacing: 0.06em; color: {{textMuted}};">RACHA</span>
+          <span class="pixel" style="font-size: 26px; line-height: 1; color: {{digitColor}};">{{streakText}}</span>
+        </div>
+
+        <div style="position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
+          <div style="display: flex; gap: 4px;">
+            <sc-for list="{{days}}" as="day" hint-placeholder-count="7">
+              <div style="flex: 1; height: 18px; border-radius: 3px; background: {{day.bg}}; border: {{day.border}};"></div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <sc-for list="{{days}}" as="day" hint-placeholder-count="7">
+              <span class="pixel" style="flex: 1; text-align: center; font-size: 8px; color: {{day.labelColor}};">{{day.label}}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0;">
+          <span class="pixel" style="font-size: 9px; letter-spacing: 0.06em; color: {{textMuted}};">MEJOR</span>
+          <span class="pixel" style="font-size: 16px; line-height: 1; color: {{textMain}};">21</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: -8px;">
+        <sc-if value="{{isDone}}" hint-placeholder-val="{{true}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{statusColor}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;">
+            <path d="M5 13l4 4L19 7"></path>
+          </svg>
+        </sc-if>
+        <sc-if value="{{isPending}}" hint-placeholder-val="{{false}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{statusColor}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 7v5l3 2"></path>
+          </svg>
+        </sc-if>
+        <sc-if value="{{isLost}}" hint-placeholder-val="{{false}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{statusColor}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;">
+            <path d="M12 3v9"></path>
+            <path d="M6 7a8 8 0 1 0 12 0"></path>
+          </svg>
+        </sc-if>
+        <span style="font-size: 12.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.4;">{{statusText}}</span>
+      </div>
+
+      <div style="height: 1px; background: {{surfaceBorder}};"></div>
+
+      <div style="font-size: 24px; font-weight: 800; color: {{textMain}}; line-height: 1.15;">Aprende los países del mundo</div>
+
+      <div style="height: 40px; border-radius: 36px; background: {{primary}}; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 14px; font-weight: 500; color: {{btnFg}};">Comenzar práctica</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">El mismo marcador, encogido, en sesión</span>
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="min-width: 0;">
+            <div style="font-size: 10.4px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: {{primary}};">Europa</div>
+            <div style="font-size: 16px; font-weight: 800; color: {{textMain}}; margin-top: 3px;">3 / 44</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 6px; border-radius: 999px; background: {{panelBg}}; border: 1px solid {{panelBorder}}; padding: 4px 9px;">
+              <div style="display: flex; gap: 2px;">
+                <div style="width: 4px; height: 12px; border-radius: 1px; background: {{chipBlock}};"></div>
+                <div style="width: 4px; height: 12px; border-radius: 1px; background: {{chipBlock}};"></div>
+                <div style="width: 4px; height: 12px; border-radius: 1px; background: {{chipBlock}};"></div>
+              </div>
+              <span class="pixel" style="font-size: 13px; color: {{digitColor}};">{{streakText}}</span>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{danger}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"></path>
+              <path d="M16 16l4-4-4-4"></path>
+              <path d="M20 12H10"></path>
+            </svg>
+          </div>
+        </div>
+        <div style="height: 8px; border-radius: 999px; background: {{surfaceHover}}; overflow: hidden;">
+          <div style="width: 7%; height: 100%; border-radius: 999px; background: {{primary}};"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.5;">Coste: cero tokens de color nuevos (usa surface-hover, primary y warning). Lo unico nuevo es la fuente de pixeles.</div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "theme": {"editor": "enum", "options": ["Claro", "Oscuro"], "default": "Claro", "section": "Tema"},
+  "estado": {"editor": "enum", "options": ["Hoy pendiente", "Hoy completado", "Racha perdida"], "default": "Hoy pendiente", "section": "Estado"},
+  "$preview": {"width": 390, "height": 780}
+}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { estado: props.estado ?? "Hoy pendiente" };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.estado !== this.props.estado) {
+      this.setState({ estado: this.props.estado });
+    }
+  }
+
+  cycle() {
+    const order = ["Hoy pendiente", "Hoy completado", "Racha perdida"];
+    const next = order[(order.indexOf(this.state.estado) + 1) % order.length];
+    this.setState({ estado: next });
+  }
+
+  renderVals() {
+    const isDark = (this.props.theme ?? "Claro") === "Oscuro";
+    const estado = this.state.estado;
+
+    const p = isDark
+      ? {
+          pageBg: "#14121f", surface: "#1b1930", surfaceHover: "#262238", surfaceBorder: "#34304a",
+          textMain: "#f1eefc", textMuted: "#a29cc0", primary: "#9b8bff", primarySoft: "#2c2650",
+          warning: "#f2a53d", danger: "#f2748c", btnFg: "#14121f", faint: "#2f2b47",
+          scanlines: "repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0 1px, rgba(255,255,255,0) 1px 3px)"
+        }
+      : {
+          pageBg: "#f2f1f8", surface: "#ffffff", surfaceHover: "#f1eff9", surfaceBorder: "#e2dff1",
+          textMain: "#1c1b2e", textMuted: "#6b6880", primary: "#6d5ef0", primarySoft: "#ecebfe",
+          warning: "#d97a13", danger: "#e0435f", btnFg: "#ffffff", faint: "#e7e4f4",
+          scanlines: "repeating-linear-gradient(to bottom, rgba(28,27,46,0.045) 0 1px, rgba(28,27,46,0) 1px 3px)"
+        };
+
+    const isDone = estado === "Hoy completado";
+    const isLost = estado === "Racha perdida";
+    const isPending = estado === "Hoy pendiente";
+
+    const labels = ["L", "M", "X", "J", "V", "S", "D"];
+    const doneCount = isLost ? 0 : 6;
+
+    const days = labels.map((label, index) => {
+      const filled = index < doneCount;
+      const isToday = index === 6;
+
+      if (filled || (isToday && isDone)) {
+        return { label, bg: p.primary, border: "1px solid " + p.primary, labelColor: p.textMuted };
+      }
+
+      if (isToday && isPending) {
+        return { label, bg: "transparent", border: "2px dashed " + p.warning, labelColor: p.warning };
+      }
+
+      return { label, bg: p.faint, border: "1px solid " + p.faint, labelColor: p.textMuted };
+    });
+
+    const streak = isLost ? 0 : isDone ? 7 : 6;
+
+    const statusText = isLost
+      ? "Se cortó la racha. Practica hoy y vuelve a empezar desde 1."
+      : isDone
+        ? "Día completado. Tu mejor racha son 21 días."
+        : "Aún no practicas hoy. Te quedan 6 horas para mantener la racha.";
+
+    return {
+      pageBg: p.pageBg,
+      surface: p.surface,
+      surfaceHover: p.surfaceHover,
+      surfaceBorder: p.surfaceBorder,
+      textMain: p.textMain,
+      textMuted: p.textMuted,
+      primary: p.primary,
+      primarySoft: p.primarySoft,
+      danger: p.danger,
+      btnFg: p.btnFg,
+      scanlines: p.scanlines,
+      panelBg: p.surfaceHover,
+      panelBorder: p.surfaceBorder,
+      chipBlock: isLost ? p.faint : p.primary,
+      days,
+      streakText: String(streak).padStart(2, "0"),
+      digitColor: isLost ? p.textMuted : isDone ? p.primary : p.warning,
+      statusColor: isLost ? p.textMuted : isDone ? p.primary : p.warning,
+      statusText,
+      isDone,
+      isLost,
+      isPending,
+      cycle: () => this.cycle()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Silkscreen:wght@400;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: #6d5ef0; }
+    a:hover { color: #5b4bdb; }
+    .pixel { font-family: "Silkscreen", "Courier New", monospace; }
+  </style>
+</helmet>
+
+<div style="min-height: 100%; width: 100%; background: {{pageBg}}; display: flex; justify-content: center; padding: 20px 16px 28px;">
+  <div style="width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="pixel" style="font-size: 11px; letter-spacing: 0.06em; color: {{primary}};">LOS 5 ESTADOS DEL PERMISO</span>
+      <span style="font-size: 12px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">Esto hay que resolverlo en las tres propuestas: el navegador sólo deja pedir el permiso una vez, y si el usuario lo bloquea no hay forma de volver a pedirlo desde el código.</span>
+    </div>
+
+    <sc-for list="{{estados}}" as="estado" hint-placeholder-count="5">
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="pixel" style="font-size: 9px; letter-spacing: 0.06em; color: {{textMuted}};">{{estado.indice}}</span>
+          <span style="font-size: 13.6px; font-weight: 800; color: {{textMain}};">{{estado.titulo}}</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; border-radius: 12px; border: 1px solid {{estado.filaBorde}}; background: {{estado.filaFondo}}; padding: 10px 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{estado.iconoColor}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <path d="M18 9a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6z"></path>
+            <path d="M10 19a2 2 0 0 0 4 0"></path>
+          </svg>
+          <span style="flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: {{estado.textoColor}}; line-height: 1.4;">{{estado.fila}}</span>
+          <span style="font-size: 12.5px; font-weight: 700; color: {{estado.accionColor}}; flex-shrink: 0;">{{estado.accion}}</span>
+        </div>
+
+        <span style="font-size: 11.5px; font-weight: 500; color: {{textMuted}}; line-height: 1.45;">{{estado.nota}}</span>
+      </div>
+    </sc-for>
+
+    <div style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.5;">Ninguno de los cinco se distingue sólo por color: cada uno dice en texto qué pasa y qué se puede hacer.</div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "theme": {"editor": "enum", "options": ["Claro", "Oscuro"], "default": "Claro", "section": "Tema"},
+  "$preview": {"width": 390, "height": 1020}
+}'>
+class Component extends DCLogic {
+  renderVals() {
+    const isDark = (this.props.theme ?? "Claro") === "Oscuro";
+
+    const p = isDark
+      ? {
+          pageBg: "#14121f", surface: "#1b1930", surfaceHover: "#262238", surfaceBorder: "#34304a",
+          textMain: "#f1eefc", textMuted: "#a29cc0",
+          primary: "#9b8bff", primarySoft: "#2c2650", primaryEdge: "#4b4180", primaryIcon: "#b9adff",
+          warning: "#f2a53d", warningSoft: "#3a2a17", warningEdge: "#6b4a1c", warningIcon: "#f2a53d",
+          fieldBg: "#2b2740", fieldBorder: "#6f6a94"
+        }
+      : {
+          pageBg: "#f2f1f8", surface: "#ffffff", surfaceHover: "#f1eff9", surfaceBorder: "#e2dff1",
+          textMain: "#1c1b2e", textMuted: "#6b6880",
+          primary: "#6d5ef0", primarySoft: "#ecebfe", primaryEdge: "#cfc8fb", primaryIcon: "#5b4bdb",
+          warning: "#d97a13", warningSoft: "#fdf0dc", warningEdge: "#eec489", warningIcon: "#b3610c",
+          fieldBg: "#e2dff1", fieldBorder: "#9c96c4"
+        };
+
+    const estados = [
+      {
+        indice: "01",
+        titulo: "Sin decidir",
+        fila: "Recordatorio diario de práctica",
+        accion: "Activar",
+        nota: "Estado de arranque. El permiso del navegador se pide sólo cuando se toca Activar, nunca al cargar la página.",
+        filaFondo: p.surface,
+        filaBorde: p.surfaceBorder,
+        iconoColor: p.textMuted,
+        textoColor: p.textMain,
+        accionColor: p.primaryIcon
+      },
+      {
+        indice: "02",
+        titulo: "Activado",
+        fila: "Te aviso todos los días a las 20:00",
+        accion: "Cambiar",
+        nota: "Permiso concedido y recordatorio encendido. Desde aquí se cambia la hora o se apaga.",
+        filaFondo: p.primarySoft,
+        filaBorde: p.primaryEdge,
+        iconoColor: p.primaryIcon,
+        textoColor: p.textMain,
+        accionColor: p.primaryIcon
+      },
+      {
+        indice: "03",
+        titulo: "Apagado por el usuario",
+        fila: "Recordatorio apagado. El permiso sigue concedido.",
+        accion: "Encender",
+        nota: "Apagarlo dentro de la app no toca el permiso del navegador, así que volver a encenderlo es un toque y no vuelve a preguntar nada.",
+        filaFondo: p.surface,
+        filaBorde: p.surfaceBorder,
+        iconoColor: p.textMuted,
+        textoColor: p.textMuted,
+        accionColor: p.primaryIcon
+      },
+      {
+        indice: "04",
+        titulo: "Bloqueado en el navegador",
+        fila: "El navegador tiene bloqueados los avisos de este sitio",
+        accion: "Cómo permitir",
+        nota: "El interruptor no puede hacer nada: el permiso denegado no se puede volver a pedir desde el código. Lo único honesto es explicar el camino en los ajustes del navegador.",
+        filaFondo: p.warningSoft,
+        filaBorde: p.warningEdge,
+        iconoColor: p.warningIcon,
+        textoColor: p.textMain,
+        accionColor: p.warningIcon
+      },
+      {
+        indice: "05",
+        titulo: "No disponible todavía",
+        fila: "Instala la app para recibir avisos",
+        accion: "Cómo instalar",
+        nota: "En iPhone los avisos web sólo existen si la PWA está añadida a la pantalla de inicio (iOS 16.4 o superior). Sin eso, el interruptor no debe aparecer encendible.",
+        filaFondo: p.surfaceHover,
+        filaBorde: p.surfaceBorder,
+        iconoColor: p.textMuted,
+        textoColor: p.textMuted,
+        accionColor: p.primaryIcon
+      }
+    ];
+
+    return {
+      pageBg: p.pageBg,
+      surface: p.surface,
+      surfaceBorder: p.surfaceBorder,
+      textMain: p.textMain,
+      textMuted: p.textMuted,
+      primary: p.primary,
+      estados
+    };
+  }
+}
+</script>
+</body>
+</html>

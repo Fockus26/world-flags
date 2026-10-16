@@ -1,0 +1,35 @@
+{
+	"pages": [
+		{ "id": "rachas", "name": "Rachas" },
+		{ "id": "notificaciones", "name": "Notificaciones" }
+	],
+	"artboards": [
+		{ "file": "Racha-Fusion.dc.html", "title": "★ Elegida · Fusión A+B, en el usuario", "page": "rachas", "x": 0, "y": 0, "w": 390, "h": 820, "is_interactive": true },
+		{ "file": "Main.dc.html", "title": "Racha A · Marcador arcade", "page": "rachas", "x": 470, "y": 0, "w": 390, "h": 880, "is_interactive": true },
+		{ "file": "Racha-B.dc.html", "title": "Racha B · Llama pixel + calendario LCD", "page": "rachas", "x": 940, "y": 0, "w": 390, "h": 1020, "is_interactive": true },
+		{ "file": "Racha-C.dc.html", "title": "Racha C · Cartucho 8 bits", "page": "rachas", "x": 1410, "y": 0, "w": 390, "h": 900, "is_interactive": true },
+		{ "file": "Notif-A.dc.html", "title": "★ Elegida · Snackbar (una sola vez)", "page": "notificaciones", "x": 0, "y": 0, "w": 390, "h": 1230, "is_interactive": true },
+		{ "file": "Notif-B.dc.html", "title": "Notif 2 · Tarjeta en la pantalla", "page": "notificaciones", "x": 470, "y": 0, "w": 390, "h": 1080, "is_interactive": true },
+		{ "file": "Notif-C.dc.html", "title": "Notif 3 · Centro de avisos", "page": "notificaciones", "x": 940, "y": 0, "w": 390, "h": 1120, "is_interactive": true },
+		{ "file": "Estados.dc.html", "title": "Los 5 estados del permiso", "page": "notificaciones", "x": 1410, "y": 0, "w": 390, "h": 1100, "is_interactive": false }
+	],
+	"annotations": [
+		{
+			"id": "nota-rachas",
+			"page": "rachas",
+			"x": 0,
+			"y": -260,
+			"w": 1800,
+			"text": "Elegida: fusión de A + B, primer artboard. Colapsada es la chip de A (vive junto al avatar, dentro de UserSummary, no en fila aparte); al tocarla se abre el calendario completo de B, empujando el resto de la tarjeta hacia abajo con el mismo mecanismo de AutoHeight.tsx que ya usa el modal de ajustes.\n\nLas cuatro leen el mismo dato que ya existe: getCurrentStreak / getLongestStreak sobre stats.activeDays (D018). No hace falta persistencia nueva ni columna nueva en Supabase.\n\nLo que sí es decisión nueva en las cuatro: cargar una fuente de píxeles (Silkscreen en estas maquetas) solo para los números. Hoy el proyecto carga únicamente Plus Jakarta Sans."
+		},
+		{
+			"id": "nota-notificaciones",
+			"page": "notificaciones",
+			"x": 0,
+			"y": -260,
+			"w": 1800,
+			"text": "Elegida: propuesta 1 (snackbar), primer artboard. El prompt \"¿Te aviso mañana...?\" se muestra una sola vez: responder cualquiera de las dos opciones (o cerrarlo con la X) guarda un booleano en learning-storage.ts y ese booleano es lo único que decide si vuelve a aparecer, sin importar cuántas sesiones más termines. Toca el prompt para ver el antes/después.\n\nAviso de versión nueva y recordatorio diario son dos cosas distintas.\n\nEl de versión nueva es in-app: no pide permiso a nadie, pero exige cambiar public/sw.js (hoy llama a skipWaiting() en install, así que no hay un estado \"esperando\" que mostrar).\n\nEl recordatorio diario sí es notificación del sistema y necesita Web Push con VAPID más algo que dispare a la hora: no se puede programar solo desde el navegador.\n\nTodo el copy de estas maquetas es provisional."
+		}
+	],
+	"launch": { "view": "canvas", "page": "rachas" }
+}

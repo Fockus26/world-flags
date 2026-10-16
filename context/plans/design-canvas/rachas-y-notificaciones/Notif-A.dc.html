@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Silkscreen:wght@400;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: #6d5ef0; }
+    a:hover { color: #5b4bdb; }
+    .pixel { font-family: "Silkscreen", "Courier New", monospace; }
+    .tap { cursor: pointer; }
+    .tap:active { transform: scale(0.98); }
+  </style>
+</helmet>
+
+<div style="min-height: 100%; width: 100%; background: {{pageBg}}; display: flex; justify-content: center; padding: 20px 16px 28px;">
+  <div style="width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 18px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="pixel" style="font-size: 11px; letter-spacing: 0.06em; color: {{primary}};">1 - TODO POR SNACKBAR</span>
+      <span style="font-size: 12px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">Reutiliza tal cual el patrón de avisos de logros (D025): misma anatomía, misma esquina, mismo auto-descarte. Cero superficies nuevas.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">a · Se pide el permiso al terminar una sesión — una sola vez</span>
+
+      <sc-if value="{{mostrarPrompt}}" hint-placeholder-val="{{true}}">
+        <div style="border-radius: 22px; border: 1px solid {{primaryEdge}}; background: {{primarySoft}}; padding: 12px; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{primaryIcon}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+            <path d="M18 9a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6z"></path>
+            <path d="M10 19a2 2 0 0 0 4 0"></path>
+          </svg>
+          <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 11.2px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: {{textMuted}};">Recordatorios</span>
+            <strong style="font-size: 14.4px; font-weight: 700; color: {{textMain}};">¿Te aviso mañana para que no pierdas la racha?</strong>
+            <span style="font-size: 12.5px; font-weight: 500; color: {{textMuted}}; line-height: 1.4;">Un solo aviso al día, a la hora que elijas. Si dices que no, no se te vuelve a preguntar: lo activas cuando quieras desde Configuración.</span>
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+              <div class="tap" onClick="{{responder}}" style="height: 36px; padding: 0 14px; border-radius: 36px; background: {{primary}}; display: flex; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: {{btnFg}};">Sí, avísame</span>
+              </div>
+              <div class="tap" onClick="{{responder}}" style="height: 36px; padding: 0 14px; border-radius: 36px; display: flex; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: {{neutralText}};">Ahora no</span>
+              </div>
+            </div>
+          </div>
+          <svg class="tap" onClick="{{responder}}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{textMuted}}" stroke-width="2.2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 4px;">
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{mostrarPrompt}}" hint-placeholder-val="{{false}}">
+        <div class="tap" onClick="{{reiniciar}}" style="border-radius: 22px; border: 1px dashed {{surfaceBorder}}; padding: 14px; display: flex; align-items: center; gap: 10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{textMuted}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <path d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span style="font-size: 12.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.4;">Ya respondiste (sea cual fue tu respuesta) — no vuelve a aparecer aunque termines otra sesión. Toca aquí solo para reiniciar la demo.</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">b · Lo que le llega al teléfono</span>
+
+      <div style="border-radius: 18px; background: {{osBg}}; border: 1px solid {{osBorder}}; padding: 12px; display: flex; gap: 10px;">
+        <div style="width: 34px; height: 34px; border-radius: 9px; background: {{primary}}; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 17px;">🏳️</span>
+        </div>
+        <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+            <span style="font-size: 11.5px; font-weight: 700; color: {{osMuted}};">Banderas del Mundo</span>
+            <span style="font-size: 11px; font-weight: 600; color: {{osMuted}};">ahora</span>
+          </div>
+          <strong style="font-size: 13.6px; font-weight: 700; color: {{osText}};">Tienes 12 banderas para repasar</strong>
+          <span style="font-size: 12.5px; font-weight: 500; color: {{osMuted}}; line-height: 1.4;">Llevas 7 días seguidos. Tres minutos y la racha sigue viva.</span>
+        </div>
+      </div>
+      <span style="font-size: 11px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">Se dibuja con el sistema operativo, no con nuestro CSS: solo controlamos icono, título y cuerpo.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">c · Hay una versión nueva de la app</span>
+
+      <div style="border-radius: 22px; border: 1px solid {{secondaryEdge}}; background: {{secondarySoft}}; padding: 12px; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{secondaryIcon}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+          <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"></path>
+          <path d="M20 4v4h-4"></path>
+          <path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"></path>
+          <path d="M4 20v-4h4"></path>
+        </svg>
+        <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11.2px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: {{textMuted}};">Actualización</span>
+          <strong style="font-size: 14.4px; font-weight: 700; color: {{textMain}};">Hay una versión nueva lista</strong>
+          <span style="font-size: 12.5px; font-weight: 500; color: {{textMuted}}; line-height: 1.4;">Se aplica al recargar. Tu progreso no se toca.</span>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <div style="height: 36px; padding: 0 14px; border-radius: 36px; background: {{secondary}}; display: flex; align-items: center;">
+              <span style="font-size: 13px; font-weight: 500; color: {{btnFg}};">Actualizar</span>
+            </div>
+            <div style="height: 36px; padding: 0 14px; border-radius: 36px; display: flex; align-items: center;">
+              <span style="font-size: 13px; font-weight: 500; color: {{neutralText}};">Después</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span style="font-size: 11px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">Este aviso es de la app, no del sistema: no pide permiso a nadie y funciona igual si el usuario dijo que no a las notificaciones.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">d · Dónde se cambia después (modal › Juego)</span>
+
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+        <span style="font-size: 14px; font-weight: 700; color: {{textMain}};">Recordatorio diario</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;">
+          <div style="min-height: 40px; border-radius: 12px; border: 1px solid {{primary}}; background: {{primary}}; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 12px; font-weight: 700; color: {{btnFg}};">Activado</span>
+          </div>
+          <div style="min-height: 40px; border-radius: 12px; border: 1px solid {{fieldBorder}}; background: {{fieldBg}}; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 12px; font-weight: 700; color: {{textMain}};">Desactivado</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; border-radius: 10px; border: 1px solid {{fieldBorder}}; background: {{fieldBg}}; padding: 0 12px;">
+          <span style="font-size: 12.5px; font-weight: 600; color: {{textMain}};">Hora del aviso</span>
+          <span style="font-size: 13px; font-weight: 700; color: {{textMain}};">20:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.5;">Se muestra una sola vez: al responder (cualquiera de las dos opciones, o la X) se guarda un booleano nuevo en learning-storage.ts (junto al resto del perfil) y ese booleano es lo único que decide si el snackbar vuelve a aparecer — no importa cuántas sesiones termines después. Copy provisional, pendiente de tu aprobación. Si se elige esta ruta, va como fila nueva en CONTENT_CHECKLIST.md.</div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "theme": {"editor": "enum", "options": ["Claro", "Oscuro"], "default": "Claro", "section": "Tema"},
+  "mostrarPrompt": {"editor": "boolean", "default": true, "section": "Estado"},
+  "$preview": {"width": 390, "height": 1160}
+}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mostrarPrompt: props.mostrarPrompt !== false };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.mostrarPrompt !== this.props.mostrarPrompt) {
+      this.setState({ mostrarPrompt: this.props.mostrarPrompt !== false });
+    }
+  }
+
+  renderVals() {
+    const isDark = (this.props.theme ?? "Claro") === "Oscuro";
+
+    const p = isDark
+      ? {
+          pageBg: "#14121f", surface: "#1b1930", surfaceBorder: "#34304a",
+          textMain: "#f1eefc", textMuted: "#a29cc0",
+          primary: "#9b8bff", primarySoft: "#2c2650", primaryEdge: "#4b4180", primaryIcon: "#b9adff",
+          secondary: "#e19bec", secondarySoft: "#3a1f45", secondaryEdge: "#5c3566", secondaryIcon: "#edb9f5",
+          fieldBg: "#2b2740", fieldBorder: "#6f6a94",
+          btnFg: "#14121f", neutralText: "#c8c4dc",
+          osBg: "#23203a", osBorder: "#3a3556", osText: "#f1eefc", osMuted: "#a29cc0"
+        }
+      : {
+          pageBg: "#f2f1f8", surface: "#ffffff", surfaceBorder: "#e2dff1",
+          textMain: "#1c1b2e", textMuted: "#6b6880",
+          primary: "#6d5ef0", primarySoft: "#ecebfe", primaryEdge: "#cfc8fb", primaryIcon: "#5b4bdb",
+          secondary: "#b34bd1", secondarySoft: "#f6e9fb", secondaryEdge: "#e6c6f2", secondaryIcon: "#9a34b8",
+          fieldBg: "#e2dff1", fieldBorder: "#9c96c4",
+          btnFg: "#ffffff", neutralText: "#3f3b52",
+          osBg: "#ffffff", osBorder: "#dcd9ea", osText: "#1c1b2e", osMuted: "#6b6880"
+        };
+
+    return Object.assign({}, p, {
+      mostrarPrompt: this.state.mostrarPrompt,
+      responder: () => this.setState({ mostrarPrompt: false }),
+      reiniciar: () => this.setState({ mostrarPrompt: true })
+    });
+  }
+}
+</script>
+</body>
+</html>

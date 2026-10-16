@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Silkscreen:wght@400;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    a { color: #6d5ef0; }
+    a:hover { color: #5b4bdb; }
+    .pixel { font-family: "Silkscreen", "Courier New", monospace; }
+    .tap { cursor: pointer; }
+    .tap:active { transform: scale(0.99); }
+  </style>
+</helmet>
+
+<div style="min-height: 100%; width: 100%; background: {{pageBg}}; display: flex; justify-content: center; padding: 20px 16px 28px;">
+  <div style="width: 100%; max-width: 358px; display: flex; flex-direction: column; gap: 14px;">
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="pixel" style="font-size: 11px; letter-spacing: 0.06em; color: {{primary}};">C - CARTUCHO 8 BITS</span>
+      <span style="font-size: 12px; font-weight: 600; color: {{textMuted}}; line-height: 1.45;">La racha como premio: aparece grande al terminar la sesion y el resto del tiempo vive como una insignia pequeña. Toca el cartucho para ver el día normal y la marca nueva.</span>
+    </div>
+
+    <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 20px; font-weight: 800; color: {{textMain}};">Sesión terminada</span>
+        <span style="font-size: 12.5px; font-weight: 600; color: {{textMuted}};">Europa · 44 de 44 · 6 min 12 s</span>
+      </div>
+
+      <div class="tap" onClick="{{cycle}}" style="position: relative; background: {{cartBg}}; padding: 12px; box-shadow: 0 -4px 0 0 {{cartBg}}, 0 4px 0 0 {{cartBg}}, -4px 0 0 0 {{cartBg}}, 4px 0 0 0 {{cartBg}}; display: flex; flex-direction: column; gap: 10px;">
+
+        <div style="display: flex; gap: 4px;">
+          <div style="height: 4px; flex: 1; background: {{cartGrip}};"></div>
+          <div style="height: 4px; flex: 1; background: {{cartGrip}};"></div>
+          <div style="height: 4px; flex: 1; background: {{cartGrip}};"></div>
+        </div>
+
+        <sc-if value="{{esRecord}}" hint-placeholder-val="{{true}}">
+          <div style="align-self: flex-start; background: {{warning}}; padding: 4px 8px;">
+            <span class="pixel" style="font-size: 10px; letter-spacing: 0.06em; color: {{onWarning}};">NUEVA MARCA</span>
+          </div>
+        </sc-if>
+
+        <div style="background: {{labelBg}}; padding: 14px; display: flex; align-items: center; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+            <span class="pixel" style="font-size: 10px; letter-spacing: 0.06em; color: {{labelMuted}};">RACHA</span>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <span class="pixel" style="font-size: 42px; line-height: 1; color: {{labelAccent}};">{{streakText}}</span>
+              <span class="pixel" style="font-size: 14px; color: {{labelMuted}};">{{deltaText}}</span>
+            </div>
+            <span style="font-size: 12.5px; font-weight: 700; color: {{labelText}};">días seguidos</span>
+          </div>
+
+          <div style="margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+            <span class="pixel" style="font-size: 9px; letter-spacing: 0.06em; color: {{labelMuted}};">MEJOR</span>
+            <span class="pixel" style="font-size: 18px; line-height: 1; color: {{labelText}};">{{recordText}}</span>
+            <div style="display: flex; gap: 3px; margin-top: 4px;">
+              <sc-for list="{{blocks}}" as="block" hint-placeholder-count="7">
+                <div style="width: 7px; height: 14px; background: {{block.bg}};"></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <span style="font-size: 12px; font-weight: 600; color: {{cartText}}; line-height: 1.45;">{{cartCopy}}</span>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1; height: 40px; border-radius: 36px; background: {{neutralSoft}}; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 14px; font-weight: 500; color: {{neutralText}};">Volver</span>
+        </div>
+        <div style="flex: 1; height: 40px; border-radius: 36px; background: {{primary}}; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 14px; font-weight: 500; color: {{btnFg}};">Otra ronda</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{textMuted}};">El resto del tiempo, en reposo</span>
+      <div style="background: {{surface}}; border: 1px solid {{surfaceBorder}}; border-radius: 22px; padding: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 20px 40px -24px rgba(20,15,45,0.35);">
+        <div style="width: 52px; height: 52px; border-radius: 999px; background: {{primarySoft}}; flex-shrink: 0;"></div>
+        <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px;">
+          <strong style="font-size: 16px; font-weight: 700; color: {{textMain}};">Explorador</strong>
+          <span style="font-size: 11.5px; font-weight: 600; color: {{textMuted}};">14% · 27/196</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; background: {{cartBg}}; padding: 5px 9px; box-shadow: 0 -3px 0 0 {{cartBg}}, 0 3px 0 0 {{cartBg}}, -3px 0 0 0 {{cartBg}}, 3px 0 0 0 {{cartBg}}; flex-shrink: 0;">
+          <div style="display: flex; gap: 2px;">
+            <div style="width: 3px; height: 11px; background: {{labelAccent}};"></div>
+            <div style="width: 3px; height: 11px; background: {{labelAccent}};"></div>
+            <div style="width: 3px; height: 11px; background: {{labelAccent}};"></div>
+          </div>
+          <span class="pixel" style="font-size: 13px; color: {{cartText}};">{{streakText}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size: 11.5px; font-weight: 600; color: {{textMuted}}; line-height: 1.5;">Coste: es la más cara. Pide una superficie oscura propia (el cartucho) que hoy no existe en modo claro: dos tokens nuevos más la fuente de pixeles.</div>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "theme": {"editor": "enum", "options": ["Claro", "Oscuro"], "default": "Claro", "section": "Tema"},
+  "momento": {"editor": "enum", "options": ["Día sumado", "Nueva marca"], "default": "Día sumado", "section": "Estado"},
+  "$preview": {"width": 390, "height": 820}
+}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { momento: props.momento ?? "Día sumado" };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.momento !== this.props.momento) {
+      this.setState({ momento: this.props.momento });
+    }
+  }
+
+  cycle() {
+    const order = ["Día sumado", "Nueva marca"];
+    const next = order[(order.indexOf(this.state.momento) + 1) % order.length];
+    this.setState({ momento: next });
+  }
+
+  renderVals() {
+    const isDark = (this.props.theme ?? "Claro") === "Oscuro";
+    const esRecord = this.state.momento === "Nueva marca";
+
+    const p = isDark
+      ? {
+          pageBg: "#14121f", surface: "#1b1930", surfaceHover: "#262238", surfaceBorder: "#34304a",
+          textMain: "#f1eefc", textMuted: "#a29cc0", primary: "#9b8bff", primarySoft: "#2c2650",
+          warning: "#f2a53d", onWarning: "#14121f", btnFg: "#14121f",
+          neutralSoft: "#2a2740", neutralText: "#c8c4dc",
+          cartBg: "#100e1c", cartGrip: "#2c2650", cartText: "#cfc9e8",
+          labelBg: "#221d3d", labelText: "#f1eefc", labelMuted: "#a29cc0", labelAccent: "#9b8bff",
+          blockOff: "#2f2b47"
+        }
+      : {
+          pageBg: "#f2f1f8", surface: "#ffffff", surfaceHover: "#f1eff9", surfaceBorder: "#e2dff1",
+          textMain: "#1c1b2e", textMuted: "#6b6880", primary: "#6d5ef0", primarySoft: "#ecebfe",
+          warning: "#d97a13", onWarning: "#ffffff", btnFg: "#ffffff",
+          neutralSoft: "#eeedf6", neutralText: "#3f3b52",
+          cartBg: "#241f3d", cartGrip: "#3d3661", cartText: "#d9d4f0",
+          labelBg: "#332c56", labelText: "#f1eefc", labelMuted: "#b4adda", labelAccent: "#b9adff",
+          blockOff: "#4a4373"
+        };
+
+    const streak = esRecord ? 22 : 8;
+    const record = esRecord ? 22 : 21;
+
+    const blocks = [];
+
+    for (let i = 0; i < 7; i += 1) {
+      blocks.push({ bg: i < 6 ? p.labelAccent : p.blockOff });
+    }
+
+    return {
+      pageBg: p.pageBg,
+      surface: p.surface,
+      surfaceBorder: p.surfaceBorder,
+      textMain: p.textMain,
+      textMuted: p.textMuted,
+      primary: p.primary,
+      primarySoft: p.primarySoft,
+      warning: p.warning,
+      onWarning: p.onWarning,
+      btnFg: p.btnFg,
+      neutralSoft: p.neutralSoft,
+      neutralText: p.neutralText,
+      cartBg: p.cartBg,
+      cartGrip: p.cartGrip,
+      cartText: p.cartText,
+      labelBg: p.labelBg,
+      labelText: p.labelText,
+      labelMuted: p.labelMuted,
+      labelAccent: p.labelAccent,
+      blocks,
+      esRecord,
+      streakText: String(streak),
+      recordText: String(record),
+      deltaText: "+1",
+      cartCopy: esRecord
+        ? "Nunca habías llegado tan lejos. El cartucho guarda el numero hasta que falles un dia."
+        : "Un día más en el cartucho. Vuelve mañana para que no se borre.",
+      cycle: () => this.cycle()
+    };
+  }
+}
+</script>
+</body>
+</html>
