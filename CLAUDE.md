@@ -29,8 +29,11 @@ En git: `.kit-version`, `supabase/` (D199) y los documentos **fijos** de `contex
 
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
-Claude Design) y `.env*`; respaldo: `bun run context:backup`. Nunca van a git (ni con
-`git add -f`).
+Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
+`git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`bunx vercel env pull
+.env.local --yes`, entorno Development; los valores reales viven en Vercel por entorno; lo propio de
+esta máquina va en `.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
+su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
 Los slots del pool de worktrees (`orchestrate`, `..\world-flags-wt\wtN`, D136) traen los
 `.env*` copiados, pero **no** `context/` local: se lee (y actualiza) en la carpeta
 principal, `C:\Users\Admin\Documents\Work\world-flags\`. Un subagente en un slot que no
