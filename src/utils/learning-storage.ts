@@ -14,23 +14,25 @@ import {
 	WORLD_BEST_TIME_KEY_HISTORY,
 	WORLD_BEST_TIME_KEYS,
 } from "@/types/country";
-import type {
-	BestTimeKey,
-	CountriesLearningHistory,
-	DailyReminderPreference,
-	FieldUpdatedAt,
-	GameProgress,
-	LastPracticeByCountry,
-	LearningPath,
-	RegionBestTimes,
-	RegionGameScores,
-	ReviewGrade,
-	ReviewState,
-	SessionRecord,
-	UnlockedAchievements,
-	UserLearningData,
-	UserProfile,
-	UserStats,
+import {
+	AVATAR_STYLES,
+	type AvatarStyle,
+	type BestTimeKey,
+	type CountriesLearningHistory,
+	type DailyReminderPreference,
+	type FieldUpdatedAt,
+	type GameProgress,
+	type LastPracticeByCountry,
+	type LearningPath,
+	type RegionBestTimes,
+	type RegionGameScores,
+	type ReviewGrade,
+	type ReviewState,
+	type SessionRecord,
+	type UnlockedAchievements,
+	type UserLearningData,
+	type UserProfile,
+	type UserStats,
 } from "@/types/progress";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 import { getLocalDateString } from "@/utils/date";
@@ -339,6 +341,26 @@ function migrateDailyReminder(
 }
 
 /**
+ * El perfil campo a campo: lo que no tenga el tipo esperado (un `name` que no
+ * es texto, un estilo de avatar que ya no existe, un perfil que ni siquiera es
+ * un objeto) vuelve al valor por defecto. Sin esto, un `name` numérico en el
+ * almacenamiento tumbaba la app al pintar el resumen del usuario.
+ */
+function migrateProfile(profile: unknown): UserProfile {
+	if (typeof profile !== "object" || profile === null) return DEFAULT_PROFILE;
+	const { name, avatarStyle, avatarSeed } = profile as Record<string, unknown>;
+
+	return {
+		name: typeof name === "string" ? name : DEFAULT_PROFILE.name,
+		avatarStyle: AVATAR_STYLES.includes(avatarStyle as AvatarStyle)
+			? (avatarStyle as AvatarStyle)
+			: DEFAULT_PROFILE.avatarStyle,
+		avatarSeed:
+			typeof avatarSeed === "string" ? avatarSeed : DEFAULT_PROFILE.avatarSeed,
+	};
+}
+
+/**
  * Normaliza datos crudos (de localStorage o de una fila de Supabase) a un
  * `UserLearningData` completo, rellenando lo que falte y migrando esquemas
  * viejos.
@@ -356,10 +378,7 @@ export function normalizeLearningData(
 	const lastPracticeByCountry = parsedData.lastPracticeByCountry ?? {};
 
 	return {
-		profile: {
-			...DEFAULT_PROFILE,
-			...parsedData.profile,
-		},
+		profile: migrateProfile(parsedData.profile),
 		countryHistory,
 		regionGameScores,
 		regionBestTimes: parsedData.regionBestTimes ?? {},
