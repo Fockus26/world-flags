@@ -221,3 +221,50 @@ export function subscribeToDailyReminder(
 			return "failed";
 		});
 }
+
+/**
+ * La suscripción Push de este dispositivo, si la hay. Usa `getRegistration`
+ * y no `ready`: si el SW no llegó a registrarse, `ready` no se resuelve nunca
+ * y el interruptor se quedaría sin estado.
+ */
+async function getCurrentSubscription(): Promise<PushSubscription | null> {
+	if (getNotificationSupport() !== "supported") return null;
+
+	const registration = await navigator.serviceWorker.getRegistration();
+
+	return (await registration?.pushManager.getSubscription()) ?? null;
+}
+
+/**
+ * Si este dispositivo recibe el recordatorio: permiso concedido y suscripción
+ * viva. Es por dispositivo, igual que la fila de `push_subscriptions`.
+ */
+export async function isSubscribedToDailyReminder(): Promise<boolean> {
+	try {
+		if (getNotificationSupport() !== "supported") return false;
+		if (Notification.permission !== "granted") return false;
+
+		return (await getCurrentSubscription()) !== null;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Da de baja el recordatorio en este dispositivo. Basta con anular la
+ * suscripción en el navegador: el endpoint deja de existir y
+ * `send-daily-reminders` borra la fila de `push_subscriptions` en cuanto le
+ * responde 404/410, sin tocar la tabla desde el cliente.
+ *
+ * Nunca lanza: `false` si no se pudo anular.
+ */
+export async function unsubscribeFromDailyReminder(): Promise<boolean> {
+	try {
+		const subscription = await getCurrentSubscription();
+
+		return subscription ? await subscription.unsubscribe() : true;
+	} catch (error) {
+		console.error("Failed to unsubscribe from daily reminder:", error);
+		return false;
+	}
+}

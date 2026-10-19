@@ -3,6 +3,7 @@ import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Fieldset } from "@/components/ui/Fieldset";
 import { OptionTile } from "@/components/ui/OptionTile";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useDailyReminderPreference } from "@/hooks/useDailyReminderPreference";
 import { useSoundPreference } from "@/hooks/useSoundPreference";
 import {
 	type Difficulty,
@@ -13,7 +14,12 @@ import {
 	TIMER_DURATIONS,
 	type TimerDuration,
 } from "@/types/country";
+import { DAILY_REMINDER_EXPLANATIONS } from "@/utils/daily-reminder-explanations";
 import { RUSH_PENALTY_SUMMARY } from "@/utils/rush-penalty";
+
+/** Por qué no se pudo apagar: el resto de motivos sale de `DAILY_REMINDER_EXPLANATIONS`. */
+const UNSUBSCRIBE_FAILED_MESSAGE =
+	"No pudimos desactivar el recordatorio en este dispositivo. Inténtalo de nuevo en un momento.";
 
 /** Botón "?" enfocable: el texto de ayuda va en `aria-label` (lo oyen los
  *  lectores de pantalla al enfocar) y también en el tooltip visual para ratón. */
@@ -57,6 +63,17 @@ export function GameTab({
 	onDifficultyChange,
 }: GameTabProps) {
 	const { soundEnabled, setSoundEnabled } = useSoundPreference();
+	const {
+		enabled: reminderEnabled,
+		problem: reminderProblem,
+		setEnabled: setReminderEnabled,
+	} = useDailyReminderPreference();
+	const reminderProblemText =
+		reminderProblem === null
+			? ""
+			: reminderProblem === "unsubscribe-failed"
+				? UNSUBSCRIBE_FAILED_MESSAGE
+				: `${DAILY_REMINDER_EXPLANATIONS[reminderProblem].title}. ${DAILY_REMINDER_EXPLANATIONS[reminderProblem].body}`;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -206,6 +223,41 @@ export function GameTab({
 						Activados
 					</OptionTile>
 				</div>
+			</Fieldset>
+
+			<Fieldset
+				legend={
+					<span className="inline-flex items-center gap-2">
+						Notificaciones
+						<HelpHint label="Un recordatorio diario para seguir tu racha, a la hora en que lo activas. Vale solo para este dispositivo." />
+					</span>
+				}
+			>
+				{/* Mismo patrón que "Sonidos". El estado sale del navegador
+				    (permiso + suscripción Push): mientras se consulta, ninguna
+				    opción va marcada. Si no se puede activar, el motivo queda
+				    debajo y el radio vuelve a "Desactivadas" (D127). */}
+				<div className="grid grid-cols-2 gap-1.5">
+					<OptionTile
+						name="settings-notifications"
+						value="off"
+						checked={reminderEnabled === false}
+						onChange={() => setReminderEnabled(false)}
+					>
+						Desactivadas
+					</OptionTile>
+					<OptionTile
+						name="settings-notifications"
+						value="on"
+						checked={reminderEnabled === true}
+						onChange={() => setReminderEnabled(true)}
+					>
+						Activadas
+					</OptionTile>
+				</div>
+				<p role="status" className="m-0 text-caption text-text-placeholder">
+					{reminderProblemText}
+				</p>
 			</Fieldset>
 
 			<Fieldset legend="Tema">
