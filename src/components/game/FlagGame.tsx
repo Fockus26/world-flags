@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { PageFlip } from "@/components/app/PageFlip";
 import { RequiredUpdateDialog } from "@/components/app/RequiredUpdateDialog";
 import { SystemSnackbars } from "@/components/app/SystemSnackbars";
@@ -59,6 +59,19 @@ function FlagGameContent() {
 	}
 	const flipViewKey = lastResult ? lastFlipKeyRef.current : liveFlipKey;
 
+	// Al volver a la pantalla de inicio desde una partida ("Volver al inicio"
+	// en Resultados, "Sí, abandonar" en cualquier partida o en la práctica
+	// diaria), el botón que tenía el foco se desmonta con ella: el foco va al
+	// título de inicio (P51), cuando el giro termina y deja de estar `inert`.
+	const previousFlipKeyRef = useRef<FlipViewKey>(flipViewKey);
+	useEffect(() => {
+		const previous = previousFlipKeyRef.current;
+		previousFlipKeyRef.current = flipViewKey;
+		if (previous !== "configuration" && flipViewKey === "configuration") {
+			focusIfLost(() => document.getElementById(CONFIGURATION_TITLE_ID));
+		}
+	}, [flipViewKey]);
+
 	function renderFlipView(key: FlipViewKey) {
 		switch (key) {
 			case "session":
@@ -112,15 +125,8 @@ function FlagGameContent() {
 					<Results
 						result={lastResult}
 						onRestart={restartGame}
-						onExit={() => {
-							exitGame();
-							// "Volver al inicio" se desmonta con Resultados: el foco
-							// va al título de la pantalla de inicio (P51), cuando el
-							// giro termina y deja de estar `inert`.
-							focusIfLost(() =>
-								document.getElementById(CONFIGURATION_TITLE_ID),
-							);
-						}}
+						// El foco lo recoge el efecto de `flipViewKey` de arriba.
+						onExit={exitGame}
 					/>
 				</div>
 			)}
