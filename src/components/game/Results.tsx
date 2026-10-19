@@ -92,7 +92,12 @@ function CompetitiveResults({
 						format={(count) => `${formatCount(count)}/${result.totalCountries}`}
 						className="text-heading-sm leading-none tabular-nums whitespace-nowrap sm:text-stat-sm"
 					/>
-					<span className="mt-1 text-tiny font-bold">encontrados</span>
+					{/* Etiqueta pequeña: `primary` sobre `primary-soft` da 3,97:1;
+					    `primary-hover` da 5,15:1 (6,54:1 en oscuro). El número es
+					    texto grande y se queda en `primary` (D206). */}
+					<span className="mt-1 text-tiny font-bold text-primary-hover">
+						encontrados
+					</span>
 				</div>
 
 				<p className="m-0 max-w-lg leading-[1.6] text-text-placeholder">
@@ -134,7 +139,10 @@ function CompetitiveResults({
 					format={formatElapsedTime}
 					className="text-heading-sm leading-none tabular-nums whitespace-nowrap sm:text-stat-sm"
 				/>
-				<span className="mt-1 text-tiny font-bold">tiempo</span>
+				{/* `primary-hover`: ver "encontrados" arriba (D206). */}
+				<span className="mt-1 text-tiny font-bold text-primary-hover">
+					tiempo
+				</span>
 			</div>
 
 			<p className="m-0 max-w-lg leading-[1.6] text-text-placeholder">
