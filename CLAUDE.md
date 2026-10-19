@@ -34,10 +34,9 @@ Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
 .env.local --yes`, entorno Development; los valores reales viven en Vercel por entorno; lo propio de
 esta máquina va en `.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
-Los slots del pool de worktrees (`orchestrate`, `..\world-flags-wt\wtN`, D136) traen los
-`.env*` copiados, pero **no** `context/` local: se lee (y actualiza) en la carpeta
-principal, `C:\Users\Admin\Documents\Work\world-flags\`. Un subagente en un slot que no
-pueda escribir ahí lo devuelve en su informe. El estado de las ramas es `gh pr list`.
+Los slots del pool (`..\world-flags-wt\wtN`, D136) traen los `.env*` pero **no** el
+`context/` local: se lee y actualiza en la carpeta principal; quien no pueda escribir ahí
+lo devuelve en su informe. Estado de las ramas: `gh pr list`.
 
 ---
 
@@ -116,8 +115,8 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 | `wave-qa` | Lo lanza `orchestrate` con la ola mergeada, antes de cerrarla |
 | `design-qa` / `functional-qa` | Al cerrar una pantalla / un flujo completo |
 
-**Entorno:** en este Windows Playwright falla a ratos (Chromium colgado, `innerHeight` = 0).
-Si un agente de QA no puede ejecutar, su reporte es revisión de código, marcado como no verificado.
+**Entorno:** en Windows Playwright falla a ratos; si QA no puede ejecutar, reporta revisión
+de código marcada como no verificada.
 
 ---
 
