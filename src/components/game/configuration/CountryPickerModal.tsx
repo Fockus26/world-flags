@@ -6,7 +6,7 @@ import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
 import { countries } from "@/data/countries";
 import { REGION_LABELS, REGIONS, type Region } from "@/types/country";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
-import { focusIfLost } from "@/utils/focus";
+import { focusAfterRemoval } from "@/utils/focus";
 
 interface CountryPickerModalProps {
 	isOpen: boolean;
@@ -123,11 +123,12 @@ function RegionBulkButton({
 			data-region-bulk={region}
 			aria-label={accessibleName}
 			className="grid cursor-pointer place-items-center border-0 bg-transparent px-2.5 text-tiny font-semibold text-text-placeholder transition-colors hover:bg-surface hover:text-secondary-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
-			onClick={() => {
+			onClick={(event) => {
+				const pressed = event.currentTarget;
 				onPress();
 				// Al pulsarlo puede desmontarse ("Todos" con todo marcado,
 				// "Ninguno" con nada): el foco pasa al que queda (P54).
-				focusIfLost(() =>
+				focusAfterRemoval(pressed, () =>
 					document.querySelector<HTMLElement>(`[data-region-bulk="${region}"]`),
 				);
 			}}
