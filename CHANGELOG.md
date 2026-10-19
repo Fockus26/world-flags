@@ -9,6 +9,24 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.0] - 2026-10-19
+
+### Añadido
+
+- En Configuración, pestaña Juego, hay una opción Notificaciones para activar o
+  desactivar el recordatorio diario en este dispositivo cuando quieras.
+
+### Corregido
+
+- Un doble clic en el botón de una ventana (Empezar, Sí, abandonar…) ya no pulsa
+  también lo que queda debajo al cerrarse: hace lo mismo que un clic.
+- Con teclado o lector de pantalla, al pulsar Todos o Ninguno en el selector de
+  países el foco pasa al botón que queda, en vez de saltar a Cerrar.
+- Al abandonar una partida o la práctica diaria, el foco vuelve al título de la
+  pantalla de inicio.
+- Si el perfil guardado en el navegador está dañado, la app ya no se queda en
+  "Algo salió mal": recupera el nombre y el avatar por defecto.
+
 ## [2.9.0] - 2026-10-19
 
 ### Añadido
