@@ -16,8 +16,8 @@
 | #89 | `fix/copy-lotes-y-nota` | C2 · "Lote N de M", "Cancelar", "Lote en marcha", nota en claro al 58 % (P49, P52.3, P52.4, P58) | patch | D204 |
 
 **2026-10-19:** #86, #87, #88 mergeados. `main` traído a #89 con un merge (64a29e0); conflicto del titular resuelto conservando las dos cosas (foco de C1 + "Lote en marcha" de C2). Checks en verde. #89 mergeado (main db1a434). Ramas borradas. Abierto solo #90 (release, del dueño). Sigue: QA final.
-**Sigue:** QA final (wave-qa + a11y + diseño + SEO) sobre main con todo mergeado. Con sesión, bloqueada: Docker Desktop provoca pantallazo azul 0x7E en esta PC (2026-10-18/19); sin Docker, `qa:local --offline` (solo invitado).
-**Esta PC (Cesar):** se instalaron Bun 1.4.3 y gh 2.102.0 (winget); git con `user.name/email` del repo. Falta: `.env.local` (`bunx vercel env pull`, requiere `vercel login` del dueño), agentes del kit (`feature-worker`, `wave-qa`, `wt.ps1`), Docker.
+**Sigue:** QA final (wave-qa + a11y + diseño + SEO) sobre main con todo mergeado (#90 release ya en main, 85f480e). Antes: mergear #91 `chore/supabase-local` (config.toml, migración, seed.sql, README de supabase/; start y db reset verificados en esta PC, ~4-5 min cada uno) para que los slots tengan la base local.
+**Esta PC (Cesar), 2026-10-19:** Bun 1.4.3, gh, Supabase CLI 2.121.0, Docker Desktop estable (ya sin pantallazo), `.env.local` y `.env.test.local` presentes. Kit 3.9.0 instalado en `~/.claude` desde el clon `..\web-agent-kit` (agentes `feature-worker`, `wave-qa`, `design-qa`, `functional-qa`). Pool `..\world-flags-wt\wt1–wt4` creado (puertos 4301–4304).
 
 **Ola de arreglos 2026-10-12 — ola A mergeada (#78–#81), slots libres** (brief `plans/orquestacion-2026-10-12-arreglos.md`, prompts `-prompts.md`, plan `plans/tanda-2026-10-12-arreglos.md`). Base main 27df232 (#73–#77 mergeados).
 
