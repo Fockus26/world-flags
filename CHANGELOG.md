@@ -9,6 +9,32 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.9.0] - 2026-10-19
+
+### Añadido
+
+- Página propia cuando abres una dirección que no existe, con un botón para
+  volver a practicar.
+- Si la app falla al mostrarse, ahora ves una pantalla para reintentar o
+  recargar en vez de una pantalla en blanco. Tu progreso no se pierde.
+- El texto que seleccionas se resalta con el color de la app, en tema claro y
+  oscuro.
+
+### Cambiado
+
+- En Aprender por lotes, la partida se titula "Lote N de M", Resultados dice
+  "Lote en marcha" y el botón para no abandonar dice "Cancelar".
+- El título de la pestaña y de los enlaces compartidos ya no repite el nombre:
+  ahora dice "Banderas del Mundo — Aprende con repetición espaciada".
+
+### Corregido
+
+- La nota de Resultados se lee mejor en tema claro.
+- Con teclado o lector de pantalla, el foco ya no se pierde al empezar o
+  abandonar un aprendizaje por lotes, al llegar a Resultados o volver al inicio,
+  al responder una tarjeta ni al pulsar Todos o Ninguno en el selector de
+  países.
+
 ## [2.8.3] - 2026-10-13
 
 ### Corregido
