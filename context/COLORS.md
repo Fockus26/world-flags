@@ -22,7 +22,7 @@
 |---|---|---|
 | primary / accent | `#6d5ef0` | CTAs, selección, marca. **Como texto sobre blanco falla AA (~3.97:1)** — no usar como color de texto |
 | accent-foreground | `#ffffff` | texto sobre relleno `--accent` (opción marcada de `OptionTile`, primitivos HeroUI). 4,66:1. Antes `#f7f6ff` = 4,34:1, fallaba AA (D106) |
-| primary-hover | `#5b4bdb` | |
+| primary-hover | `#5b4bdb` | texto pequeño con acento sobre `primary-soft`: 5,15:1 (6,54:1 en oscuro con `#b3a6ff`). Ahí `primary` da 3,97:1. Lo usan la fila propia del ranking (D148) y las etiquetas «encontrados»/«tiempo» de Resultados del rush (D206) |
 | primary-soft | `#ecebfe` | fondos suaves, botón `soft` |
 | secondary | `#b34bd1` · hover `#9b3ab8` | acentos secundarios: bordes, barra de progreso, casillas del picker. **Como texto falla AA** (4,34:1 sobre blanco, 3,86:1 sobre `background`, 3,81:1 sobre `surface-hover`): el texto morado va en `secondary-hover` (5,69 / 5,07 / 5,00:1; D187, D192). Tampoco sirve de relleno con texto blanco: el botón `contained` ("Práctica diaria") pinta `secondary-hover` (D195) |
 | background (`--background`) | `#f2f1f8` | fondo de página (gris lavanda) |
