@@ -390,17 +390,17 @@ cabeceras de caché del HTML en Vercel. Sin código por ahora.
 Guía: `reference/STATUS-SCREENS.md` del kit (escrita para Next; aquí se traduce a Astro +
 isla React). Primero diseño (adenda para Claude Design), luego implementación. Cada una PATCH.
 
-## P39 — Color de selección de texto (`::selection`)
+## P39 — Color de selección de texto (`::selection`) — PR #88 (D203)
 Hoy sale el del navegador. Token `selection.bg` / `selection.text` en claro y oscuro (filas en
 `COLORS.md`), contraste ≥ 4,5:1 del texto seleccionado, en `global.css`. Fase 02 del kit.
 
-## P40 — Página 404 propia
+## P40 — Página 404 propia — PR #88 (D203)
 Solo existe `src/pages/index.astro`: una ruta inexistente muestra la 404 genérica de Vercel.
 `src/pages/404.astro` (Astro la sirve en Vercel) con el layout, tema claro/oscuro y una acción
 "Volver a practicar" → `/`. Sin variante con/sin sesión (la sesión vive dentro de la isla).
 Copy: `CONTENT_CHECKLIST.md` fila 48. Ojo con `sw.js`: no cachear la 404 como navegación.
 
-## P41 — Pantalla de error (error boundary)
+## P41 — Pantalla de error (error boundary) — PR #88 (D203)
 No hay `ErrorBoundary`: un fallo de render de React deja la pantalla en blanco. Un boundary
 alrededor de `App` con "algo salió mal" + reintentar/recargar, que no pierda el progreso
 (`learning-storage.ts` intacto). Copy: fila 49. Sin conexión ya está cubierto
@@ -457,18 +457,18 @@ Banderas), faltan `og:image:alt`/`twitter:image:alt` (dueño), `og-image.png` 58
 **Decidido 2026-10-12: opción (a).** Visto en W6 (#73): texto blanco sobre `#b34bd1` = 4,34:1 (16 px, peso 500). Opciones (D192): (a) base
 `secondary-hover` en el contained secondary; (b) texto oscuro; (c) oscurecer el token `secondary`. Decide el dueño.
 
-## P49 — Título de la sesión de lote (Medio, Q2)
+## P49 — Título de la sesión de lote (Medio, Q2) — PR #89 (D204)
 
 La sesión de un lote se titula "5 PAÍSES PERSONALIZADOS"; se confunde con una práctica a mano. Propuesta:
 "Lote N de M". Copy del dueño. Ver `plans/qa-design-2026-10-12.md`.
 
-## P50 — QA de diseño: resto (Q2)
+## P50 — QA de diseño: resto (Q2) — bajo en PR #86 (D201); medio sin acción
 
 Medio: el tutorial (backdrop) tapa el 🏆 ~1 s tras cargar (diseño, no fallo; e2e deben sembrar
 `world-flags-tutorial-seen=true`). Bajo: `rounded-[0.25rem]` en `CountryPickerModal.tsx:73` → token.
 Sin verificar en Q2: línea del lote en Resultados y modal de abandonar el lote; zoom, daltonismo, Tab.
 
-## P51 — a11y: foco perdido en lotes y Resultados (Medio, Q3)
+## P51 — a11y: foco perdido en lotes y Resultados (Medio, Q3) — PR #86 (D202)
 
 Foco cae en `<body>` al pulsar "Empezar" en LearningPathModal (`Configuration.tsx:423-450`), al confirmar
 "Sí, abandonar" (`LearningPathPanel.tsx:52-56`), al terminar la sesión de lote y con "Volver al inicio".
@@ -481,12 +481,12 @@ devuelve el foco a `body` 2 de 4 veces. Ver `plans/qa-a11y-2026-10-12.md`. Va a 
 texto oscuro. Resultados oscuro: "/10" nota baja `#e27071` sobre `#511d1d` = 4,39:1 (`Results.tsx:174`).
 Copy (dueño): "Seguir aprendiendo" repetido en el modal de abandonar; "Conviene repetir esta región" en lotes.
 
-## P53 — Al responder una tarjeta el foco cae a `<body>` (WCAG 2.4.3)
+## P53 — Al responder una tarjeta el foco cae a `<body>` (WCAG 2.4.3) — PR #86 (D202)
 
 Visto en W7 (#75): `AnswerForm` deshabilita el input con foco y quita "Comprobar" en cualquier partida.
 Afecta el teclado de todas las partidas; unidad propia. Relacionado con P51.
 
-## P54 — "Todos"/"Ninguno" pierden el foco al pulsarlos con teclado (2.4.3)
+## P54 — "Todos"/"Ninguno" pierden el foco al pulsarlos con teclado (2.4.3) — PR #86 (D202)
 
 Visto en W5 (#76): el botón se desmonta (Todos → Ninguno) y el foco va a "Cerrar" o `body`. Juntar con P51/P53.
 
@@ -519,14 +519,14 @@ reintentos (o en los 3 s antes de sincronizar perfil), sirve la marca vieja y no
 - **P48** (a) ya anotado arriba.
 Copy aprobado: añadir filas al CONTENT_CHECKLIST como "Aprobado 2026-10-12".
 
-## P57 — Restos de marca tras F5 (#78) — decide/hace el dueño
+## P57 — Restos de marca tras F5 (#78) — decide/hace el dueño — title en PR #87; og-image y Edge Function siguen del dueño
 
 - `<title>` quedó «Banderas del Mundo — Aprende las banderas del mundo» (repite): copy del dueño.
 - `public/og-image.png` dice «World Flags» en grande: rehacerla si se quiere la marca nueva.
 - Edge Function privada `supabase/functions/send-daily-reminders/index.ts:83` («…en World Flags.»): cambiar y desplegar a mano.
 - Alt de la og-image ajustado por F5 (checklist fila 52): aprobar.
 
-## P58 — Nota de Resultados en claro falla AA (escalado por F3, #81) — decide el dueño
+## P58 — Nota de Resultados en claro falla AA (escalado por F3, #81) — decide el dueño — PR #89 (D204)
 
 En claro, `getScoreColor` como texto en `Results.tsx`: nota 3 → 3,81:1, 4 → 2,98:1, 5–10 → 2,1–2,4:1. El número
 (texto grande, 3:1) falla 4–10; "/10" (4,5:1) falla 3–10. Opciones con pros/contras en D196 (#81). Toca

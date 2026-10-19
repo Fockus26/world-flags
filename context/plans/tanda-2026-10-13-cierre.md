@@ -35,6 +35,15 @@ en dos PRs seguidos). C3 y C4 en paralelo con C1.
 
 P38 (404 de bundle viejo tras deploy): solo observar. P50 medio (tutorial tapa 🏆 1 s): es diseño.
 
-## Decisiones (respuesta del dueño)
+## Decisiones (respuesta del dueño, 2026-10-19)
 
-_pendiente_
+- P58: texto del círculo con `color-mix(in oklab, <nota> 62%, var(--foreground))` (opción 3 de D196); medir las 10 notas.
+- P57 `<title>`: «Banderas del Mundo — Aprende con repetición espaciada».
+- P57 alt de la og-image: se aprueba el actual (fila 52); se revisa si se rehace la imagen.
+- Copy de C2 ya decidido el 2026-10-12 (P49 "Lote N de M", P52.3 "Cancelar", P52.4 "Lote en marcha").
+- Se hace en esta sesión, una unidad tras otra, sin workers (la PC nueva no tiene el kit instalado). C1 → #86.
+
+## Estado (2026-10-19)
+
+C1 #86 · C4 #87 · C3 #88 · C2 #89 (tras #86). Todas con astro check, biome (archivos tocados), tests y build en verde; ninguna verificada en navegador.
+Sigue: el dueño mergea → QA final única. Medio/Bajo de esa QA → "Después del lanzamiento" en `pendientes.md`.

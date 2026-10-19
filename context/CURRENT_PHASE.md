@@ -6,7 +6,18 @@
 
 ## Estado actual
 
-**Tanda de cierre 2026-10-13** (`plans/tanda-2026-10-13-cierre.md`): todo lo abierto en una ola + una QA final; esperando decisiones del dueño.
+**Tanda de cierre 2026-10-13** (`plans/tanda-2026-10-13-cierre.md`): C1–C4 hechas el 2026-10-19 en una sola sesión, sin workers (PC nueva: el kit no está instalado), ninguna verificada en navegador.
+
+| PR | Rama | Qué | Changeset | Decisión |
+|---|---|---|---|---|
+| #86 | `fix/foco-perdido` | C1 · foco recogido: lotes, Resultados, respuesta (readOnly), Todos/Ninguno; `--radius-xs` (P50, P51, P53, P54) | patch | D201–D202 |
+| #87 | `chore/marca-titulo` | C4 · `<title>` «Banderas del Mundo — Aprende con repetición espaciada»; alt og aprobada (P57) | patch | — |
+| #88 | `feat/pantallas-de-estado` | C3 · 404 propia, ErrorBoundary, `::selection` (P39–P41); copy 404/error provisional (filas 48–49) | minor | D203 |
+| #89 | `fix/copy-lotes-y-nota` | C2 · "Lote N de M", "Cancelar", "Lote en marcha", nota en claro al 58 % (P49, P52.3, P52.4, P58) | patch | D204 |
+
+**Orden:** #89 después de #86 (conflicto de una línea en el titular de `Results.tsx`: tras mergear #86, merge de `main` en la rama y resolver). #87 y #88 independientes.
+**Sigue:** QA final (wave-qa + a11y + diseño + SEO) sobre main con todo mergeado. Con sesión, bloqueada: Docker Desktop provoca pantallazo azul 0x7E en esta PC (2026-10-18/19); sin Docker, `qa:local --offline` (solo invitado).
+**Esta PC (Cesar):** se instalaron Bun 1.4.3 y gh 2.102.0 (winget); git con `user.name/email` del repo. Falta: `.env.local` (`bunx vercel env pull`, requiere `vercel login` del dueño), agentes del kit (`feature-worker`, `wave-qa`, `wt.ps1`), Docker.
 
 **Ola de arreglos 2026-10-12 — ola A mergeada (#78–#81), slots libres** (brief `plans/orquestacion-2026-10-12-arreglos.md`, prompts `-prompts.md`, plan `plans/tanda-2026-10-12-arreglos.md`). Base main 27df232 (#73–#77 mergeados).
 
