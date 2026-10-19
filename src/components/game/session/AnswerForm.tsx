@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import type { AnswerStatus, GameMode } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
 import { focusWhenVisible } from "@/utils/focus";
+import { ANSWER_INPUT_ID, ANSWER_INPUT_PROPS } from "./answer-input";
 
 interface AnswerFormProps {
 	countryName: string;
@@ -71,7 +72,7 @@ export function AnswerForm({
 			onSubmit={onSubmit}
 		>
 			<label
-				htmlFor="country-answer"
+				htmlFor={ANSWER_INPUT_ID}
 				className="font-extrabold text-surface-soft"
 			>
 				{label}
@@ -79,9 +80,8 @@ export function AnswerForm({
 
 			<Input
 				ref={resolvedInputRef}
-				id="country-answer"
-				name="answer"
-				type="text"
+				{...ANSWER_INPUT_PROPS}
+				id={ANSWER_INPUT_ID}
 				value={answer}
 				onChange={(event) => onAnswerChange(event.target.value)}
 				// `readOnly` + `aria-disabled` en vez de `disabled`: un campo
@@ -92,8 +92,6 @@ export function AnswerForm({
 				// ignoran el envío fuera de "idle".
 				readOnly={isAnswerChecked}
 				aria-disabled={isAnswerChecked || undefined}
-				autoComplete="off"
-				spellCheck={false}
 				placeholder={placeholder}
 			/>
 
