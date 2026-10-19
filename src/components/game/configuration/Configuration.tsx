@@ -559,7 +559,7 @@ export function Configuration() {
 				title="¿Abandonar el aprendizaje por lotes?"
 				description="Se pierde el avance de los lotes. Lo que ya aprendiste sigue en tu progreso y en la práctica diaria."
 				confirmLabel="Sí, abandonar"
-				cancelLabel="Seguir aprendiendo"
+				cancelLabel="Cancelar"
 			/>
 
 			<LeaderboardModal

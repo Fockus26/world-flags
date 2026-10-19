@@ -68,6 +68,27 @@ export function getScoreColor(score: number, isDark = false): string {
 	return `hsl(${hue} 72% ${lightness}%)`;
 }
 
+/**
+ * Parte del color de la nota que va hacia el texto en claro (P58, D204). El
+ * color de la nota en claro (L 42 %) daba 2,1–3,8:1 sobre su fondo; mezclado
+ * con `--foreground` al 58 % queda entre 4,91:1 (nota 6) y 8,37:1 (nota 1).
+ * Con 62 % (lo de `Button`), la nota 6 se quedaba justo en 4,50:1, sin margen.
+ */
+const LIGHT_SCORE_TEXT_MIX = 58;
+
+/**
+ * Color del número y de "/10" en Resultados. En oscuro, el de la nota tal cual
+ * (D196, ya pasa AA). En claro, mezclado hacia el texto: conserva el tono y
+ * llega a 4,5:1. El borde del círculo sigue con `getScoreColor`.
+ */
+export function getScoreTextColor(score: number, isDark = false): string {
+	const color = getScoreColor(score, isDark);
+
+	return isDark
+		? color
+		: `color-mix(in oklab, ${color} ${LIGHT_SCORE_TEXT_MIX}%, var(--foreground))`;
+}
+
 export function getScoreBackgroundColor(score: number, isDark = false): string {
 	const hue = scoreHue(score);
 	const lightness = isDark ? 22 : 94;

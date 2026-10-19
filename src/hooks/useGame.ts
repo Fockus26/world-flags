@@ -158,7 +158,10 @@ export function useGame() {
 	 */
 	const startGame = (
 		requestedConfiguration: GameConfigurationType,
-		{ isLearningPath = false }: { isLearningPath?: boolean } = {},
+		{
+			isLearningPath = false,
+			sessionLabel,
+		}: { isLearningPath?: boolean; sessionLabel?: string } = {},
 	): boolean => {
 		// El modo competitivo ("rush") siempre es difícil y aleatorio: no son
 		// ajustables, así que se fuerzan acá sin importar qué haya quedado
@@ -218,6 +221,7 @@ export function useGame() {
 				configuration: effectiveConfiguration,
 				countries: prepareCountries(countries, effectiveConfiguration),
 				...(isLearningPath && { isLearningPath }),
+				...(sessionLabel && { sessionLabel }),
 			}),
 		);
 
@@ -583,7 +587,12 @@ export function useGame() {
 				mode: "practice",
 				gameType,
 			},
-			{ isLearningPath: true },
+			{
+				isLearningPath: true,
+				// "Lote N de M" (P49): el alcance de la sesión son unos países
+				// sueltos y se leía "5 países personalizados".
+				sessionLabel: `Lote ${(overview.status.currentBatchIndex ?? 0) + 1} de ${overview.status.batchCount}`,
+			},
 		);
 	};
 
