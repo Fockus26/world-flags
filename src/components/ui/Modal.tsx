@@ -1,5 +1,6 @@
 import { ModalBackdrop, ModalContainer, ModalDialog } from "@heroui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
+import { swallowDoubleClickTail } from "@/utils/pointer";
 
 interface ModalProps {
 	isOpen: boolean;
@@ -67,6 +68,13 @@ export function Modal({
 	isKeyboardDismissDisabled = false,
 	fillViewport = false,
 }: ModalProps) {
+	// Al cerrarse (o desmontarse abierto), el segundo clic de un doble clic en
+	// su botón no debe llegar a lo que queda debajo.
+	useEffect(() => {
+		if (!isOpen) return;
+		return swallowDoubleClickTail;
+	}, [isOpen]);
+
 	return (
 		<ModalBackdrop
 			isOpen={isOpen}
