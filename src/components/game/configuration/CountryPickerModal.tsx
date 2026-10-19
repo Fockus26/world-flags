@@ -305,12 +305,6 @@ export function CountryPickerModal({
 									type="button"
 									onClick={() => toggleRegionExpanded(region)}
 									aria-expanded={isExpanded}
-									// El contador sin palabras se leía pegado al nombre ("Europa45").
-									aria-label={`${REGION_LABELS[region]}, ${
-										selectedCount > 0
-											? `${selectedCount} de ${regionCodes.length} países elegidos`
-											: `${regionCodes.length} países`
-									}`}
 									className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent py-2 pr-2 pl-2.5 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-surface-soft sm:min-h-9"
 								>
 									<NavArrowDown
@@ -320,10 +314,23 @@ export function CountryPickerModal({
 									<span className="truncate text-label font-extrabold text-surface-soft">
 										{REGION_LABELS[region]}
 									</span>
-									<span className="shrink-0 text-tiny text-text-placeholder">
+									{/* Nombre desde el contenido, sin `aria-label` (WCAG 2.5.3):
+									    empieza por el nombre visible del continente. El
+									    contador sin palabras se leía pegado al nombre
+									    ("Europa45") o como "12 barra 45": se oculta y el lector
+									    lee su versión con palabras. */}
+									<span
+										className="shrink-0 text-tiny text-text-placeholder"
+										aria-hidden="true"
+									>
 										{selectedCount > 0
 											? `${selectedCount}/${regionCodes.length}`
 											: regionCodes.length}
+									</span>
+									<span className="sr-only">
+										{selectedCount > 0
+											? `, ${selectedCount} de ${regionCodes.length} países elegidos`
+											: `, ${regionCodes.length} países`}
 									</span>
 								</button>
 								<div className="flex shrink-0 items-stretch">
