@@ -10,6 +10,7 @@ import { buildBoard, findMatch } from "@/utils/country-board";
 import { focusWhenVisible } from "@/utils/focus";
 import { getScopeLabel } from "@/utils/practice-scope";
 import { playSound } from "@/utils/sound";
+import { ANSWER_INPUT_PROPS, RUSH_ANSWER_INPUT_ID } from "../answer-input";
 import type { BoardSlotState } from "./BoardSlot";
 import { CountryBoard } from "./CountryBoard";
 
@@ -372,7 +373,7 @@ export function CountriesRush() {
 						onSubmit={handleSubmit}
 					>
 						<label
-							htmlFor="country-rush-input"
+							htmlFor={RUSH_ANSWER_INPUT_ID}
 							className="font-extrabold text-surface-soft"
 						>
 							Escribe un país de {scopeLabel}
@@ -380,15 +381,10 @@ export function CountriesRush() {
 
 						<Input
 							ref={inputRef}
-							id="country-rush-input"
-							name="answer"
-							type="text"
+							{...ANSWER_INPUT_PROPS}
+							id={RUSH_ANSWER_INPUT_ID}
 							value={inputValue}
 							onChange={(event) => handleInputChange(event.target.value)}
-							autoComplete="off"
-							spellCheck={false}
-							autoCapitalize="none"
-							enterKeyHint="done"
 						/>
 
 						{feedback && (
