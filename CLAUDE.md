@@ -20,7 +20,7 @@ cronometrado ("rush") con ranking público, y alcance de práctica flexible
 
 **Buscar, no leer:** `decisions/` (un archivo por decisión; no las re-litigues),
 `CONTENT_CHECKLIST.md`, inventarios, `PHASE_LOG/`. `grep` y abrir solo lo que sale:
-`grep -rhi "^# D.*modal" context/decisions/`. Más detalle en `docs/`, `README.md`, `CONTRIBUTING.md`.
+`grep -rhi "^# D.*modal" context/decisions/`. Más: `docs/`, `README.md`.
 
 ### Qué está en el repo y qué vive solo en local
 
@@ -75,7 +75,7 @@ Supabase o Tailwind (cambian rápido).
 
 ## Cómo se trabaja aquí
 
-Una unidad a la vez (componente, pantalla, flujo o fix acotado).
+Una unidad a la vez.
 
 Todo cambio llega a `main` **por Pull Request**. `main` está protegida.
 
