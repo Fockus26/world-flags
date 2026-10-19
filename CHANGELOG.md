@@ -9,6 +9,16 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.1] - 2026-10-19
+
+### Corregido
+
+- En el móvil, el campo donde escribes la respuesta ya no muestra sugerencias
+  del teclado, autocorrector ni el autorrellenado de tarjetas o direcciones del
+  navegador: es un campo de texto libre para escribir el país o la capital.
+- Con las animaciones reducidas, un doble clic en Empezar o Sí, abandonar ya no
+  pulsa también el botón que aparece debajo.
+
 ## [2.10.0] - 2026-10-19
 
 ### Añadido
