@@ -216,7 +216,8 @@ export function CountriesPractice({
 	}
 
 	const { configuration } = activeGame;
-	const scopeLabel = getScopeLabel(configuration.scope);
+	const scopeLabel =
+		activeGame.sessionLabel ?? getScopeLabel(configuration.scope);
 	const regionLabel = REGION_LABELS[currentCountry.region];
 	const maxHintLetters = Math.max(currentCountry.name.length - 1, 0);
 

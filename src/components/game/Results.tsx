@@ -10,6 +10,7 @@ import {
 	getScoreBackgroundColor,
 	getScoreColor,
 	getScoreMessage,
+	getScoreTextColor,
 } from "@/utils/score";
 import { RecordConfetti } from "./RecordConfetti";
 
@@ -140,11 +141,15 @@ function CompetitiveResults({
 
 function PracticeResults({
 	result,
+	title,
 }: {
 	result: Extract<GameResult, { mode: "practice" }>;
+	/** Sustituye al mensaje de la nota ("Lote en marcha" en un lote, P52.4). */
+	title?: string;
 }) {
 	const isDark = useTheme().resolvedTheme === "dark";
 	const scoreColor = getScoreColor(result.score, isDark);
+	const scoreTextColor = getScoreTextColor(result.score, isDark);
 	const scoreBackground = getScoreBackgroundColor(result.score, isDark);
 	const percentage = Math.round(
 		(result.correctAnswers / result.totalCountries) * 100,
@@ -155,7 +160,7 @@ function PracticeResults({
 			<p className="m-0 text-text-placeholder">Práctica terminada</p>
 
 			<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
-				{getScoreMessage(result.score)}
+				{title ?? getScoreMessage(result.score)}
 			</h1>
 
 			<div
@@ -163,7 +168,7 @@ function PracticeResults({
 				style={{
 					borderColor: scoreColor,
 					backgroundColor: scoreBackground,
-					color: scoreColor,
+					color: scoreTextColor,
 				}}
 			>
 				<CountUpNumber
@@ -203,7 +208,10 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 			{result.mode === "competitive" ? (
 				<CompetitiveResults result={result} />
 			) : (
-				<PracticeResults result={result} />
+				<PracticeResults
+					result={result}
+					title={learningPath ? "Lote en marcha" : undefined}
+				/>
 			)}
 
 			{learningPath ? (

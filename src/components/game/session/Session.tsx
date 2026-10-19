@@ -286,7 +286,8 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	}
 
 	const { configuration } = activeGame;
-	const scopeLabel = getScopeLabel(configuration.scope);
+	const scopeLabel =
+		activeGame.sessionLabel ?? getScopeLabel(configuration.scope);
 
 	function advanceCompetitive() {
 		if (isLastCountry) {
