@@ -10,6 +10,23 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// La llama el navegador desde otro origen (la app en Vercel): sin estas
+// cabeceras, y sin responder al preflight `OPTIONS`, el navegador bloquea la
+// petición y `functions.invoke` da `FunctionsFetchError`.
+const CORS_HEADERS = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Headers":
+		"authorization, x-client-info, apikey, content-type",
+	"Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function respond(body: string, status: number, headers: Record<string, string> = {}) {
+	return new Response(body, {
+		status,
+		headers: { ...CORS_HEADERS, ...headers },
+	});
+}
+
 interface SubscribeBody {
 	deviceId: string;
 	userId: string | null;
@@ -21,8 +38,12 @@ interface SubscribeBody {
 }
 
 Deno.serve(async (req) => {
+	if (req.method === "OPTIONS") {
+		return new Response("ok", { headers: CORS_HEADERS });
+	}
+
 	if (req.method !== "POST") {
-		return new Response("Method not allowed", { status: 405 });
+		return respond("Method not allowed", 405);
 	}
 
 	let body: SubscribeBody;
@@ -30,14 +51,14 @@ Deno.serve(async (req) => {
 	try {
 		body = await req.json();
 	} catch {
-		return new Response("Invalid JSON", { status: 400 });
+		return respond("Invalid JSON", 400);
 	}
 
 	const { deviceId, userId, endpoint, p256dh, auth, timezone, reminderHour } =
 		body;
 
 	if (!deviceId || !endpoint || !p256dh || !auth) {
-		return new Response("Missing fields", { status: 400 });
+		return respond("Missing fields", 400);
 	}
 
 	const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -53,7 +74,7 @@ Deno.serve(async (req) => {
 			await supabaseAdmin.auth.getUser(token);
 
 		if (authError || authData.user?.id !== userId) {
-			return new Response("User id does not match token", { status: 401 });
+			return respond("User id does not match token", 401);
 		}
 	}
 
@@ -73,10 +94,10 @@ Deno.serve(async (req) => {
 
 	if (error) {
 		console.error("Failed to upsert push subscription:", error);
-		return new Response("Failed to save subscription", { status: 500 });
+		return respond("Failed to save subscription", 500);
 	}
 
-	return new Response(JSON.stringify({ ok: true }), {
-		headers: { "Content-Type": "application/json" },
+	return respond(JSON.stringify({ ok: true }), 200, {
+		"Content-Type": "application/json",
 	});
 });
