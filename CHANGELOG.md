@@ -9,6 +9,14 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.2] - 2026-10-19
+
+### Corregido
+
+- En los Resultados del rush, con el tema claro, las palabras «encontrados» y
+  «tiempo» bajo el número del círculo tienen ahora un morado más oscuro y se
+  leen mejor.
+
 ## [2.10.1] - 2026-10-19
 
 ### Corregido
