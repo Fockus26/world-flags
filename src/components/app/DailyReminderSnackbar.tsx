@@ -3,58 +3,14 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setLearningData } from "@/store/slices/gameSlice";
-import { saveDailyReminderAnswer } from "@/utils/learning-storage";
 import {
-	type DailyReminderResult,
-	subscribeToDailyReminder,
-} from "@/utils/push-notifications";
+	DAILY_REMINDER_EXPLANATIONS,
+	type ExplainedDailyReminderResult,
+} from "@/utils/daily-reminder-explanations";
+import { saveDailyReminderAnswer } from "@/utils/learning-storage";
+import { subscribeToDailyReminder } from "@/utils/push-notifications";
 
-/** Resultados que se explican en el propio aviso en vez de cerrarlo (D127). */
-type ExplainedResult = Exclude<DailyReminderResult, "subscribed" | "dismissed">;
-
-type Status = "question" | "subscribing" | ExplainedResult;
-
-interface Explanation {
-	emoji: string;
-	title: string;
-	body: string;
-	/** Si se ofrece "Reintentar": solo cuando quien juega puede arreglarlo sin salir. */
-	canRetry: boolean;
-}
-
-// Los textos de por qué no se activó el recordatorio y cómo arreglarlo.
-const EXPLANATIONS: Record<ExplainedResult, Explanation> = {
-	denied: {
-		emoji: "🔕",
-		title: "Las notificaciones están bloqueadas",
-		body: "Este navegador no deja que Banderas del Mundo te mande avisos. Para activarlos, abre los permisos del sitio (el icono junto a la dirección web), permite las notificaciones y pulsa «Reintentar».",
-		canRetry: true,
-	},
-	failed: {
-		emoji: "⚠️",
-		title: "No pudimos activar el recordatorio",
-		body: "Algo falló al guardar el aviso en este dispositivo. Inténtalo de nuevo en un momento.",
-		canRetry: true,
-	},
-	"ios-needs-install": {
-		emoji: "📲",
-		title: "Instala la app para recibir avisos",
-		body: "En iPhone y iPad los avisos solo funcionan con Banderas del Mundo instalada: en Safari, toca Compartir y luego «Añadir a pantalla de inicio», y ábrela desde ahí.",
-		canRetry: false,
-	},
-	"insecure-context": {
-		emoji: "🔒",
-		title: "Los avisos necesitan una conexión segura",
-		body: "El navegador solo permite avisos en páginas con https. Abre Banderas del Mundo desde su dirección segura para activarlos.",
-		canRetry: false,
-	},
-	unsupported: {
-		emoji: "🔕",
-		title: "Este navegador no permite avisos",
-		body: "Puedes activar el recordatorio desde otro navegador o dispositivo.",
-		canRetry: false,
-	},
-};
+type Status = "question" | "subscribing" | ExplainedDailyReminderResult;
 
 /**
  * Snackbar "¿te aviso mañana...?" (D025): reutiliza la anatomía/estilo de
@@ -157,7 +113,7 @@ export function DailyReminderSnackbar() {
 	const explanation =
 		status === "question" || status === "subscribing"
 			? null
-			: EXPLANATIONS[status];
+			: DAILY_REMINDER_EXPLANATIONS[status];
 
 	return (
 		<div
