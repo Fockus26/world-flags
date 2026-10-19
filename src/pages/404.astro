@@ -1,0 +1,37 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+// Copy provisional (CONTENT_CHECKLIST fila 48): propuesta del agente, pendiente
+// de aprobar por el dueño. Sin variante con/sin sesión: la sesión vive dentro
+// de la isla de React y esta página no la monta (P40).
+// Tema: sin React no hay `data-theme`; `variables.css` sigue el del sistema
+// (`prefers-color-scheme`). El tema elegido a mano no se lee aquí: solo
+// `learning-storage.ts` toca el almacenamiento.
+---
+
+<Layout title="Página no encontrada — Banderas del Mundo" noindex>
+	<main
+		id="main-content"
+		class="grid h-dvh w-full place-items-center overflow-auto p-4"
+	>
+		<section
+			aria-labelledby="not-found-title"
+			class="flex w-[min(100%,32rem)] flex-col items-center gap-3 rounded-2xl border border-surface-border bg-surface p-6 text-center shadow-xl"
+		>
+			<p class="m-0 text-caption font-bold text-text-placeholder">Error 404</p>
+			<h1 id="not-found-title" class="m-0 text-heading text-surface-soft">
+				Esta página no existe
+			</h1>
+			<p class="m-0 text-body-sm text-text-placeholder">
+				La dirección que abriste no lleva a ninguna parte del juego. Tu progreso
+				sigue guardado.
+			</p>
+			<a
+				href="/"
+				class="mt-3 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 font-bold text-accent-foreground no-underline transition-colors hover:bg-primary-hover focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover"
+			>
+				Volver a practicar
+			</a>
+		</section>
+	</main>
+</Layout>
