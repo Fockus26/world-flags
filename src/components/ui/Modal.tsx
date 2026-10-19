@@ -1,6 +1,6 @@
 import { ModalBackdrop, ModalContainer, ModalDialog } from "@heroui/react";
 import { type ReactNode, useEffect } from "react";
-import { swallowDoubleClickTail } from "@/utils/pointer";
+import { swallowDoubleClickTail, trackPointerDowns } from "@/utils/pointer";
 
 interface ModalProps {
 	isOpen: boolean;
@@ -72,6 +72,7 @@ export function Modal({
 	// su botón no debe llegar a lo que queda debajo.
 	useEffect(() => {
 		if (!isOpen) return;
+		trackPointerDowns();
 		return swallowDoubleClickTail;
 	}, [isOpen]);
 
