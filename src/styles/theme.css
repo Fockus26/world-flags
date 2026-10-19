@@ -89,6 +89,7 @@
 	   defecto de Tailwind para que rounded-sm/md/lg/xl/2xl ya existentes en
 	   toda la app hereden el nuevo look sin tocar cada componente.
 	=========================== */
+	--radius-xs: 0.25rem;
 	--radius-sm: 0.625rem;
 	--radius-md: 1rem;
 	--radius-lg: 1.375rem;

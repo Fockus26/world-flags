@@ -28,6 +28,8 @@ export interface ButtonProps {
 	onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 	/** `event.relatedTarget` = de dónde viene el foco. */
 	onFocus?: (event: FocusEvent<Element>) => void;
+	/** Para que otro componente lo encuentre y le devuelva el foco (D202). */
+	id?: string;
 	"aria-label"?: string;
 	"aria-describedby"?: string;
 	ref?: Ref<HTMLButtonElement>;

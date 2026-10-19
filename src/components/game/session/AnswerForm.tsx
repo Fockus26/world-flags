@@ -84,7 +84,14 @@ export function AnswerForm({
 				type="text"
 				value={answer}
 				onChange={(event) => onAnswerChange(event.target.value)}
-				disabled={isAnswerChecked}
+				// `readOnly` + `aria-disabled` en vez de `disabled`: un campo
+				// deshabilitado suelta el foco a `<body>` y "Comprobar" desaparece
+				// con él (P53). Así el foco se queda aquí, se ve igual de apagado
+				// (HeroUI pinta `aria-disabled` como `disabled`) y Tab llega a
+				// las calificaciones. Intro no vuelve a comprobar: las partidas
+				// ignoran el envío fuera de "idle".
+				readOnly={isAnswerChecked}
+				aria-disabled={isAnswerChecked || undefined}
 				autoComplete="off"
 				spellCheck={false}
 				placeholder={placeholder}

@@ -1,9 +1,11 @@
 import { Trophy } from "iconoir-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useGame } from "@/hooks/useGame";
 import { useTheme } from "@/hooks/useTheme";
 import { GAME_TYPE_NOUNS, type GameResult } from "@/types/country";
+import { focusWhenVisible } from "@/utils/focus";
 import { formatElapsedTime } from "@/utils/learning-storage";
 import { getScopeLabel } from "@/utils/practice-scope";
 import {
@@ -13,6 +15,13 @@ import {
 	getScoreTextColor,
 } from "@/utils/score";
 import { RecordConfetti } from "./RecordConfetti";
+
+// El titular de cada variante (solo se monta una). `tabIndex={-1}`: al
+// aparecer Resultados el foco va aquí; si no, se quedaba en `<body>` porque lo
+// de detrás pasa a `inert` (P51).
+const RESULTS_TITLE_ID = "results-title";
+const RESULTS_TITLE_CLASS =
+	"my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft sm:text-stat";
 
 /**
  * Número de Resultados que cuenta de 0 a `value` (D154). Lo que se ve está
@@ -73,7 +82,7 @@ function CompetitiveResults({
 			<>
 				<p className="m-0 text-text-placeholder">Rush terminado</p>
 
-				<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
+				<h1 id={RESULTS_TITLE_ID} tabIndex={-1} className={RESULTS_TITLE_CLASS}>
 					Te rendiste
 				</h1>
 
@@ -101,7 +110,7 @@ function CompetitiveResults({
 		<>
 			<p className="m-0 text-text-placeholder">Rush terminado</p>
 
-			<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
+			<h1 id={RESULTS_TITLE_ID} tabIndex={-1} className={RESULTS_TITLE_CLASS}>
 				¡Completado!
 			</h1>
 
@@ -159,7 +168,7 @@ function PracticeResults({
 		<>
 			<p className="m-0 text-text-placeholder">Práctica terminada</p>
 
-			<h1 className="my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft sm:text-stat">
+			<h1 id={RESULTS_TITLE_ID} tabIndex={-1} className={RESULTS_TITLE_CLASS}>
 				{title ?? getScoreMessage(result.score)}
 			</h1>
 
@@ -202,6 +211,10 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 		: null;
 	const learningPathTodayCount = learningPath?.status.todayCodes.length ?? 0;
 	const canRestart = !learningPath || learningPathTodayCount > 0;
+
+	useEffect(() => {
+		focusWhenVisible(document.getElementById(RESULTS_TITLE_ID));
+	}, []);
 
 	return (
 		<section className="relative flex max-h-full w-[min(100%,38rem)] flex-col items-center overflow-auto rounded-2xl border border-surface-border bg-surface p-4 text-center shadow-xl sm:p-[clamp(1.5rem,4vh,2.5rem)]">

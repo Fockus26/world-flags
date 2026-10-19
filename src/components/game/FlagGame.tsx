@@ -5,8 +5,12 @@ import { SystemSnackbars } from "@/components/app/SystemSnackbars";
 import { useGame } from "@/hooks/useGame";
 import { useRequiredUpdate } from "@/hooks/useRequiredUpdate";
 import { useTutorial } from "@/hooks/useTutorial";
+import { focusIfLost } from "@/utils/focus";
 import { AchievementToasts } from "./AchievementToasts";
-import { Configuration } from "./configuration/Configuration";
+import {
+	CONFIGURATION_TITLE_ID,
+	Configuration,
+} from "./configuration/Configuration";
 import { Results } from "./Results";
 import { CountriesPractice } from "./session/countries/CountriesPractice";
 import { CountriesRush } from "./session/countries/CountriesRush";
@@ -108,7 +112,15 @@ function FlagGameContent() {
 					<Results
 						result={lastResult}
 						onRestart={restartGame}
-						onExit={exitGame}
+						onExit={() => {
+							exitGame();
+							// "Volver al inicio" se desmonta con Resultados: el foco
+							// va al título de la pantalla de inicio (P51), cuando el
+							// giro termina y deja de estar `inert`.
+							focusIfLost(() =>
+								document.getElementById(CONFIGURATION_TITLE_ID),
+							);
+						}}
 					/>
 				</div>
 			)}

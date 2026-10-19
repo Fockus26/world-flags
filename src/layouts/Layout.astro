@@ -11,6 +11,8 @@ interface Props {
 	image?: string;
 	/** Texto alternativo de `image` (og:image:alt / twitter:image:alt). */
 	imageAlt?: string;
+	/** Páginas que no deben indexarse (la 404). */
+	noindex?: boolean;
 }
 
 const {
@@ -18,6 +20,7 @@ const {
 	description = "Aprende las banderas de los 197 países con repetición espaciada: practica por continente o por lotes, compite a contrarreloj y sube al ranking.",
 	image = "/og-image.png",
 	imageAlt = "Banderas del Mundo: logo de una bandera sobre una tarjeta y el lema «Aprende las banderas del mundo con repetición espaciada»",
+	noindex = false,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -83,7 +86,7 @@ const structuredData = {
 
 		<!-- SEO -->
 		<meta name="description" content={description} />
-		<meta name="robots" content="index, follow" />
+		<meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
 		<link rel="canonical" href={canonicalURL} />
 
 		<!-- Open Graph -->
