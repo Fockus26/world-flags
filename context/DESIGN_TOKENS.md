@@ -16,6 +16,7 @@ etc. arbitrarios heredados en las pantallas de sesión — no sumar más.
 | Token | Valor | Notas |
 |---|---|---|
 | `--radius` (HeroUI, `heroui-theme.css`) | `0.75rem` | base de HeroUI (botones, campos) |
+| `--radius-xs` (Tailwind, `theme.css`) | `0.25rem` | casillas de 16 px (picker de países, D201) |
 | `--radius-sm` (Tailwind, `theme.css`) | `0.625rem` | |
 | `--radius-md` | `1rem` | |
 | `--radius-lg` | `1.375rem` | tarjetas de pantalla |

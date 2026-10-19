@@ -22,6 +22,7 @@ import {
 } from "@/types/country";
 import { getAvatarUrl } from "@/utils/avatar";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
+import { focusIfLost } from "@/utils/focus";
 import {
 	calculateLearningProgress,
 	countLearnedCountries,
@@ -47,13 +48,22 @@ import { ConfigurationModal } from "./configurationModal/ConfigurationModal";
 import { GameTypeToggle } from "./GameTypeToggle";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { LearningPathModal } from "./LearningPathModal";
-import { LearningPathPanel } from "./LearningPathPanel";
+import {
+	LEARNING_PATH_PANEL_TITLE_ID,
+	LearningPathPanel,
+} from "./LearningPathPanel";
 import { RegionSelector } from "./RegionSelector";
 import { StreakPanel } from "./StreakPanel";
 import { UserSummary } from "./UserSummary";
 
 const EMPTY_SCOPE_MESSAGE =
 	"Elige al menos un continente o algún país para practicar.";
+
+/** Botón "Aprender por lotes": destino del foco al abandonar uno (P51). */
+const LEARNING_PATH_START_ID = "learning-path-start";
+
+/** Título de la pantalla: destino del foco al volver desde Resultados (P51). */
+export const CONFIGURATION_TITLE_ID = "configuration-title";
 
 // Solo lo oyen los lectores de pantalla.
 const LOADING_MESSAGE = "Cargando tu progreso…";
@@ -338,6 +348,8 @@ export function Configuration() {
 					    "…". Los otros dos títulos caben en una línea; este baja a
 					    dos solo en las pantallas más estrechas. */}
 					<h1
+						id={CONFIGURATION_TITLE_ID}
+						tabIndex={-1}
 						className="
 							m-0
 							text-lg
@@ -346,6 +358,9 @@ export function Configuration() {
 							text-surface-soft
 							sm:text-xl
 							min-[44rem]:text-3xl
+							focus-visible:outline-2
+							focus-visible:outline-offset-2
+							focus-visible:outline-surface-soft
 						"
 					>
 						{/* El skeleton es `aria-hidden` y su texto, invisible: sin el
@@ -447,6 +462,7 @@ export function Configuration() {
 					/>
 				) : (
 					<Button
+						id={LEARNING_PATH_START_ID}
 						color="secondary"
 						variant="outline"
 						type="button"
@@ -520,9 +536,14 @@ export function Configuration() {
 				gameType={gameType}
 				scopeLabel={getScopeLabel(scope)}
 				scopeCount={getScopeCountryCodes(countries, scope).length}
-				onCreate={(pathOrder, batchSize) =>
-					createLearningPathFor(gameType, scope, pathOrder, batchSize)
-				}
+				onCreate={(pathOrder, batchSize) => {
+					createLearningPathFor(gameType, scope, pathOrder, batchSize);
+					// El botón que abrió el modal ya no existe: el foco va al
+					// título del panel nuevo (P51).
+					focusIfLost(() =>
+						document.getElementById(LEARNING_PATH_PANEL_TITLE_ID),
+					);
+				}}
 			/>
 
 			<ConfirmationModal
@@ -531,6 +552,9 @@ export function Configuration() {
 				onConfirm={() => {
 					abandonLearningPath(gameType);
 					setIsAbandonPathOpen(false);
+					// "Abandonar" desaparece con el panel: el foco va al botón
+					// que lo sustituye (P51).
+					focusIfLost(() => document.getElementById(LEARNING_PATH_START_ID));
 				}}
 				title="¿Abandonar el aprendizaje por lotes?"
 				description="Se pierde el avance de los lotes. Lo que ya aprendiste sigue en tu progreso y en la práctica diaria."
