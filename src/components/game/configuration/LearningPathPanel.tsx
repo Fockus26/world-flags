@@ -2,6 +2,9 @@ import { Button } from "@/components/ui/Button";
 import type { LearningPath } from "@/types/progress";
 import type { LearningPathStatus } from "@/utils/learning-path";
 
+/** Título del panel: también destino del foco al crear un aprendizaje (P51). */
+export const LEARNING_PATH_PANEL_TITLE_ID = "learning-path-panel-title";
+
 interface LearningPathPanelProps {
 	path: LearningPath;
 	status: LearningPathStatus;
@@ -42,13 +45,16 @@ export function LearningPathPanel({
 
 	return (
 		<section
-			aria-labelledby="learning-path-panel-title"
+			aria-labelledby={LEARNING_PATH_PANEL_TITLE_ID}
 			className={`flex flex-col gap-2 rounded-xl border border-surface-border p-3 ${className ?? ""}`}
 		>
 			<div className="flex items-start justify-between gap-2">
+				{/* `tabIndex={-1}`: destino del foco al empezar un aprendizaje
+				    desde el modal (el botón que lo abrió desaparece, P51). */}
 				<h2
-					id="learning-path-panel-title"
-					className="m-0 min-w-0 text-label font-extrabold text-surface-soft"
+					id={LEARNING_PATH_PANEL_TITLE_ID}
+					tabIndex={-1}
+					className="m-0 min-w-0 text-label font-extrabold text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
 				>
 					Aprender por lotes · {path.scopeLabel}
 				</h2>

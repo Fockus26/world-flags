@@ -6,6 +6,7 @@ import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
 import { countries } from "@/data/countries";
 import { REGION_LABELS, REGIONS, type Region } from "@/types/country";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
+import { focusIfLost } from "@/utils/focus";
 
 interface CountryPickerModalProps {
 	isOpen: boolean;
@@ -70,7 +71,7 @@ function CountryCheckbox({
 			/>
 			<span
 				aria-hidden="true"
-				className="relative flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] sm:mt-px peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
+				className="relative flex size-4 shrink-0 items-center justify-center rounded-xs border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] sm:mt-px peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
 			/>
 			<span className="line-clamp-2 min-w-0 wrap-break-word">
 				{label}
@@ -84,6 +85,7 @@ const REGION_BULK_LABELS = ["Ninguno", "Todos"] as const;
 
 interface RegionBulkButtonProps {
 	label: (typeof REGION_BULK_LABELS)[number];
+	region: Region;
 	/** Nombre del continente, para el nombre accesible. */
 	regionName: string;
 	onPress: () => void;
@@ -106,6 +108,7 @@ interface RegionBulkButtonProps {
  */
 function RegionBulkButton({
 	label,
+	region,
 	regionName,
 	onPress,
 }: RegionBulkButtonProps) {
@@ -117,9 +120,17 @@ function RegionBulkButton({
 	return (
 		<button
 			type="button"
+			data-region-bulk={region}
 			aria-label={accessibleName}
 			className="grid cursor-pointer place-items-center border-0 bg-transparent px-2.5 text-tiny font-semibold text-text-placeholder transition-colors hover:bg-surface hover:text-secondary-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-secondary-hover"
-			onClick={onPress}
+			onClick={() => {
+				onPress();
+				// Al pulsarlo puede desmontarse ("Todos" con todo marcado,
+				// "Ninguno" con nada): el foco pasa al que queda (P54).
+				focusIfLost(() =>
+					document.querySelector<HTMLElement>(`[data-region-bulk="${region}"]`),
+				);
+			}}
 		>
 			{REGION_BULK_LABELS.map((word) => (
 				<span
@@ -318,6 +329,7 @@ export function CountryPickerModal({
 									{selectedCount > 0 && (
 										<RegionBulkButton
 											label="Ninguno"
+											region={region}
 											regionName={REGION_LABELS[region]}
 											onPress={() => toggleAllInRegion(regionCodes, true)}
 										/>
@@ -325,6 +337,7 @@ export function CountryPickerModal({
 									{!allSelected && (
 										<RegionBulkButton
 											label="Todos"
+											region={region}
 											regionName={REGION_LABELS[region]}
 											onPress={() => toggleAllInRegion(regionCodes, false)}
 										/>
