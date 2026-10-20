@@ -27,6 +27,22 @@ etc. arbitrarios heredados en las pantallas de sesión — no sumar más.
 Clases: `rounded-sm/md/lg/xl/2xl` ya heredan estos valores. Modales HeroUI usan
 `min(32px, var(--radius-3xl))` internamente.
 
+## Anchos de tarjeta (D208)
+
+Tokens `--container-*` de Tailwind en `theme.css` (dan `w-*` y `max-w-*`). Se usan
+como `w-full max-w-card`: el ancho del token, sin pasar del contenedor en móvil
+(lo mismo que el antiguo `w-[min(100%,Xrem)]`). No al revés (`w-card max-w-full`):
+dentro de un `grid place-items-center` la pista toma los 32rem fijos y la tarjeta
+desborda a 320 px.
+
+| Token | Valor | Dónde |
+|---|---|---|
+| `--container-card` | `32rem` | pantallas de estado: 404 (`404.astro`) y error (`ErrorBoundary`) |
+| `--container-card-wide` | `38rem` | `Results` (récord, resumen y botones) |
+
+Los modales y las sesiones aún llevan `w-[min(Xrem,92vw)]` / `w-[min(100%,58rem)]`
+heredados — no sumar más; al tocarlos, pasarlos a un token de esta tabla.
+
 ## Sombras
 
 - `shadow-xl` de Tailwind en las tarjetas de pantalla (`Configuration`, `Session`,

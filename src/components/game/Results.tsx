@@ -225,7 +225,7 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 	}, []);
 
 	return (
-		<section className="relative flex max-h-full w-[min(100%,38rem)] flex-col items-center overflow-auto rounded-2xl border border-surface-border bg-surface p-4 text-center shadow-xl sm:p-[clamp(1.5rem,4vh,2.5rem)]">
+		<section className="relative flex max-h-full w-full max-w-card-wide flex-col items-center overflow-auto rounded-2xl border border-surface-border bg-surface p-4 text-center shadow-xl sm:p-[clamp(1.5rem,4vh,2.5rem)]">
 			{result.mode === "competitive" ? (
 				<CompetitiveResults result={result} />
 			) : (
