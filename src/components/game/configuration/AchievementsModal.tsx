@@ -194,7 +194,7 @@ export function AchievementsModal({
 			// varias tarjetas por fila (D085). `max-w-none` quita el tope de
 			// `size="md"` de HeroUI (`.modal__dialog--md` = `max-w-md`), que si
 			// no deja el diálogo en ~28rem aunque pida más ancho.
-			className="w-[min(58rem,94vw)] max-w-none text-left"
+			className="w-dialog-xl max-w-none text-left"
 			ariaLabelledby="achievements-title"
 		>
 			<header className="mb-3 flex items-center justify-between gap-3">

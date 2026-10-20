@@ -50,7 +50,7 @@ export function RequiredUpdateDialog() {
 			ariaLabelledby="required-update-title"
 			ariaDescribedby="required-update-description"
 			size="sm"
-			className="w-[min(24rem,92vw)] text-left"
+			className="w-dialog-sm text-left"
 		>
 			<div className="flex flex-col gap-4">
 				<div className="flex items-start gap-3">

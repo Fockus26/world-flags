@@ -44,7 +44,7 @@ export function ReleaseNotesModal({ isOpen, onClose }: ReleaseNotesModalProps) {
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="w-[min(32rem,92vw)] text-left"
+			className="w-dialog text-left"
 			ariaLabelledby="release-notes-title"
 		>
 			<header className="mb-3 flex items-center justify-between gap-3">

@@ -502,7 +502,7 @@ export function LeaderboardModal({
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="w-[min(34rem,92vw)] max-w-none text-left"
+			className="w-dialog-wide max-w-none text-left"
 			ariaLabelledby="leaderboard-title"
 		>
 			<header className="mb-3 flex items-center justify-between gap-3">

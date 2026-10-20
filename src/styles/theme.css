@@ -105,6 +105,20 @@
 	--container-card-wide: 38rem;
 
 	/* ===========================
+	   Anchos de diálogo, aviso y sesión (D213). Los de diálogo y aviso
+	   llevan dentro el `min()` con su margen al viewport (`w-dialog` =
+	   el antiguo `w-[min(Xrem,92vw)]`). `dialog` es el ancho que ya se
+	   veía: el `max-w-md` (28rem) de HeroUI recortaba los 30/32rem que se
+	   pedían. La sesión sigue el patrón de tarjeta: `w-full max-w-session`.
+	=========================== */
+	--container-dialog-sm: min(24rem, 92vw);
+	--container-dialog: min(28rem, 92vw);
+	--container-dialog-wide: min(34rem, 92vw);
+	--container-dialog-xl: min(58rem, 94vw);
+	--container-toast: min(22rem, calc(100vw - 1.5rem));
+	--container-session: 58rem;
+
+	/* ===========================
 	   Tamaños de letra (D178)
 	   Sin `--line-height` a propósito: como los `text-[Xrem]` que
 	   sustituyen, solo fijan el tamaño y el interlineado se hereda.
