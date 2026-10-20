@@ -4,11 +4,20 @@ import {
 } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useAppSelector } from "@/store/hooks";
-import { authErrorMessage, isExistingAccountError } from "@/utils/auth-errors";
+import {
+	authErrorField,
+	authErrorMessage,
+	isExistingAccountError,
+} from "@/utils/auth-errors";
 
 /** En español y por `error.code` (D052, D212): nunca el texto crudo de Supabase. */
 function toAuthErrorMessage(error: AuthError): string {
 	return authErrorMessage(error, isAuthRetryableFetchError(error));
+}
+
+/** El campo que señala el error en el formulario (`aria-invalid`, D212). */
+function toAuthErrorField(error: AuthError) {
+	return authErrorField(error, isAuthRetryableFetchError(error));
 }
 
 export function useAuth() {
@@ -61,12 +70,13 @@ export function useAuth() {
 		 * cuenta (D212).
 		 */
 		if (error && isExistingAccountError(error)) {
-			return { error: null, needsEmailConfirmation: true };
+			return { error: null, errorField: null, needsEmailConfirmation: true };
 		}
 
 		if (error) {
 			return {
 				error: toAuthErrorMessage(error),
+				errorField: toAuthErrorField(error),
 				needsEmailConfirmation: false,
 			};
 		}
@@ -74,11 +84,12 @@ export function useAuth() {
 		const isExistingAccount = data.user?.identities?.length === 0;
 
 		if (isExistingAccount) {
-			return { error: null, needsEmailConfirmation: true };
+			return { error: null, errorField: null, needsEmailConfirmation: true };
 		}
 
 		return {
 			error: null,
+			errorField: null,
 			needsEmailConfirmation: !data.session,
 		};
 	};
@@ -103,6 +114,7 @@ export function useAuth() {
 
 		return {
 			error: error ? toAuthErrorMessage(error) : null,
+			errorField: error ? toAuthErrorField(error) : null,
 		};
 	};
 

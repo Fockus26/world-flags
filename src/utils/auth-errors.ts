@@ -57,6 +57,29 @@ export function authErrorMessage(
 	);
 }
 
+/**
+ * Qué campo del formulario señala el error (`aria-invalid`), si alguno:
+ * "credentials" son el correo y la contraseña a la vez (Supabase no dice cuál
+ * falló). Los de red, límites o servidor no son culpa de ningún campo.
+ */
+export type AuthErrorField = "email" | "password" | "credentials";
+
+const AUTH_FIELDS_BY_CODE: Record<string, AuthErrorField> = {
+	invalid_credentials: "credentials",
+	validation_failed: "credentials",
+	email_address_invalid: "email",
+	weak_password: "password",
+};
+
+export function authErrorField(
+	error: AuthErrorLike,
+	isNetworkError: boolean,
+): AuthErrorField | null {
+	if (isNetworkError || !error.code) return null;
+
+	return AUTH_FIELDS_BY_CODE[error.code] ?? null;
+}
+
 /** Registro con un correo que ya tiene cuenta (con "Confirm email" apagado). */
 export function isExistingAccountError(error: AuthErrorLike): boolean {
 	return error.code === "user_already_exists" || error.code === "email_exists";

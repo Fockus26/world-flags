@@ -15,6 +15,7 @@ import { describe, test } from "node:test";
 import {
 	AUTH_GENERIC_MESSAGE,
 	AUTH_OFFLINE_MESSAGE,
+	authErrorField,
 	authErrorMessage,
 	isExistingAccountError,
 	PASSWORD_BLANK_MESSAGE,
@@ -69,6 +70,30 @@ describe("authErrorMessage", () => {
 			false,
 		);
 		assert.equal(isExistingAccountError({}), false);
+	});
+});
+
+describe("authErrorField", () => {
+	test("señala el campo que toca, o ninguno", () => {
+		assert.equal(
+			authErrorField({ code: "invalid_credentials" }, false),
+			"credentials",
+		);
+		assert.equal(
+			authErrorField({ code: "email_address_invalid" }, false),
+			"email",
+		);
+		assert.equal(authErrorField({ code: "weak_password" }, false), "password");
+		assert.equal(
+			authErrorField({ code: "over_request_rate_limit" }, false),
+			null,
+		);
+		assert.equal(authErrorField({ code: "unexpected_failure" }, false), null);
+		assert.equal(authErrorField({}, false), null);
+	});
+
+	test("sin red no es culpa de ningún campo", () => {
+		assert.equal(authErrorField({ code: "invalid_credentials" }, true), null);
 	});
 });
 
