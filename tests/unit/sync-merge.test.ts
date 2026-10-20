@@ -478,6 +478,28 @@ describe("invitado que entra en una cuenta (D056, planSync)", () => {
 		assertSameJson(plan.data, guest);
 	});
 
+	test("cuenta sin progreso pero con perfil y marcas: un invitado vacío no la pisa", () => {
+		// Lo que vio W5 en la tanda 2026-10-20b: fila con nombre y mejores
+		// tiempos (sin historial ni sesiones, que es lo que cuenta como
+		// progreso) y login desde un invitado recién limpio.
+		let account = createDefaultLearningData();
+		account = saveUserProfile(
+			account,
+			{ ...account.profile, name: "Alejandro" },
+			at(DAY_1),
+		);
+		account = {
+			...account,
+			regionBestTimes: { "north-america@2": 6000 },
+		};
+
+		const plan = planSync(account, createDefaultLearningData(), null);
+
+		assert.equal(plan.push, false);
+		assert.equal(plan.discardedLocal, false);
+		assertSameJson(plan.data, account);
+	});
+
 	test("cuenta sin fila en la nube: lo mismo, pasa a ser la cuenta", () => {
 		const guest = guestData();
 

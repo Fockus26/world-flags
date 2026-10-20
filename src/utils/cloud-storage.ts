@@ -14,11 +14,15 @@ import {
 import { pickChangedColumns, SUB_GAME_COLUMNS } from "./learning-data-row";
 import {
 	normalizeLearningData,
-	planSync,
 	SUB_GAME_KEYS,
 	SUB_GAME_TYPES,
 	type SubGameType,
 } from "./learning-storage";
+import {
+	nextVersion,
+	runVersionedSync,
+	type VersionedLearningData,
+} from "./sync-attempts";
 
 type SubGameColumn = (typeof SUB_GAME_COLUMNS)[SubGameType];
 
@@ -43,7 +47,7 @@ function learningDataSelect<Select extends string>(
 }
 
 const LEARNING_DATA_SELECT = learningDataSelect(
-	"profile, country_history, region_game_scores, region_best_times, last_configuration, last_practice_by_country, countries_game, capitals_game, achievements, stats, session_history, daily_reminder, field_updated_at, learning_paths",
+	"profile, country_history, region_game_scores, region_best_times, last_configuration, last_practice_by_country, countries_game, capitals_game, achievements, stats, session_history, daily_reminder, field_updated_at, learning_paths, updated_at",
 );
 
 /**
@@ -63,15 +67,34 @@ const SYNC_TIMEOUT_MS = 10_000;
  *   menudo (wifi sin salida a internet, portal cautivo).
  * - `server`: el servidor respondió con un error (500, permisos, esquema).
  *   Hay red; lo que falla es la sincronización.
+ *
+ * `sessionRejected`: el servidor no aceptó el token de la sesión (401, o los
+ * códigos de JWT de PostgREST). No se arregla reintentando con el mismo
+ * token: `GameEffects` refresca la sesión y, si sigue igual, la cierra (D210).
  */
 export class CloudRequestError extends Error {
 	readonly kind: "network" | "server";
+	readonly sessionRejected: boolean;
 
-	constructor(kind: "network" | "server", message: string, cause?: unknown) {
+	constructor(
+		kind: "network" | "server",
+		message: string,
+		cause?: unknown,
+		sessionRejected = false,
+	) {
 		super(message, { cause });
 		this.name = "CloudRequestError";
 		this.kind = kind;
+		this.sessionRejected = sessionRejected;
 	}
+}
+
+/** Códigos de PostgREST para un JWT inválido, ausente o caducado. */
+const SESSION_REJECTED_CODES = new Set(["PGRST301", "PGRST302", "PGRST303"]);
+
+/** ¿El servidor rechazó el token de la sesión (y no hay que reintentar con él)? */
+export function isSessionRejected(error: unknown): boolean {
+	return error instanceof CloudRequestError && error.sessionRejected;
 }
 
 /** ¿El fallo es falta de conexión (y no un error del servidor)? */
@@ -87,7 +110,7 @@ export function isNetworkFailure(error: unknown): boolean {
 }
 
 function toCloudRequestError(
-	error: { message: string },
+	error: { message: string; code?: string },
 	status: number,
 	action: string,
 ): CloudRequestError {
@@ -97,17 +120,26 @@ function toCloudRequestError(
 	const isNetwork =
 		status === 0 || (typeof navigator !== "undefined" && !navigator.onLine);
 
+	const sessionRejected =
+		!isNetwork &&
+		(status === 401 || SESSION_REJECTED_CODES.has(error.code ?? ""));
+
 	return new CloudRequestError(
 		isNetwork ? "network" : "server",
 		`${action}: ${error.message}`,
 		error,
+		sessionRejected,
 	);
 }
 
+/**
+ * La fila de la cuenta, normalizada, con su versión (`updated_at`): la que
+ * condiciona la subida siguiente (D210).
+ */
 export async function fetchRemoteLearningData(
 	userId: string,
 	signal?: AbortSignal,
-): Promise<UserLearningData | null> {
+): Promise<VersionedLearningData | null> {
 	let query = supabase
 		.from("user_learning_data")
 		.select(LEARNING_DATA_SELECT)
@@ -147,7 +179,7 @@ export async function fetchRemoteLearningData(
 	 * lectura posterior de `stats` reventaría. Además así la siembra
 	 * retroactiva de días activos también aplica a los datos de la nube.
 	 */
-	return normalizeLearningData({
+	const normalized = normalizeLearningData({
 		profile: data.profile,
 		countryHistory: data.country_history,
 		regionGameScores: data.region_game_scores,
@@ -175,11 +207,23 @@ export async function fetchRemoteLearningData(
 		// `normalizeLearningData` valida la forma: la columna es jsonb libre.
 		learningPaths: data.learning_paths ?? {},
 	});
+
+	return { data: normalized, version: data.updated_at };
 }
 
+/** Ya existe una fila con esa clave: otro dispositivo la creó entre medias. */
+const UNIQUE_VIOLATION = "23505";
+
 /**
- * Sube `data`. Con `previous` (la fila ya existe) es un UPDATE solo de las
- * columnas que cambiaron; sin él, un upsert de la fila entera.
+ * Sube `data` **condicionada a la versión leída** (D210). Con `previous` (la
+ * fila ya existe) es un UPDATE solo de las columnas que cambiaron y solo si
+ * `updated_at` sigue siendo el leído; sin él, un INSERT de la fila entera, que
+ * falla si otro dispositivo la creó mientras tanto. Devuelve `false` cuando
+ * no se escribió nada por eso: quien llama vuelve a leer y fusionar.
+ *
+ * Sin la condición, una subida retrasada (red lenta) pisaba lo que otro
+ * dispositivo subió después de leerla: la fusión por fecha de D055 nunca
+ * llegaba a ver ese cambio más reciente.
  *
  * El delta no puede ir por upsert: Postgres comprueba los `not null` sobre la
  * fila que INSERTARÍA antes de resolver el conflicto, así que un upsert sin
@@ -188,26 +232,39 @@ export async function fetchRemoteLearningData(
 export async function pushLearningData(
 	userId: string,
 	data: UserLearningData,
-	previous: UserLearningData | null,
+	previous: VersionedLearningData | null,
 	signal?: AbortSignal,
-): Promise<void> {
-	const updatedAt = new Date().toISOString();
+): Promise<boolean> {
+	const updatedAt = nextVersion(previous?.version ?? null);
 	const table = supabase.from("user_learning_data");
 
+	// `select` devuelve las filas escritas: ninguna = la versión ya no era la leída.
 	const query = previous
 		? table
 				.update({
-					...pickChangedColumns(data, previous),
+					...pickChangedColumns(data, previous.data),
 					updated_at: updatedAt,
 				})
 				.eq("user_id", userId)
-		: table.upsert({
-				user_id: userId,
-				...pickChangedColumns(data, null),
-				updated_at: updatedAt,
-			});
+				.eq("updated_at", previous.version)
+				.select("user_id")
+		: table
+				.insert({
+					user_id: userId,
+					...pickChangedColumns(data, null),
+					updated_at: updatedAt,
+				})
+				.select("user_id");
 
-	const { error, status } = await (signal ? query.abortSignal(signal) : query);
+	const {
+		data: written,
+		error,
+		status,
+	} = await (signal ? query.abortSignal(signal) : query);
+
+	if (error?.code === UNIQUE_VIOLATION && !previous) {
+		return false;
+	}
 
 	if (error) {
 		const cloudError = toCloudRequestError(
@@ -222,6 +279,8 @@ export async function pushLearningData(
 
 		throw cloudError;
 	}
+
+	return (written?.length ?? 0) > 0;
 }
 
 /** Se rechaza en cuanto `signal` se aborta (con su `reason`); si no, nunca termina. */
@@ -243,7 +302,9 @@ function rejectOnAbort(signal: AbortSignal): Promise<never> {
  * Sincroniza la cuenta: lee la fila, la fusiona con lo local y sube el
  * resultado si aporta algo. Se usa al hidratar (login, recarga) y para cada
  * subida posterior (D051): subir sin leer antes pisaría lo que otro
- * dispositivo subió mientras tanto.
+ * dispositivo subió mientras tanto. Y la subida va condicionada a la versión
+ * leída: si otro escribió entre la lectura y la subida, se vuelve a leer y
+ * fusionar (`runVersionedSync`, D210).
  *
  * Qué se hace lo decide `planSync` (pura): cuenta sin progreso → lo local pasa
  * a ser la cuenta; cuenta con progreso y sin `base` (entra un invitado) → lo
@@ -323,15 +384,15 @@ async function runSync(
 	base: UserLearningData | null,
 	signal: AbortSignal,
 ): Promise<SyncResult> {
-	const remote = await fetchRemoteLearningData(userId, signal);
-
-	const plan = planSync(remote, localData, base);
-
-	if (plan.push) {
-		await pushLearningData(userId, plan.data, remote, signal);
-	}
-
-	return { data: plan.data, discardedLocal: plan.discardedLocal };
+	return runVersionedSync(
+		{
+			read: () => fetchRemoteLearningData(userId, signal),
+			write: (data, previous) =>
+				pushLearningData(userId, data, previous, signal),
+		},
+		localData,
+		base,
+	);
 }
 
 export interface LeaderboardEntry {
