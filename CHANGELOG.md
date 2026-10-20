@@ -9,6 +9,16 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.4] - 2026-10-20
+
+### Corregido
+
+- Con el modo de alto contraste de Windows ya se ve qué opción está elegida en
+  la configuración del juego (modo, sonidos, notificaciones, tema) y en el modal
+  de aprender por lotes.
+- En ese mismo modo, los botones con relleno vuelven a tener su borde y ya no
+  parecen texto suelto.
+
 ## [2.10.3] - 2026-10-20
 
 ### Corregido
