@@ -8,9 +8,9 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * Validación del ranking en el servidor (D112–D114). La hace un trigger en
- * `leaderboard_entries` (`supabase/leaderboard-validacion.sql`, ampliado a los
- * continentes en `supabase/leaderboard-continentes.sql`, locales): este
+ * Validación del ranking en el servidor (D112–D114, D211). La hace un trigger
+ * en `leaderboard_entries` (hoy, la migración
+ * `supabase/migrations/20261020120000_leaderboard_validar_todo.sql`): este
  * módulo guarda los números de los que sale ese SQL, para que un test los
  * compare con el catálogo, y el código con el que el trigger rechaza. El
  * cliente usa los mismos mínimos para no guardar como mejor marca un tiempo
@@ -58,8 +58,8 @@ export function isPlausibleRushTime(
 /**
  * Mínimo de cada scope que se lee hoy: los 3 de "Todo el mundo" y los 24 de
  * continente (D138), todos con `getRushMinTimeMs`. Los scopes viejos
- * ("world", "capitals:world") y los desconocidos no tienen mínimo: nadie los
- * lee (D114).
+ * ("world", "capitals:world") no tienen mínimo: nadie los lee (D114). Cualquier
+ * otro scope, el trigger lo rechaza (D211).
  */
 export function getLeaderboardMinimums(): Record<string, number> {
 	return Object.fromEntries(
@@ -70,6 +70,30 @@ export function getLeaderboardMinimums(): Record<string, number> {
 			]),
 		),
 	);
+}
+
+/**
+ * Largo máximo del nombre en el ranking (D211): el `maxLength` del campo
+ * Nombre. El trigger rechaza un `display_name` más largo (o vacío).
+ */
+export const LEADERBOARD_DISPLAY_NAME_MAX_LENGTH = 24;
+
+/**
+ * El nombre tal como va al ranking (D211): sin espacios en los extremos y
+ * cortado a `LEADERBOARD_DISPLAY_NAME_MAX_LENGTH` caracteres (por puntos de
+ * código, como `char_length` en Postgres). Un perfil con un nombre más largo
+ * (escrito por otra vía) no deja de subir sus marcas; uno vacío usa `fallback`.
+ */
+export function toLeaderboardDisplayName(
+	name: string,
+	fallback: string,
+): string {
+	const clamped = Array.from(name.trim())
+		.slice(0, LEADERBOARD_DISPLAY_NAME_MAX_LENGTH)
+		.join("")
+		.trim();
+
+	return clamped || fallback;
 }
 
 /**

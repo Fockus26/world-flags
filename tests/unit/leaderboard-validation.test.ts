@@ -5,15 +5,15 @@
  *   vigentes (3 juegos × "Todo el mundo" y 8 continentes, D138) tiene el
  *   suyo, y es nº de países del alcance × 300 ms.
  * - Son generosos: batirlos exige teclear más rápido que cualquier humano.
- * - El SQL del trigger (`supabase/leaderboard-continentes.sql`, que redefine
- *   el de `leaderboard-validacion.sql`; local: no está en git ni en CI) dice
- *   los mismos números. Si el archivo no existe, esa comprobación se salta.
+ * - El SQL del trigger (la última migración que lo redefine, D211) dice los
+ *   mismos números, rechaza los scopes sin ranking salvo los dos viejos
+ *   (D114), y limita nombre y avatar a lo que acepta la app.
  * - El cliente no guarda como mejor marca un tiempo bajo el mínimo (D139).
  * - Un rechazo del servidor es definitivo (no se reintenta); un fallo de red
  *   o de servidor sí se reintenta (D050, D113).
  */
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -28,14 +28,17 @@ import {
 	LEADERBOARD_SCOPES,
 	REGIONS,
 } from "@/types/country";
+import { AVATAR_STYLES } from "@/types/progress";
 import {
 	getLeaderboardMinimums,
 	getRushMinTimeMs,
 	isLeaderboardTimeRejected,
 	isPlausibleRushTime,
+	LEADERBOARD_DISPLAY_NAME_MAX_LENGTH,
 	LEADERBOARD_MIN_MS_PER_ANSWER,
 	LEADERBOARD_TIME_REJECTED_CODE,
 	shouldRetryLeaderboardUpload,
+	toLeaderboardDisplayName,
 } from "@/utils/leaderboard-validation";
 
 const SQL_PATH = join(
@@ -43,7 +46,8 @@ const SQL_PATH = join(
 	"..",
 	"..",
 	"supabase",
-	"leaderboard-continentes.sql",
+	"migrations",
+	"20261020120000_leaderboard_validar_todo.sql",
 );
 
 /**
@@ -134,9 +138,7 @@ describe("mínimos del ranking", () => {
 		}
 	});
 
-	test("el SQL del trigger usa los mismos mínimos", {
-		skip: !existsSync(SQL_PATH) && "supabase/ es local",
-	}, () => {
+	test("el SQL del trigger usa los mismos mínimos", () => {
 		const sql = readFileSync(SQL_PATH, "utf8");
 		const functionBody = sql.slice(0, sql.indexOf("create trigger"));
 		const sqlMinimums = Object.fromEntries(
@@ -147,6 +149,56 @@ describe("mínimos del ranking", () => {
 
 		assert.deepEqual(sqlMinimums, getLeaderboardMinimums());
 		assert.ok(sql.includes(`errcode = '${LEADERBOARD_TIME_REJECTED_CODE}'`));
+	});
+});
+
+describe("lo demás que valida el trigger (D211)", () => {
+	const sql = readFileSync(SQL_PATH, "utf8");
+
+	test("los scopes sin mínimo se rechazan, salvo los dos viejos", () => {
+		assert.ok(sql.includes("message = 'leaderboard_scope_rejected'"));
+		assert.ok(sql.includes("new.scope in ('world', 'capitals:world')"));
+		// Los viejos no son vigentes: si lo fueran, tendrían su mínimo.
+		const minimums = getLeaderboardMinimums();
+		assert.equal(minimums.world, undefined);
+		assert.equal(minimums["capitals:world"], undefined);
+	});
+
+	test("el nombre tiene el mismo largo máximo que el campo", () => {
+		assert.ok(
+			sql.includes(
+				`char_length(new.display_name) not between 1 and ${LEADERBOARD_DISPLAY_NAME_MAX_LENGTH}`,
+			),
+		);
+	});
+
+	test("los estilos de avatar son los de la app", () => {
+		const list = sql.match(/new\.avatar_style not in \(([^)]*)\)/)?.[1] ?? "";
+		const sqlStyles = [...list.matchAll(/'([^']+)'/g)].map(([, s]) => s);
+
+		assert.deepEqual(sqlStyles, [...AVATAR_STYLES]);
+	});
+
+	test("la fecha la pone el servidor", () => {
+		assert.ok(sql.includes("new.updated_at := now();"));
+	});
+});
+
+describe("nombre que va al ranking (D211)", () => {
+	test("se corta a 24 caracteres por puntos de código", () => {
+		assert.equal(toLeaderboardDisplayName("a".repeat(30), "X"), "a".repeat(24));
+		const emoji = "🌍".repeat(30);
+		const clamped = toLeaderboardDisplayName(emoji, "X");
+		assert.equal(Array.from(clamped).length, 24);
+	});
+
+	test("sin espacios en los extremos y con respaldo si queda vacío", () => {
+		assert.equal(toLeaderboardDisplayName("  Ana  ", "X"), "Ana");
+		assert.equal(toLeaderboardDisplayName("   ", "Explorador"), "Explorador");
+		assert.equal(
+			toLeaderboardDisplayName(`${"a".repeat(23)} b`, "X"),
+			"a".repeat(23),
+		);
 	});
 });
 
