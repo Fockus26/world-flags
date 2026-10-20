@@ -184,8 +184,14 @@ function colorVars(color: ButtonColor, variant: ButtonVariant): CSSProperties {
 const HOVER_LIKE_FOCUS =
 	"data-[focus-visible]:[--button-bg:var(--button-bg-hover)]!";
 
+// Alto contraste (D207): `forced-colors` borra el relleno, y sin borde el
+// botón queda como texto suelto. El borde solo existe ahí (1 px, el sistema le
+// da el color `ButtonText`), así que fuera de ese modo no cambia ninguna
+// medida. `outline` ya trae su borde inline, que manda.
+const FORCED_COLORS_BORDER = "forced-colors:border";
+
 function interactionClassName(_variant: ButtonVariant): string {
-	return HOVER_LIKE_FOCUS;
+	return `${HOVER_LIKE_FOCUS} ${FORCED_COLORS_BORDER}`;
 }
 
 export function Button({
