@@ -31,6 +31,11 @@ interface OptionTileProps {
  * deja 4 px de hueco (lo justo para el anillo de foco), pero la subida sigue
  * apagada: no todos los consumidores pasan por `AutoHeight` y 4 px no
  * alcanzan para subir 2 px y además llevar el anillo entero.
+ *
+ * Alto contraste (D207): `forced-colors` borra el relleno `--accent`, que es
+ * lo único que marca la elegida, así que esa opción sale del ajuste forzado y
+ * se pinta con `Highlight`/`HighlightText` (como `GameTypeToggle`). Su anillo
+ * de foco pasa a `CanvasText`: fuera del ajuste, `--focus` no sigue la paleta.
  */
 export function OptionTile({
 	name,
@@ -70,6 +75,10 @@ export function OptionTile({
 				motion-safe:active:scale-98
 				has-checked:border-[var(--accent)] has-checked:bg-[var(--accent)]
 				has-checked:text-[var(--accent-foreground)]
+				forced-colors:has-checked:forced-color-adjust-none
+				forced-colors:has-checked:border-[Highlight] forced-colors:has-checked:bg-[Highlight]
+				forced-colors:has-checked:text-[HighlightText]
+				forced-colors:has-checked:outline-[CanvasText]
 				has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2
 				has-focus-visible:outline-[var(--focus)]
 				${isPopping ? "motion-safe:animate-in motion-safe:zoom-in-95" : ""}
