@@ -9,6 +9,19 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.3] - 2026-10-20
+
+### Corregido
+
+- Si la app falla al mostrarse, la pantalla «Algo salió mal» se anuncia con su
+  título y el teclado sigue desde ahí, en vez de quedarse perdido en la página.
+- En el móvil, el campo donde escribes la respuesta y el desplegable de qué
+  practicar son un poco más altos y se tocan mejor.
+- La etiqueta del lote en la cabecera de la partida ("Lote 2 de 5") se lee mejor
+  en pantallas pequeñas.
+- El aviso de aprender por lotes dice ahora "Aprende poco a poco las banderas"
+  (o las capitales, o los países).
+
 ## [2.10.2] - 2026-10-19
 
 ### Corregido
