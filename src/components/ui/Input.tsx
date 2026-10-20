@@ -10,7 +10,18 @@ interface InputProps extends ComponentPropsWithRef<"input"> {
  * nativa de `<input>` (incluido `onChange` con evento) para no tocar los
  * formularios que ya existen; el `<input>` interno es un elemento real.
  */
-export function Input({ className, label, id, ...props }: InputProps) {
+export function Input({
+	className: extraClassName,
+	label,
+	id,
+	...props
+}: InputProps) {
+	// 44 px de alto en móvil (objetivo táctil del kit, D209). Por debajo de
+	// `sm` HeroUI lo deja en 42 px; desde `sm` no se toca.
+	const className = ["max-sm:min-h-11", extraClassName]
+		.filter(Boolean)
+		.join(" ");
+
 	if (!label) {
 		return <HeroInput id={id} className={className} {...props} />;
 	}

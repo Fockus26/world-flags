@@ -45,7 +45,8 @@ export function Select({
 				.join(" ")}
 		>
 			{label ? <Label>{label}</Label> : null}
-			<HeroSelect.Trigger>
+			{/* 44 px de alto en móvil, como `ui/Input` (D209); centrado para que el texto no se quede arriba. */}
+			<HeroSelect.Trigger className="items-center max-sm:min-h-11">
 				<HeroSelect.Value />
 				<HeroSelect.Indicator />
 			</HeroSelect.Trigger>
