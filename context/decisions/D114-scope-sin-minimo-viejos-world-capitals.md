@@ -9,3 +9,5 @@
 **Nota de estado:** SQL sin aplicar
 
 _Contexto común de la unidad (antes `26-ranking-validacion.md`): en D112._
+
+**Sustituida en parte por D211:** los scopes desconocidos ya se rechazan; los viejos `world` y `capitals:world` siguen pasando sin mínimo.
