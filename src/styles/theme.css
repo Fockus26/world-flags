@@ -97,6 +97,14 @@
 	--radius-2xl: 2rem;
 
 	/* ===========================
+	   Anchos de tarjeta (D208): `w-full max-w-card` en vez de
+	   `w-[min(100%,Xrem)]`. `card` para las pantallas de estado (404 y
+	   error), `card-wide` para Resultados, que lleva más contenido.
+	=========================== */
+	--container-card: 32rem;
+	--container-card-wide: 38rem;
+
+	/* ===========================
 	   Tamaños de letra (D178)
 	   Sin `--line-height` a propósito: como los `text-[Xrem]` que
 	   sustituyen, solo fijan el tamaño y el interlineado se hereda.
