@@ -1,7 +1,6 @@
 import { type FocusEvent, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setGuestProgressDiscarded } from "@/store/slices/syncSlice";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 /**
  * Aviso de que lo jugado como invitado no pasó a la cuenta (D212): al entrar
@@ -13,10 +12,8 @@ import { setGuestProgressDiscarded } from "@/store/slices/syncSlice";
  * de `SystemSnackbars` (`role="status"`, se anuncia al aparecer).
  */
 export function GuestProgressDiscardedSnackbar() {
-	const dispatch = useAppDispatch();
-	const isVisible = useAppSelector(
-		(state) => state.sync.guestProgressDiscarded,
-	);
+	const { guestProgressDiscarded: isVisible, dismissGuestProgressNotice } =
+		useSyncStatus();
 	// Dónde estaba el foco antes de entrar en el aviso: al cerrarlo, el botón
 	// desaparece y el foco vuelve allí en vez de caer en `<body>`.
 	const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -38,7 +35,7 @@ export function GuestProgressDiscardedSnackbar() {
 			target.focus({ preventScroll: true });
 		}
 
-		dispatch(setGuestProgressDiscarded(false));
+		dismissGuestProgressNotice();
 	}
 
 	return (
