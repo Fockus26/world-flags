@@ -1,10 +1,12 @@
-import { type SubmitEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { validateNewPassword } from "@/utils/auth-errors";
+import { focusIfLost } from "@/utils/focus";
 import { EmailConfirmationPending } from "./EmailConfirmationPending";
 
 type AuthMode = "signin" | "signup";
@@ -97,9 +99,18 @@ export function AuthSection() {
 		event.preventDefault();
 		setError(null);
 
-		if (mode === "signup" && password !== confirmPassword) {
-			setError("Las contraseñas no coinciden.");
-			return;
+		if (mode === "signup") {
+			const passwordError = validateNewPassword(password);
+
+			if (passwordError) {
+				setError(passwordError);
+				return;
+			}
+
+			if (password !== confirmPassword) {
+				setError("Las contraseñas no coinciden.");
+				return;
+			}
 		}
 
 		setIsSubmitting(true);
@@ -142,10 +153,29 @@ export function AuthSection() {
 				? "pending"
 				: "form";
 
+	/**
+	 * Al entrar (correo, Google o el enlace de confirmación) el formulario se
+	 * desmonta con el foco dentro y caería en `<body>`, fuera del diálogo: el
+	 * primer Escape ya no lo cerraba. Se lleva a "Sesión iniciada como…", que
+	 * además anuncia el resultado (D212). Solo en el paso a sesión iniciada
+	 * con la sección montada, no al abrirla ya con sesión.
+	 */
+	const signedInRef = useRef<HTMLParagraphElement>(null);
+	const previousViewRef = useRef(view);
+
+	useEffect(() => {
+		const previousView = previousViewRef.current;
+		previousViewRef.current = view;
+
+		if (view === "authenticated" && previousView !== "authenticated") {
+			focusIfLost(() => signedInRef.current);
+		}
+	}, [view]);
+
 	if (view === "authenticated") {
 		return (
 			<div className="flex flex-col gap-3 animate-in fade-in-0 zoom-in-95 duration-300">
-				<p className="m-0 text-label">
+				<p ref={signedInRef} tabIndex={-1} className="m-0 text-label">
 					Sesión iniciada como <strong>{user?.email}</strong>
 				</p>
 

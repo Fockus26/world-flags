@@ -61,6 +61,13 @@ export function EmailConfirmationPending({
 				pantalla se cerrará sola cuando confirmes tu cuenta.
 			</p>
 
+			{/* Un correo que ya tenía cuenta llega aquí igual que uno nuevo, para
+			    no revelar qué correos existen (D212). Copy provisional. */}
+			<p className="m-0 text-text-placeholder text-caption leading-normal">
+				Si ya tenías una cuenta con este correo, no te llegará nada: pulsa «Usar
+				otro correo» e inicia sesión.
+			</p>
+
 			<div className="mt-2 flex gap-2">
 				<Button
 					color="secondary"

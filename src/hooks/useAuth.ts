@@ -4,18 +4,11 @@ import {
 } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useAppSelector } from "@/store/hooks";
+import { authErrorMessage, isExistingAccountError } from "@/utils/auth-errors";
 
-/**
- * Sin red, Supabase Auth devuelve un "Failed to fetch" en inglés: se cambia
- * por un mensaje que diga lo que pasa (D052). El resto de errores, tal cual.
- */
-export const AUTH_OFFLINE_MESSAGE =
-	"Sin conexión. Inténtalo de nuevo cuando vuelvas a estar en línea.";
-
+/** En español y por `error.code` (D052, D212): nunca el texto crudo de Supabase. */
 function toAuthErrorMessage(error: AuthError): string {
-	return isAuthRetryableFetchError(error)
-		? AUTH_OFFLINE_MESSAGE
-		: error.message;
+	return authErrorMessage(error, isAuthRetryableFetchError(error));
 }
 
 export function useAuth() {
@@ -59,6 +52,18 @@ export function useAuth() {
 			options: { emailRedirectTo: window.location.origin },
 		});
 
+		/**
+		 * Correo que ya tiene cuenta: con "Confirm email" activo (producción)
+		 * Supabase responde como a un registro nuevo, sin identidades; sin él,
+		 * con `user_already_exists`. En los dos casos se sigue como un registro
+		 * nuevo ("revisa tu correo", con la pista de iniciar sesión si ya
+		 * tenías cuenta): decir "ya existe" revelaría qué correos tienen
+		 * cuenta (D212).
+		 */
+		if (error && isExistingAccountError(error)) {
+			return { error: null, needsEmailConfirmation: true };
+		}
+
 		if (error) {
 			return {
 				error: toAuthErrorMessage(error),
@@ -69,10 +74,7 @@ export function useAuth() {
 		const isExistingAccount = data.user?.identities?.length === 0;
 
 		if (isExistingAccount) {
-			return {
-				error: "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
-				needsEmailConfirmation: false,
-			};
+			return { error: null, needsEmailConfirmation: true };
 		}
 
 		return {
