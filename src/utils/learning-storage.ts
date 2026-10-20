@@ -1499,6 +1499,9 @@ export interface SyncPlan {
 /**
  * La decisión de cada sincronización, pura:
  *
+ * - **Entra un invitado sin progreso y la cuenta tiene fila**: queda la nube
+ *   tal cual, sin subir (D210). No hay nada que pasar, y los valores por
+ *   defecto pisarían el perfil o las marcas de la cuenta.
  * - **La cuenta no tiene progreso en la nube** (recién creada o sin jugar): lo
  *   local — el invitado que acaba de entrar — pasa a ser la cuenta.
  * - **La cuenta ya tiene progreso y no hay base** (`base` `null`: lo local no
@@ -1512,6 +1515,16 @@ export function planSync(
 	local: UserLearningData,
 	base: UserLearningData | null,
 ): SyncPlan {
+	/**
+	 * Entra un invitado sin progreso en una cuenta con fila: no hay nada que
+	 * pasar a la cuenta, y subir lo local pisaría lo que la fila sí tiene
+	 * aunque no cuente como progreso (nombre, avatar, mejores tiempos, rutas)
+	 * con los valores por defecto (D210, visto por W5 en la tanda 2026-10-20b).
+	 */
+	if (remote && !base && !hasLearningProgress(local)) {
+		return { data: remote, push: false, discardedLocal: false };
+	}
+
 	if (!remote || !hasLearningProgress(remote)) {
 		return { data: local, push: true, discardedLocal: false };
 	}

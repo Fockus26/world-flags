@@ -11,3 +11,5 @@
   cuando vuelves a iniciar sesión.
 - Al cerrar sesión en otra pestaña, esta también lo refleja y te avisa, y lo que jugaste
   aquí sin subir pasa a tu cuenta cuando vuelves a iniciar sesión.
+- Iniciar sesión desde un dispositivo sin progreso ya no reemplaza el nombre, el avatar ni
+  los mejores tiempos de tu cuenta por los de por defecto.

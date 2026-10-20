@@ -26,6 +26,12 @@ Hallazgos del QA funcional del 2026-10-20: [Alto] 1, [Medio] 7 y [Medio] 8.
 - `GameEffects`, antes de borrar los datos de la cuenta (D009), aparta datos + base si había cambios pendientes (`savePendingAccountData`). Al hidratar esa misma cuenta en este dispositivo, `restorePendingAccountData` los repone como datos locales + base: la cola de D049, que la sincronización fusiona y sube. Lo jugado como invitado entre medias se descarta, como en D056. Los de otra cuenta se quedan apartados para la suya.
 - **Límite:** si el cierre llega mientras la pestaña aún está en `loading` (hidratando), no hay base en memoria y no se aparta nada.
 
+## Invitado vacío que entra en una cuenta sin "progreso" (visto por W5)
+
+- **Qué pasaba (también en `main`):** `planSync` solo cuenta como progreso el historial, las notas por continente, los logros y las sesiones. Una fila con nombre, avatar o mejores tiempos, pero sin eso, contaba como "cuenta sin progreso", y un invitado recién limpio la pisaba con los valores por defecto ("Explorador", marcas vacías).
+- **Ahora:** si entra un invitado (sin base) sin progreso y la cuenta tiene fila, queda la nube tal cual y no se sube nada. Con base (misma cuenta), igual que antes. Test en `sync-merge.test.ts` (D056).
+- Con los flujos reales, unas marcas casi siempre vienen con sesiones, que sí cuentan. El caso real es una cuenta que solo eligió nombre o avatar.
+
 **Alternativas descartadas:**
 - Fusión por fecha en el servidor (RPC/trigger): protege también a clientes viejos, pero duplica la regla de fusión en SQL y exige migración en producción. Se puede añadir encima más adelante.
 - Cerrar la sesión al primer 401 sin refrescar: un access token caducado o alterado con refresh token válido se arregla solo; cerrar sería peor.
