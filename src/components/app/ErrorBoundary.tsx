@@ -4,7 +4,7 @@ import { focusWhenVisible } from "@/utils/focus";
 const TITLE_ID = "error-boundary-title";
 
 const BUTTON_CLASS =
-	"inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md px-5 font-bold transition-colors focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover";
+	"inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md px-5 font-bold transition-colors forced-colors:border focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover";
 
 interface ErrorBoundaryProps {
 	children: ReactNode;
