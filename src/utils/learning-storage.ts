@@ -1593,6 +1593,66 @@ export function clearSyncBase(): void {
 	}
 }
 
+const PENDING_ACCOUNT_STORAGE_KEY = "world-flags-pending-account";
+
+interface StoredPendingAccount {
+	userId: string;
+	data: Partial<UserLearningData>;
+	base: Partial<UserLearningData>;
+}
+
+/**
+ * La sesión se cerró sin que el usuario lo pidiera (token rechazado, cierre
+ * en otra pestaña) con cambios sin subir (D210): se apartan, con su base,
+ * antes de que el logout borre los datos de la cuenta (D009). Al volver a
+ * entrar esa cuenta en este dispositivo, `restorePendingAccountData` los
+ * repone como cola y la sincronización los sube.
+ */
+export function savePendingAccountData(
+	userId: string,
+	data: UserLearningData,
+	base: UserLearningData,
+): void {
+	try {
+		const stored: StoredPendingAccount = { userId, data, base };
+		window.localStorage.setItem(
+			PENDING_ACCOUNT_STORAGE_KEY,
+			JSON.stringify(stored),
+		);
+	} catch {
+		// Sin espacio: se pierde lo pendiente, como en cualquier logout (D009).
+	}
+}
+
+/**
+ * Si hay cambios apartados de `userId`, los repone como datos locales y base
+ * (la cola persistida de D049) y los quita del apartado. Devuelve si había.
+ * Los de otra cuenta se quedan donde están, para cuando vuelva a entrar.
+ */
+export function restorePendingAccountData(userId: string): boolean {
+	if (typeof window === "undefined") return false;
+
+	try {
+		const stored = window.localStorage.getItem(PENDING_ACCOUNT_STORAGE_KEY);
+
+		if (!stored) return false;
+
+		const parsed = JSON.parse(stored) as StoredPendingAccount;
+
+		if (parsed.userId !== userId || !parsed.data || !parsed.base) {
+			return false;
+		}
+
+		saveLearningData(normalizeLearningData(parsed.data));
+		saveSyncBase(userId, normalizeLearningData(parsed.base));
+		window.localStorage.removeItem(PENDING_ACCOUNT_STORAGE_KEY);
+
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 /**
  * ¿Hay cambios de este dispositivo que la nube todavía no tiene? Sin base no
  * se puede saber: se responde que no (no hay nada que anunciar ni que

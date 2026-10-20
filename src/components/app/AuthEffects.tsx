@@ -8,9 +8,14 @@ import type { AppDispatch } from "@/store";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
-import { setAuthState } from "@/store/slices/authSlice";
+import {
+	sessionEndedUnexpectedly,
+	setAuthState,
+} from "@/store/slices/authSlice";
 
 import { leaderboardCache } from "@/utils/leaderboard-cache";
+
+import { consumeVoluntarySignOut } from "@/utils/session-end";
 
 function applySession(dispatch: AppDispatch, session: Session | null) {
 	dispatch(
@@ -33,12 +38,23 @@ export function AuthEffects() {
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
+		} = supabase.auth.onAuthStateChange((event, session) => {
 			const userId = session?.user.id ?? null;
 
 			// Al entrar o salir el ranking se vuelve a pedir (D188).
 			if (lastUserId !== undefined && userId !== lastUserId) {
 				leaderboardCache.clear();
+			}
+
+			// Se cerró una sesión que estaba abierta aquí sin que se pidiera en
+			// esta pestaña: se avisa y `GameEffects` aparta lo pendiente (D210).
+			// Va antes de `applySession`, que es lo que dispara ese logout.
+			if (event === "SIGNED_OUT") {
+				const wasVoluntary = consumeVoluntarySignOut();
+
+				if (typeof lastUserId === "string" && !wasVoluntary) {
+					dispatch(sessionEndedUnexpectedly());
+				}
 			}
 
 			lastUserId = userId;

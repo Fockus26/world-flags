@@ -4,6 +4,10 @@ import {
 } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useAppSelector } from "@/store/hooks";
+import {
+	consumeVoluntarySignOut,
+	markVoluntarySignOut,
+} from "@/utils/session-end";
 
 /**
  * Sin red, Supabase Auth devuelve un "Failed to fetch" en inglés: se cambia
@@ -105,7 +109,12 @@ export function useAuth() {
 	};
 
 	const signOut = async () => {
+		// Este cierre lo pidió el usuario: sin aviso de "se cerró tu sesión"
+		// (D210). `SIGNED_OUT` llega antes de que `signOut` resuelva; si no
+		// llegó (falló), la marca no debe quedar para un cierre posterior.
+		markVoluntarySignOut();
 		await supabase.auth.signOut();
+		consumeVoluntarySignOut();
 	};
 
 	return {
