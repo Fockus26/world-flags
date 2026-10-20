@@ -31,6 +31,13 @@ const ORDER_LABELS: Record<LearningPathOrder, string> = {
 	random: "Al azar",
 };
 
+/** El artículo de `GAME_TYPE_NOUNS` ("los países", "las banderas"). */
+const NOUN_ARTICLES: Record<GameType, string> = {
+	countries: "los",
+	flags: "las",
+	capitals: "las",
+};
+
 /**
  * Crear un aprendizaje por lotes (D185). El alcance es el que ya está elegido
  * en la configuración (continentes, países sueltos o el mundo): aquí solo se
@@ -83,10 +90,10 @@ export function LearningPathModal({
 				id="learning-path-description"
 				className="m-0 mb-4 text-label text-text-placeholder"
 			>
-				Aprende de a pocos {noun}. Un país queda consolidado cuando lo aciertas
-				a la primera en dos días distintos; cuando todo el lote está
-				consolidado, se abre el siguiente. Lo que ya sabías (con su continente
-				en 10/10) cuenta como consolidado.
+				Aprende poco a poco {NOUN_ARTICLES[gameType]} {noun}. Un país queda
+				consolidado cuando lo aciertas a la primera en dos días distintos;
+				cuando todo el lote está consolidado, se abre el siguiente. Lo que ya
+				sabías (con su continente en 10/10) cuenta como consolidado.
 			</p>
 
 			<div className="flex flex-col gap-5">
