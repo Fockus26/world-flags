@@ -1499,6 +1499,9 @@ export interface SyncPlan {
 /**
  * La decisión de cada sincronización, pura:
  *
+ * - **Entra un invitado sin progreso y la cuenta tiene fila**: queda la nube
+ *   tal cual, sin subir (D210). No hay nada que pasar, y los valores por
+ *   defecto pisarían el perfil o las marcas de la cuenta.
  * - **La cuenta no tiene progreso en la nube** (recién creada o sin jugar): lo
  *   local — el invitado que acaba de entrar — pasa a ser la cuenta.
  * - **La cuenta ya tiene progreso y no hay base** (`base` `null`: lo local no
@@ -1512,6 +1515,16 @@ export function planSync(
 	local: UserLearningData,
 	base: UserLearningData | null,
 ): SyncPlan {
+	/**
+	 * Entra un invitado sin progreso en una cuenta con fila: no hay nada que
+	 * pasar a la cuenta, y subir lo local pisaría lo que la fila sí tiene
+	 * aunque no cuente como progreso (nombre, avatar, mejores tiempos, rutas)
+	 * con los valores por defecto (D210, visto por W5 en la tanda 2026-10-20b).
+	 */
+	if (remote && !base && !hasLearningProgress(local)) {
+		return { data: remote, push: false, discardedLocal: false };
+	}
+
 	if (!remote || !hasLearningProgress(remote)) {
 		return { data: local, push: true, discardedLocal: false };
 	}
@@ -1590,6 +1603,66 @@ export function clearSyncBase(): void {
 		window.localStorage.removeItem(SYNC_BASE_STORAGE_KEY);
 	} catch {
 		// Sin acceso a localStorage no hay base que borrar.
+	}
+}
+
+const PENDING_ACCOUNT_STORAGE_KEY = "world-flags-pending-account";
+
+interface StoredPendingAccount {
+	userId: string;
+	data: Partial<UserLearningData>;
+	base: Partial<UserLearningData>;
+}
+
+/**
+ * La sesión se cerró sin que el usuario lo pidiera (token rechazado, cierre
+ * en otra pestaña) con cambios sin subir (D210): se apartan, con su base,
+ * antes de que el logout borre los datos de la cuenta (D009). Al volver a
+ * entrar esa cuenta en este dispositivo, `restorePendingAccountData` los
+ * repone como cola y la sincronización los sube.
+ */
+export function savePendingAccountData(
+	userId: string,
+	data: UserLearningData,
+	base: UserLearningData,
+): void {
+	try {
+		const stored: StoredPendingAccount = { userId, data, base };
+		window.localStorage.setItem(
+			PENDING_ACCOUNT_STORAGE_KEY,
+			JSON.stringify(stored),
+		);
+	} catch {
+		// Sin espacio: se pierde lo pendiente, como en cualquier logout (D009).
+	}
+}
+
+/**
+ * Si hay cambios apartados de `userId`, los repone como datos locales y base
+ * (la cola persistida de D049) y los quita del apartado. Devuelve si había.
+ * Los de otra cuenta se quedan donde están, para cuando vuelva a entrar.
+ */
+export function restorePendingAccountData(userId: string): boolean {
+	if (typeof window === "undefined") return false;
+
+	try {
+		const stored = window.localStorage.getItem(PENDING_ACCOUNT_STORAGE_KEY);
+
+		if (!stored) return false;
+
+		const parsed = JSON.parse(stored) as StoredPendingAccount;
+
+		if (parsed.userId !== userId || !parsed.data || !parsed.base) {
+			return false;
+		}
+
+		saveLearningData(normalizeLearningData(parsed.data));
+		saveSyncBase(userId, normalizeLearningData(parsed.base));
+		window.localStorage.removeItem(PENDING_ACCOUNT_STORAGE_KEY);
+
+		return true;
+	} catch {
+		return false;
 	}
 }
 

@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 
+import { supabase } from "@/lib/supabase";
+
 import { store } from "@/store";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -20,6 +22,7 @@ import type { UserLearningData } from "@/types/progress";
 
 import {
 	isNetworkFailure,
+	isSessionRejected,
 	syncLeaderboardProfile,
 	syncLearningData,
 	upsertLeaderboardEntry,
@@ -39,7 +42,9 @@ import {
 	hasLearningProgress,
 	hasPendingChanges,
 	mergeLearningData,
+	restorePendingAccountData,
 	saveLearningData,
+	savePendingAccountData,
 	saveSyncBase,
 } from "@/utils/learning-storage";
 
@@ -86,6 +91,27 @@ function toSyncBaseRef(userId: string, data: UserLearningData): SyncBaseRef {
 	return { userId, data, json: JSON.stringify(data) };
 }
 
+/**
+ * El servidor rechazó el token de la sesión (D210). Reintentar con el mismo
+ * token fallaría siempre ("No se pudo sincronizar" en bucle con la sesión
+ * aparentemente iniciada), así que la primera vez se refresca la sesión y se
+ * reintenta; si vuelve a rechazarlo (o el refresco falla), se cierra la sesión
+ * en este dispositivo. `AuthEffects` lo avisa y lo pendiente se aparta.
+ *
+ * Devuelve si hay que reintentar ya (el refresco fue bien).
+ */
+async function recoverRejectedSession(alreadyRefreshed: boolean) {
+	if (!alreadyRefreshed) {
+		const { error } = await supabase.auth.refreshSession();
+
+		if (!error) return true;
+	}
+
+	await supabase.auth.signOut({ scope: "local" });
+
+	return false;
+}
+
 /** Lo que el efecto de subidas expone a los demás efectos. */
 interface SyncScheduler {
 	/** Hubo un cambio: subir cuando el usuario pare (o al llegar al tope). */
@@ -123,6 +149,12 @@ export function GameEffects() {
 
 	/** Base de sincronización de la cuenta actual (D049). */
 	const syncBaseRef = useRef<SyncBaseRef | null>(null);
+
+	/**
+	 * Cuenta cuya sesión ya se refrescó tras un token rechazado, sin una
+	 * sincronización buena después: otro rechazo cierra la sesión (D210).
+	 */
+	const refreshedSessionRef = useRef<string | null>(null);
 
 	const schedulerRef = useRef<SyncScheduler | null>(null);
 
@@ -180,7 +212,29 @@ export function GameEffects() {
 		 * USER IS GUEST
 		 */
 		if (status === "guest") {
+			/**
+			 * La sesión se cerró sin pedirlo aquí (otra pestaña, token
+			 * rechazado): lo que esta pestaña tenía sin subir se aparta antes
+			 * de que el logout lo borre, y vuelve como cola al entrar de nuevo
+			 * con esa cuenta (D210). El logout pedido avisa antes (`AuthSection`).
+			 */
+			const syncBase = syncBaseRef.current;
+
+			if (
+				previousStatus === "authenticated" &&
+				store.getState().auth.endedUnexpectedly &&
+				syncBase
+			) {
+				const accountData = store.getState().game.learningData;
+
+				if (hasPendingChanges(accountData, syncBase.data)) {
+					savePendingAccountData(syncBase.userId, accountData, syncBase.data);
+				}
+			}
+
 			hydratedUserRef.current = null;
+
+			refreshedSessionRef.current = null;
 
 			failedSyncRef.current = null;
 
@@ -252,6 +306,16 @@ export function GameEffects() {
 			isSyncing = true;
 
 			/**
+			 * Lo que quedó sin subir cuando la sesión de esta cuenta se cerró
+			 * sola (D210) vuelve como datos locales + base: la cola de D049,
+			 * que la sincronización de abajo fusiona y sube. Lo jugado como
+			 * invitado entre medias se descarta, como en D056.
+			 */
+			if (!failedSync) {
+				restorePendingAccountData(user.id);
+			}
+
+			/**
 			 * Datos de este dispositivo: los de la cuenta (con lo jugado sin
 			 * conexión, si lo hubo) o los del invitado que acaba de entrar.
 			 */
@@ -294,6 +358,8 @@ export function GameEffects() {
 						: mergeLearningData(syncedData, latestLocalData, localData);
 
 				failedSyncRef.current = null;
+
+				refreshedSessionRef.current = null;
 
 				/**
 				 * Datos y base se guardan juntos, en la misma tarea: tienen
@@ -357,6 +423,23 @@ export function GameEffects() {
 				const failures = (failedSync?.failures ?? 0) + 1;
 
 				failedSyncRef.current = { userId: user.id, failures };
+
+				// Token rechazado: refrescar y reintentar ya, o cerrar la
+				// sesión. Un refresco bueno también re-ejecuta este efecto
+				// (cambia `user`); el reintento de aquí cubre el caso en que no.
+				if (isSessionRejected(error)) {
+					const alreadyRefreshed = refreshedSessionRef.current === user.id;
+
+					refreshedSessionRef.current = user.id;
+
+					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
+						if (retry && !cancelled && !isSyncing) {
+							void hydrateAuthenticatedUser();
+						}
+					});
+
+					return;
+				}
 
 				retryTimeoutId = setTimeout(
 					() => void hydrateAuthenticatedUser(),
@@ -478,6 +561,8 @@ export function GameEffects() {
 
 				failures = 0;
 
+				refreshedSessionRef.current = null;
+
 				dispatch(syncSucceeded(new Date().toISOString()));
 
 				const pending = hasPendingChanges(adoptedData, syncedData);
@@ -497,6 +582,19 @@ export function GameEffects() {
 				dispatch(syncFailed(kind));
 
 				failures += 1;
+
+				// Token rechazado: refrescar y reintentar ya, o cerrar la sesión.
+				if (isSessionRejected(error)) {
+					const alreadyRefreshed = refreshedSessionRef.current === userId;
+
+					refreshedSessionRef.current = userId;
+
+					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
+						if (retry && !controller.signal.aborted) void runSync();
+					});
+
+					return;
+				}
 
 				retryTimeoutId = setTimeout(
 					() => void runSync(),

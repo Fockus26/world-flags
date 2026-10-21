@@ -9,6 +9,10 @@ import {
 	authErrorMessage,
 	isExistingAccountError,
 } from "@/utils/auth-errors";
+import {
+	consumeVoluntarySignOut,
+	markVoluntarySignOut,
+} from "@/utils/session-end";
 
 /** En español y por `error.code` (D052, D212): nunca el texto crudo de Supabase. */
 function toAuthErrorMessage(error: AuthError): string {
@@ -119,7 +123,12 @@ export function useAuth() {
 	};
 
 	const signOut = async () => {
+		// Este cierre lo pidió el usuario: sin aviso de "se cerró tu sesión"
+		// (D210). `SIGNED_OUT` llega antes de que `signOut` resuelva; si no
+		// llegó (falló), la marca no debe quedar para un cierre posterior.
+		markVoluntarySignOut();
 		await supabase.auth.signOut();
+		consumeVoluntarySignOut();
 	};
 
 	return {
