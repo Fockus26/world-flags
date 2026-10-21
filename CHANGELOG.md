@@ -9,6 +9,33 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.5] - 2026-10-21
+
+### Corregido
+
+- Los errores al iniciar sesión o crear una cuenta salen en español y dicen qué
+  hacer, en vez de mensajes en inglés. Además ya no desaparecen solos y señalan
+  el campo que hay que corregir.
+- Ya no se puede crear una cuenta con una contraseña hecha solo de espacios ni
+  con una demasiado larga.
+- Si entras en una cuenta que ya tenía progreso, un aviso te dice que lo que
+  jugaste como invitado en este dispositivo no se ha guardado.
+- Tras iniciar sesión, el foco del teclado se queda en la ventana de la cuenta y
+  Escape la cierra a la primera.
+- Con la cuenta abierta en dos dispositivos, un cambio de configuración, perfil
+  o notas ya no se pierde cuando el otro dispositivo sube su progreso con
+  retraso por una red lenta.
+- Si tu sesión deja de ser válida, la app la cierra y te avisa, en vez de
+  repetir "No se pudo sincronizar" sin parar. Lo que no se había subido se
+  guarda y pasa a tu cuenta cuando vuelves a iniciar sesión.
+- Al cerrar sesión en otra pestaña, esta también lo refleja y te avisa, y lo que
+  jugaste aquí sin subir pasa a tu cuenta cuando vuelves a iniciar sesión.
+- Iniciar sesión desde un dispositivo sin progreso ya no reemplaza el nombre, el
+  avatar ni los mejores tiempos de tu cuenta por los de por defecto.
+- Con la letra del navegador muy grande en un móvil, la pantalla ya no se sale
+  por los lados y el campo de respuesta cabe entero; si no hay sitio, Comprobar
+  y Saltar se ponen uno debajo del otro.
+
 ## [2.10.4] - 2026-10-20
 
 ### Corregido
