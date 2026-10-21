@@ -118,6 +118,24 @@ export function AuthSection() {
 		setFormError({ message, fields, attempt: attemptRef.current });
 	}
 
+	const formRef = useRef<HTMLFormElement>(null);
+
+	/**
+	 * Tras un envío que vuelve con error: "Iniciar sesión" se deshabilita
+	 * mientras espera y, a veces, el navegador saca el foco a `<body>`, fuera
+	 * del diálogo (D214). Si se perdió, vuelve al botón, donde estaba: el
+	 * error ya se anuncia (`role="alert"`) y apunta a los campos señalados.
+	 * Si sigue en el botón (lo normal), no se toca.
+	 */
+	function keepFocusAfterError() {
+		focusIfLost(
+			() =>
+				formRef.current?.querySelector<HTMLButtonElement>(
+					'button[type="submit"]',
+				) ?? null,
+		);
+	}
+
 	function clearError() {
 		setFormError(null);
 	}
@@ -171,6 +189,7 @@ export function AuthSection() {
 			if (authError) {
 				setIsSubmitting(false);
 				setError(authError, toFormFields(errorField));
+				keepFocusAfterError();
 				return;
 			}
 
@@ -192,6 +211,7 @@ export function AuthSection() {
 
 		if (authError) {
 			setError(authError, toFormFields(errorField));
+			keepFocusAfterError();
 			return;
 		}
 
@@ -336,7 +356,11 @@ export function AuthSection() {
 				))}
 			</div>
 
-			<form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+			<form
+				ref={formRef}
+				className="flex flex-col gap-3"
+				onSubmit={handleSubmit}
+			>
 				<Input
 					id="auth-email"
 					type="email"
