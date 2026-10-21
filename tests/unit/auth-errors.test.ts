@@ -4,6 +4,8 @@
  * - Cada código que devuelve Supabase en el login y el registro tiene su
  *   mensaje en español; uno desconocido da el genérico, nunca el texto crudo.
  * - Sin red, el mensaje de conexión (D052) aunque haya código.
+ * - Un 5xx con la red bien no es "sin conexión": el servicio no responde
+ *   (D214). auth-js marca los dos como reintentables.
  * - Registro con correo existente: se reconoce por código (para tratarlo como
  *   un registro nuevo y no revelar el correo).
  * - Contraseña nueva: solo espacios no; más de 72 bytes no (tildes y emojis
@@ -15,8 +17,10 @@ import { describe, test } from "node:test";
 import {
 	AUTH_GENERIC_MESSAGE,
 	AUTH_OFFLINE_MESSAGE,
+	AUTH_UNAVAILABLE_MESSAGE,
 	authErrorField,
 	authErrorMessage,
+	authTransportFailure,
 	isExistingAccountError,
 	PASSWORD_BLANK_MESSAGE,
 	PASSWORD_TOO_LONG_MESSAGE,
@@ -26,7 +30,7 @@ import {
 describe("authErrorMessage", () => {
 	test("los códigos del login y el registro salen en español", () => {
 		assert.equal(
-			authErrorMessage({ code: "invalid_credentials" }, false),
+			authErrorMessage({ code: "invalid_credentials" }, null),
 			"Correo o contraseña incorrectos.",
 		);
 
@@ -41,7 +45,7 @@ describe("authErrorMessage", () => {
 			"user_already_exists",
 			"email_exists",
 		]) {
-			const message = authErrorMessage({ code }, false);
+			const message = authErrorMessage({ code }, null);
 			assert.notEqual(message, AUTH_GENERIC_MESSAGE, code);
 			assert.doesNotMatch(message, /\b(the|invalid|user|password)\b/i, code);
 		}
@@ -49,15 +53,15 @@ describe("authErrorMessage", () => {
 
 	test("código desconocido o ausente: el genérico", () => {
 		assert.equal(
-			authErrorMessage({ code: "unexpected_failure" }, false),
+			authErrorMessage({ code: "unexpected_failure" }, null),
 			AUTH_GENERIC_MESSAGE,
 		);
-		assert.equal(authErrorMessage({}, false), AUTH_GENERIC_MESSAGE);
+		assert.equal(authErrorMessage({}, null), AUTH_GENERIC_MESSAGE);
 	});
 
 	test("sin red gana el aviso de conexión", () => {
 		assert.equal(
-			authErrorMessage({ code: "invalid_credentials" }, true),
+			authErrorMessage({ code: "invalid_credentials" }, "offline"),
 			AUTH_OFFLINE_MESSAGE,
 		);
 	});
@@ -73,27 +77,85 @@ describe("authErrorMessage", () => {
 	});
 });
 
+describe("authTransportFailure (D214)", () => {
+	test("reintentable sin respuesta (status 0): sin conexión", () => {
+		assert.equal(authTransportFailure({ status: 0 }, true, true), "offline");
+		assert.equal(authTransportFailure({}, true, true), "offline");
+	});
+
+	test("reintentable con 5xx y red: el servicio no responde", () => {
+		for (const status of [502, 503, 504, 520, 530]) {
+			assert.equal(
+				authTransportFailure({ status }, true, true),
+				"unavailable",
+				String(status),
+			);
+		}
+	});
+
+	test("navigator.onLine falso: sin conexión aunque haya status", () => {
+		assert.equal(authTransportFailure({ status: 503 }, true, false), "offline");
+	});
+
+	test("500 no reintentable: el servicio no responde", () => {
+		assert.equal(
+			authTransportFailure(
+				{ code: "unexpected_failure", status: 500 },
+				false,
+				true,
+			),
+			"unavailable",
+		);
+	});
+
+	test("4xx con código: no es de transporte", () => {
+		assert.equal(
+			authTransportFailure(
+				{ code: "invalid_credentials", status: 400 },
+				false,
+				true,
+			),
+			null,
+		);
+	});
+
+	test("cada fallo tiene su mensaje", () => {
+		assert.equal(
+			authErrorMessage({ status: 503 }, "unavailable"),
+			AUTH_UNAVAILABLE_MESSAGE,
+		);
+		assert.notEqual(AUTH_UNAVAILABLE_MESSAGE, AUTH_OFFLINE_MESSAGE);
+		assert.equal(
+			authErrorField({ code: "invalid_credentials" }, "unavailable"),
+			null,
+		);
+	});
+});
+
 describe("authErrorField", () => {
 	test("señala el campo que toca, o ninguno", () => {
 		assert.equal(
-			authErrorField({ code: "invalid_credentials" }, false),
+			authErrorField({ code: "invalid_credentials" }, null),
 			"credentials",
 		);
 		assert.equal(
-			authErrorField({ code: "email_address_invalid" }, false),
+			authErrorField({ code: "email_address_invalid" }, null),
 			"email",
 		);
-		assert.equal(authErrorField({ code: "weak_password" }, false), "password");
+		assert.equal(authErrorField({ code: "weak_password" }, null), "password");
 		assert.equal(
-			authErrorField({ code: "over_request_rate_limit" }, false),
+			authErrorField({ code: "over_request_rate_limit" }, null),
 			null,
 		);
-		assert.equal(authErrorField({ code: "unexpected_failure" }, false), null);
-		assert.equal(authErrorField({}, false), null);
+		assert.equal(authErrorField({ code: "unexpected_failure" }, null), null);
+		assert.equal(authErrorField({}, null), null);
 	});
 
 	test("sin red no es culpa de ningún campo", () => {
-		assert.equal(authErrorField({ code: "invalid_credentials" }, true), null);
+		assert.equal(
+			authErrorField({ code: "invalid_credentials" }, "offline"),
+			null,
+		);
 	});
 });
 

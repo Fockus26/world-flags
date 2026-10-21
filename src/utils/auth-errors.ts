@@ -15,6 +15,13 @@
 export const AUTH_OFFLINE_MESSAGE =
 	"Sin conexión. Inténtalo de nuevo cuando vuelvas a estar en línea.";
 
+/**
+ * Con red, pero el servicio de cuentas responde con un 5xx (caído, en
+ * mantenimiento): no es "sin conexión" (D214). Copy provisional.
+ */
+export const AUTH_UNAVAILABLE_MESSAGE =
+	"El servicio de cuentas no responde ahora mismo. Prueba de nuevo en un momento.";
+
 export const AUTH_GENERIC_MESSAGE =
 	"No se pudo completar. Inténtalo de nuevo en unos minutos.";
 
@@ -44,13 +51,43 @@ const AUTH_MESSAGES_BY_CODE: Record<string, string> = {
 /** Lo mínimo de un `AuthError` que hace falta para elegir el mensaje. */
 export interface AuthErrorLike {
 	code?: string;
+	status?: number;
+}
+
+/**
+ * Fallo de transporte, no de lo que escribió quien juega: sin red o el
+ * servicio caído. `null` si la respuesta llegó y trae su código.
+ */
+export type AuthTransportFailure = "offline" | "unavailable";
+
+/**
+ * auth-js trata como "reintentable" (`AuthRetryableFetchError`) tanto un
+ * fallo de red (`status` 0) como un 502/503/504 o un 520–530 del servidor.
+ * Solo lo primero es "sin conexión"; un 5xx con la red bien es el servicio
+ * que no responde (D214). `online` es `navigator.onLine`.
+ */
+export function authTransportFailure(
+	error: AuthErrorLike,
+	isRetryable: boolean,
+	online: boolean,
+): AuthTransportFailure | null {
+	const status = error.status ?? 0;
+
+	if (isRetryable) {
+		return !online || status === 0 ? "offline" : "unavailable";
+	}
+
+	if (status >= 500) return "unavailable";
+
+	return null;
 }
 
 export function authErrorMessage(
 	error: AuthErrorLike,
-	isNetworkError: boolean,
+	failure: AuthTransportFailure | null,
 ): string {
-	if (isNetworkError) return AUTH_OFFLINE_MESSAGE;
+	if (failure === "offline") return AUTH_OFFLINE_MESSAGE;
+	if (failure === "unavailable") return AUTH_UNAVAILABLE_MESSAGE;
 
 	return (
 		(error.code && AUTH_MESSAGES_BY_CODE[error.code]) || AUTH_GENERIC_MESSAGE
@@ -73,9 +110,9 @@ const AUTH_FIELDS_BY_CODE: Record<string, AuthErrorField> = {
 
 export function authErrorField(
 	error: AuthErrorLike,
-	isNetworkError: boolean,
+	failure: AuthTransportFailure | null,
 ): AuthErrorField | null {
-	if (isNetworkError || !error.code) return null;
+	if (failure || !error.code) return null;
 
 	return AUTH_FIELDS_BY_CODE[error.code] ?? null;
 }

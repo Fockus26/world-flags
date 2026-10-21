@@ -1612,14 +1612,22 @@ interface StoredPendingAccount {
 	userId: string;
 	data: Partial<UserLearningData>;
 	base: Partial<UserLearningData>;
+	/**
+	 * ¿Lo que se juegue como invitado desde ahora es de esta cuenta? Sí justo
+	 * tras el cierre involuntario; deja de serlo cuando otra cuenta entra y
+	 * sale en este dispositivo (D214). Ausente (apartados de antes de D214):
+	 * no.
+	 */
+	guestFollows?: boolean;
 }
 
 /**
  * La sesión se cerró sin que el usuario lo pidiera (token rechazado, cierre
- * en otra pestaña) con cambios sin subir (D210): se apartan, con su base,
- * antes de que el logout borre los datos de la cuenta (D009). Al volver a
- * entrar esa cuenta en este dispositivo, `restorePendingAccountData` los
- * repone como cola y la sincronización los sube.
+ * en otra pestaña), haya o no cambios sin subir (D210, D214): se apartan, con
+ * su base, antes de que el logout borre los datos de la cuenta (D009). Al
+ * volver a entrar esa cuenta en este dispositivo, `restorePendingAccountData`
+ * los repone como cola, con lo jugado como invitado entre medias, y la
+ * sincronización los sube.
  */
 export function savePendingAccountData(
 	userId: string,
@@ -1627,7 +1635,12 @@ export function savePendingAccountData(
 	base: UserLearningData,
 ): void {
 	try {
-		const stored: StoredPendingAccount = { userId, data, base };
+		const stored: StoredPendingAccount = {
+			userId,
+			data,
+			base,
+			guestFollows: true,
+		};
 		window.localStorage.setItem(
 			PENDING_ACCOUNT_STORAGE_KEY,
 			JSON.stringify(stored),
@@ -1637,32 +1650,95 @@ export function savePendingAccountData(
 	}
 }
 
+function readPendingAccount(): StoredPendingAccount | null {
+	const stored = window.localStorage.getItem(PENDING_ACCOUNT_STORAGE_KEY);
+
+	if (!stored) return null;
+
+	const parsed = JSON.parse(stored) as StoredPendingAccount;
+
+	return parsed?.data && parsed.base ? parsed : null;
+}
+
+/**
+ * Una sesión terminó en este dispositivo sin apartar nada (otra cuenta salió,
+ * o se salió a propósito): lo que se juegue como invitado desde ahora ya no
+ * es, sin más, de la cuenta con cambios apartados (D214).
+ */
+export function detachGuestFromPendingAccount(): void {
+	try {
+		const pending = readPendingAccount();
+
+		if (!pending?.guestFollows) return;
+
+		window.localStorage.setItem(
+			PENDING_ACCOUNT_STORAGE_KEY,
+			JSON.stringify({ ...pending, guestFollows: false }),
+		);
+	} catch {
+		// Sin acceso a localStorage no hay apartado que tocar.
+	}
+}
+
+/**
+ * Lo jugado como invitado tras un cierre de sesión involuntario, encima de lo
+ * que la cuenta tenía apartado (D214). Es el mismo jugador en el mismo
+ * dispositivo: se fusiona con las reglas de siempre (D048, D055, D020) contra
+ * los datos vacíos de los que partió el invitado, de modo que solo cuenta lo
+ * que el invitado cambió.
+ */
+export function mergeGuestIntoPending(
+	pending: UserLearningData,
+	guest: UserLearningData,
+): UserLearningData {
+	return mergeLearningData(pending, guest, createDefaultLearningData());
+}
+
+/** Qué repuso `restorePendingAccountData`. */
+export interface PendingRestore {
+	/** Había cambios apartados de esta cuenta y se repusieron. */
+	restored: boolean;
+	/**
+	 * Lo jugado como invitado no era de esta cuenta y se descartó al reponer
+	 * (otra cuenta entró y salió entre medias): hay que avisar (D212).
+	 */
+	discardedGuest: UserLearningData | null;
+}
+
 /**
  * Si hay cambios apartados de `userId`, los repone como datos locales y base
- * (la cola persistida de D049) y los quita del apartado. Devuelve si había.
- * Los de otra cuenta se quedan donde están, para cuando vuelva a entrar.
+ * (la cola persistida de D049) y los quita del apartado. Lo jugado como
+ * invitado desde el cierre involuntario se fusiona encima (D214), en vez de
+ * perderse sin aviso. Los de otra cuenta se quedan donde están, para cuando
+ * vuelva a entrar.
  */
-export function restorePendingAccountData(userId: string): boolean {
-	if (typeof window === "undefined") return false;
+export function restorePendingAccountData(userId: string): PendingRestore {
+	const none: PendingRestore = { restored: false, discardedGuest: null };
+
+	if (typeof window === "undefined") return none;
 
 	try {
-		const stored = window.localStorage.getItem(PENDING_ACCOUNT_STORAGE_KEY);
+		const pending = readPendingAccount();
 
-		if (!stored) return false;
+		if (!pending || pending.userId !== userId) return none;
 
-		const parsed = JSON.parse(stored) as StoredPendingAccount;
+		const guest = getLearningData();
+		const pendingData = normalizeLearningData(pending.data);
 
-		if (parsed.userId !== userId || !parsed.data || !parsed.base) {
-			return false;
-		}
-
-		saveLearningData(normalizeLearningData(parsed.data));
-		saveSyncBase(userId, normalizeLearningData(parsed.base));
+		saveLearningData(
+			pending.guestFollows
+				? mergeGuestIntoPending(pendingData, guest)
+				: pendingData,
+		);
+		saveSyncBase(userId, normalizeLearningData(pending.base));
 		window.localStorage.removeItem(PENDING_ACCOUNT_STORAGE_KEY);
 
-		return true;
+		return {
+			restored: true,
+			discardedGuest: pending.guestFollows ? null : guest,
+		};
 	} catch {
-		return false;
+		return none;
 	}
 }
 

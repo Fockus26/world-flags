@@ -7,6 +7,7 @@ import { useAppSelector } from "@/store/hooks";
 import {
 	authErrorField,
 	authErrorMessage,
+	authTransportFailure,
 	isExistingAccountError,
 } from "@/utils/auth-errors";
 import {
@@ -14,14 +15,23 @@ import {
 	markVoluntarySignOut,
 } from "@/utils/session-end";
 
+/** Sin red o servicio caído (D214): solo `navigator.onLine` falso o `status` 0 es "sin conexión". */
+function toTransportFailure(error: AuthError) {
+	return authTransportFailure(
+		error,
+		isAuthRetryableFetchError(error),
+		typeof navigator === "undefined" || navigator.onLine,
+	);
+}
+
 /** En español y por `error.code` (D052, D212): nunca el texto crudo de Supabase. */
 function toAuthErrorMessage(error: AuthError): string {
-	return authErrorMessage(error, isAuthRetryableFetchError(error));
+	return authErrorMessage(error, toTransportFailure(error));
 }
 
 /** El campo que señala el error en el formulario (`aria-invalid`, D212). */
 function toAuthErrorField(error: AuthError) {
-	return authErrorField(error, isAuthRetryableFetchError(error));
+	return authErrorField(error, toTransportFailure(error));
 }
 
 export function useAuth() {
@@ -119,6 +129,8 @@ export function useAuth() {
 		return {
 			error: error ? toAuthErrorMessage(error) : null,
 			errorField: error ? toAuthErrorField(error) : null,
+			// Para el sondeo de "Revisa tu correo" (D214), que decide por código.
+			errorCode: error ? (error.code ?? null) : null,
 		};
 	};
 
