@@ -7,6 +7,7 @@ import {
 	type AvatarStyle,
 	type UserProfile,
 } from "@/types/progress";
+import { LEADERBOARD_DISPLAY_NAME_MAX_LENGTH } from "@/utils/leaderboard-validation";
 import { AuthSection } from "./AuthSection";
 import { Avatar } from "./Avatar";
 
@@ -71,7 +72,7 @@ export function AccountTab({ profile, onSaveProfile }: AccountTabProps) {
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						onBlur={handleNameBlur}
-						maxLength={24}
+						maxLength={LEADERBOARD_DISPLAY_NAME_MAX_LENGTH}
 					/>
 
 					<Fieldset className="gap-3" legend="Avatar" hideLegend>

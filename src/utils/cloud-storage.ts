@@ -10,9 +10,11 @@ import { leaderboardCache } from "./leaderboard-cache";
 import {
 	isLeaderboardTimeRejected,
 	type LeaderboardUploadResult,
+	toLeaderboardDisplayName,
 } from "./leaderboard-validation";
 import { pickChangedColumns, SUB_GAME_COLUMNS } from "./learning-data-row";
 import {
+	DEFAULT_PROFILE,
 	normalizeLearningData,
 	SUB_GAME_KEYS,
 	SUB_GAME_TYPES,
@@ -413,6 +415,11 @@ type LeaderboardProfile = Pick<
 	"name" | "avatarStyle" | "avatarSeed"
 >;
 
+/** El nombre que acepta el trigger del ranking (D211). */
+function getLeaderboardDisplayName(profile: LeaderboardProfile): string {
+	return toLeaderboardDisplayName(profile.name, DEFAULT_PROFILE.name);
+}
+
 function isAvatarStyle(value: unknown): value is AvatarStyle {
 	return (AVATAR_STYLES as readonly unknown[]).includes(value);
 }
@@ -476,6 +483,7 @@ export async function syncLeaderboardProfile(
 	userId: string,
 	profile: LeaderboardProfile,
 ): Promise<boolean> {
+	const displayName = getLeaderboardDisplayName(profile);
 	const { data, error, status } = await supabase
 		.from("leaderboard_entries")
 		.select("display_name, avatar_style, avatar_seed")
@@ -497,7 +505,7 @@ export async function syncLeaderboardProfile(
 
 	const isUpToDate = (data ?? []).every(
 		(row) =>
-			row.display_name === profile.name &&
+			row.display_name === displayName &&
 			row.avatar_style === profile.avatarStyle &&
 			row.avatar_seed === profile.avatarSeed,
 	);
@@ -507,7 +515,7 @@ export async function syncLeaderboardProfile(
 	const { error: updateError, status: updateStatus } = await supabase
 		.from("leaderboard_entries")
 		.update({
-			display_name: profile.name,
+			display_name: displayName,
 			avatar_style: profile.avatarStyle,
 			avatar_seed: profile.avatarSeed,
 		})
@@ -558,7 +566,7 @@ export async function upsertLeaderboardEntry(
 	const { error, status } = await supabase.from("leaderboard_entries").upsert({
 		user_id: userId,
 		scope,
-		display_name: profile.name,
+		display_name: getLeaderboardDisplayName(profile),
 		avatar_style: profile.avatarStyle,
 		avatar_seed: profile.avatarSeed,
 		best_time_ms: bestTimeMs,
