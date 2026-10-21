@@ -1,5 +1,8 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { requestSync } from "@/store/slices/syncSlice";
+import {
+	requestSync,
+	setGuestProgressDiscarded,
+} from "@/store/slices/syncSlice";
 
 /**
  * Conexión y sincronización con la nube, para la UI (D050).
@@ -12,6 +15,8 @@ import { requestSync } from "@/store/slices/syncSlice";
  *   sesión (el logout borra los datos locales, D009).
  * - `hasServerError`: hay red, pero la sincronización falla en el servidor.
  * - `requestSync()`: pide sincronizar ya, sin esperar al agrupado de subidas.
+ * - `guestProgressDiscarded`: al entrar se descartó lo jugado como invitado
+ *   (D056); `dismissGuestProgressNotice()` cierra su aviso (D212).
  */
 export function useSyncStatus() {
 	const dispatch = useAppDispatch();
@@ -22,6 +27,9 @@ export function useSyncStatus() {
 	);
 	const hasServerError = useAppSelector((state) => state.sync.hasServerError);
 	const lastSyncedAt = useAppSelector((state) => state.sync.lastSyncedAt);
+	const guestProgressDiscarded = useAppSelector(
+		(state) => state.sync.guestProgressDiscarded,
+	);
 
 	return {
 		isOnline: connectivity === "online",
@@ -29,5 +37,8 @@ export function useSyncStatus() {
 		hasServerError,
 		lastSyncedAt,
 		requestSync: () => dispatch(requestSync()),
+		guestProgressDiscarded,
+		dismissGuestProgressNotice: () =>
+			dispatch(setGuestProgressDiscarded(false)),
 	};
 }

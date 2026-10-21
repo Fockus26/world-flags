@@ -21,6 +21,11 @@ interface SyncState {
 	lastSyncedAt: string | null;
 	/** Contador: alguien pidió sincronizar ya (volver la red, cerrar sesión). */
 	syncRequestId: number;
+	/**
+	 * Al entrar en una cuenta con progreso se descartó lo jugado como invitado
+	 * en este dispositivo (D056). Se avisa hasta que lo cierren (D212).
+	 */
+	guestProgressDiscarded: boolean;
 }
 
 const initialState: SyncState = {
@@ -29,6 +34,7 @@ const initialState: SyncState = {
 	hasServerError: false,
 	lastSyncedAt: null,
 	syncRequestId: 0,
+	guestProgressDiscarded: false,
 };
 
 const syncSlice = createSlice({
@@ -65,6 +71,10 @@ const syncSlice = createSlice({
 			state.syncRequestId += 1;
 		},
 
+		setGuestProgressDiscarded: (state, action: PayloadAction<boolean>) => {
+			state.guestProgressDiscarded = action.payload;
+		},
+
 		/** Sin cuenta no hay nada pendiente ni nada que sincronizar. */
 		resetSync: (state) => {
 			state.hasPendingChanges = false;
@@ -81,6 +91,7 @@ export const {
 	syncFailed,
 	requestSync,
 	resetSync,
+	setGuestProgressDiscarded,
 } = syncSlice.actions;
 
 export default syncSlice.reducer;

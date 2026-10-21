@@ -1,13 +1,37 @@
-import { type SubmitEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { type AuthErrorField, validateNewPassword } from "@/utils/auth-errors";
+import { focusIfLost } from "@/utils/focus";
 import { EmailConfirmationPending } from "./EmailConfirmationPending";
 
 type AuthMode = "signin" | "signup";
+
+/** Campo del formulario que señala un error (`aria-invalid`). */
+type FormField = "email" | "password" | "confirm";
+
+/**
+ * Error del formulario (D212). No se va solo (WCAG 2.2.1): se queda hasta
+ * que se edita un campo señalado, se vuelve a enviar o se cambia de pestaña.
+ * `attempt` remonta el aviso en cada envío para que el mismo mensaje se
+ * vuelva a anunciar.
+ */
+interface FormError {
+	message: string;
+	fields: readonly FormField[];
+	attempt: number;
+}
+
+const FORM_ERROR_ID = "auth-form-error";
+
+function toFormFields(field: AuthErrorField | null): FormField[] {
+	if (field === "credentials") return ["email", "password"];
+	return field ? [field] : [];
+}
 
 /**
  * Cerrar sesión con progreso sin subir (D053):
@@ -86,7 +110,31 @@ export function AuthSection() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setFormError] = useState<FormError | null>(null);
+	const attemptRef = useRef(0);
+
+	function setError(message: string, fields: readonly FormField[] = []) {
+		attemptRef.current += 1;
+		setFormError({ message, fields, attempt: attemptRef.current });
+	}
+
+	function clearError() {
+		setFormError(null);
+	}
+
+	/** Props de un campo: señalado y descrito por el error, si le toca. */
+	function fieldErrorProps(field: FormField) {
+		const isInvalid = error?.fields.includes(field) ?? false;
+
+		return isInvalid
+			? { "aria-invalid": true, "aria-describedby": FORM_ERROR_ID }
+			: {};
+	}
+
+	/** Al corregir un campo señalado, su error deja de aplicar. */
+	function handleFieldEdit(field: FormField) {
+		if (error?.fields.includes(field)) clearError();
+	}
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [pendingConfirmation, setPendingConfirmation] = useState<{
 		email: string;
@@ -95,22 +143,34 @@ export function AuthSection() {
 
 	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
-		setError(null);
+		clearError();
 
-		if (mode === "signup" && password !== confirmPassword) {
-			setError("Las contraseñas no coinciden.");
-			return;
+		if (mode === "signup") {
+			const passwordError = validateNewPassword(password);
+
+			if (passwordError) {
+				setError(passwordError, ["password"]);
+				return;
+			}
+
+			if (password !== confirmPassword) {
+				setError("Las contraseñas no coinciden.", ["confirm"]);
+				return;
+			}
 		}
 
 		setIsSubmitting(true);
 
 		if (mode === "signup") {
-			const { error: authError, needsEmailConfirmation } =
-				await signUpWithEmail(email, password);
+			const {
+				error: authError,
+				errorField,
+				needsEmailConfirmation,
+			} = await signUpWithEmail(email, password);
 
 			if (authError) {
 				setIsSubmitting(false);
-				setError(authError);
+				setError(authError, toFormFields(errorField));
 				return;
 			}
 
@@ -124,11 +184,14 @@ export function AuthSection() {
 			return;
 		}
 
-		const { error: authError } = await signInWithEmail(email, password);
+		const { error: authError, errorField } = await signInWithEmail(
+			email,
+			password,
+		);
 		setIsSubmitting(false);
 
 		if (authError) {
-			setError(authError);
+			setError(authError, toFormFields(errorField));
 			return;
 		}
 
@@ -142,10 +205,29 @@ export function AuthSection() {
 				? "pending"
 				: "form";
 
+	/**
+	 * Al entrar (correo, Google o el enlace de confirmación) el formulario se
+	 * desmonta con el foco dentro y caería en `<body>`, fuera del diálogo: el
+	 * primer Escape ya no lo cerraba. Se lleva a "Sesión iniciada como…", que
+	 * además anuncia el resultado (D212). Solo en el paso a sesión iniciada
+	 * con la sección montada, no al abrirla ya con sesión.
+	 */
+	const signedInRef = useRef<HTMLParagraphElement>(null);
+	const previousViewRef = useRef(view);
+
+	useEffect(() => {
+		const previousView = previousViewRef.current;
+		previousViewRef.current = view;
+
+		if (view === "authenticated" && previousView !== "authenticated") {
+			focusIfLost(() => signedInRef.current);
+		}
+	}, [view]);
+
 	if (view === "authenticated") {
 		return (
 			<div className="flex flex-col gap-3 animate-in fade-in-0 zoom-in-95 duration-300">
-				<p className="m-0 text-label">
+				<p ref={signedInRef} tabIndex={-1} className="m-0 text-label">
 					Sesión iniciada como <strong>{user?.email}</strong>
 				</p>
 
@@ -243,7 +325,7 @@ export function AuthSection() {
 						className="relative flex-1 cursor-pointer px-[0.2rem] py-2 text-center font-[inherit] font-bold text-text-placeholder transition-colors duration-150 hover:text-surface-soft aria-selected:text-surface-soft focus-visible:text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-surface-soft"
 						onClick={() => {
 							setMode(item);
-							setError(null);
+							clearError();
 						}}
 					>
 						{item === "signin" ? "Iniciar sesión" : "Crear cuenta"}
@@ -260,17 +342,25 @@ export function AuthSection() {
 					type="email"
 					label="Correo"
 					value={email}
-					onChange={(e) => setEmail(e.target.value)}
+					onChange={(e) => {
+						setEmail(e.target.value);
+						handleFieldEdit("email");
+					}}
 					required
+					{...fieldErrorProps("email")}
 				/>
 				<Input
 					id="auth-password"
 					type="password"
 					label="Contraseña"
 					value={password}
-					onChange={(e) => setPassword(e.target.value)}
+					onChange={(e) => {
+						setPassword(e.target.value);
+						handleFieldEdit("password");
+					}}
 					minLength={6}
 					required
+					{...fieldErrorProps("password")}
 				/>
 				<AutoHeight show={mode === "signup"}>
 					<Input
@@ -278,20 +368,23 @@ export function AuthSection() {
 						type="password"
 						label="Repetir contraseña"
 						value={confirmPassword}
-						onChange={(e) => setConfirmPassword(e.target.value)}
+						onChange={(e) => {
+							setConfirmPassword(e.target.value);
+							handleFieldEdit("confirm");
+						}}
 						minLength={6}
 						required={mode === "signup"}
+						{...fieldErrorProps("confirm")}
 					/>
 				</AutoHeight>
 				{error && (
 					<FeedbackMessage
+						key={error.attempt}
 						variant="danger"
 						size="sm"
 						role="alert"
-						autoDismissMs={5000}
-						onDismiss={() => setError(null)}
 					>
-						{error}
+						<span id={FORM_ERROR_ID}>{error.message}</span>
 					</FeedbackMessage>
 				)}
 				<Button

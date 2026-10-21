@@ -12,6 +12,7 @@ import { setHydrationStatus, setLearningData } from "@/store/slices/gameSlice";
 
 import {
 	resetSync,
+	setGuestProgressDiscarded,
 	setHasPendingChanges,
 	syncFailed,
 	syncSucceeded,
@@ -38,6 +39,7 @@ import {
 	createDefaultLearningData,
 	getLearningData,
 	getSyncBase,
+	hasLearningProgress,
 	hasPendingChanges,
 	mergeLearningData,
 	restorePendingAccountData,
@@ -371,6 +373,12 @@ export function GameEffects() {
 				syncBaseRef.current = toSyncBaseRef(user.id, syncedData);
 
 				dispatch(setLearningData(authenticatedData));
+
+				// Se avisa solo si había algo que perder: un invitado que no
+				// jugó no pierde nada (D056, D212).
+				if (discardedLocal && hasLearningProgress(localData)) {
+					dispatch(setGuestProgressDiscarded(true));
+				}
 
 				hydratedUserRef.current = user.id;
 
