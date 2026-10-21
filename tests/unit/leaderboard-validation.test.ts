@@ -13,7 +13,7 @@
  *   o de servidor sí se reintenta (D050, D113).
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -41,13 +41,26 @@ import {
 	toLeaderboardDisplayName,
 } from "@/utils/leaderboard-validation";
 
-const SQL_PATH = join(
+const MIGRATIONS_DIR = join(
 	dirname(fileURLToPath(import.meta.url)),
 	"..",
 	"..",
 	"supabase",
 	"migrations",
-	"20261020120000_leaderboard_validar_todo.sql",
+);
+
+/** La última migración que redefine la función del trigger (D211, D217). */
+const SQL_PATH = join(
+	MIGRATIONS_DIR,
+	readdirSync(MIGRATIONS_DIR)
+		.filter((file) => file.endsWith(".sql"))
+		.sort()
+		.filter((file) =>
+			readFileSync(join(MIGRATIONS_DIR, file), "utf8").includes(
+				"create or replace function public.leaderboard_entries_validate_time()",
+			),
+		)
+		.at(-1) ?? "",
 );
 
 /**
@@ -172,6 +185,28 @@ describe("lo demás que valida el trigger (D211)", () => {
 		);
 	});
 
+	test("un nombre solo de espacios se rechaza (D217)", () => {
+		assert.ok(sql.includes("detail = 'display_name en blanco'"));
+	});
+
+	test("lo que el SQL cuenta como espacio es lo que recorta el cliente (D217)", () => {
+		const start = sql.indexOf("btrim(\n\t\tnew.display_name,");
+		assert.ok(start > 0);
+		const btrimArgs = sql.slice(start, sql.indexOf(") = ''", start));
+		const sqlBlank = [...btrimArgs.matchAll(/chr\((\d+)\)/g)].map(([, code]) =>
+			Number(code),
+		);
+		const jsBlank: number[] = [];
+		for (let code = 0; code <= 0xffff; code++) {
+			if (String.fromCharCode(code).trim() === "") jsBlank.push(code);
+		}
+
+		assert.deepEqual(
+			[...sqlBlank].sort((a, b) => a - b),
+			jsBlank,
+		);
+	});
+
 	test("los estilos de avatar son los de la app", () => {
 		const list = sql.match(/new\.avatar_style not in \(([^)]*)\)/)?.[1] ?? "";
 		const sqlStyles = [...list.matchAll(/'([^']+)'/g)].map(([, s]) => s);
@@ -195,6 +230,10 @@ describe("nombre que va al ranking (D211)", () => {
 	test("sin espacios en los extremos y con respaldo si queda vacío", () => {
 		assert.equal(toLeaderboardDisplayName("  Ana  ", "X"), "Ana");
 		assert.equal(toLeaderboardDisplayName("   ", "Explorador"), "Explorador");
+		// Tabulador, salto, espacio duro e ideográfico: también en blanco (D217).
+		const blank = String.fromCharCode(0x09, 0x0a, 0xa0, 0x3000);
+		assert.equal(toLeaderboardDisplayName(blank, "Explorador"), "Explorador");
+		assert.equal(toLeaderboardDisplayName(`${blank}Ana${blank}`, "X"), "Ana");
 		assert.equal(
 			toLeaderboardDisplayName(`${"a".repeat(23)} b`, "X"),
 			"a".repeat(23),
