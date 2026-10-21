@@ -128,7 +128,7 @@ export function ConfigurationModal({
 		<Modal
 			isOpen={isOpen}
 			onClose={onClose}
-			className="w-[min(30rem,92vw)] text-left"
+			className="w-dialog text-left"
 			ariaLabelledby="user-modal-title"
 		>
 			<header className="mb-3 flex items-center justify-between">

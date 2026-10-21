@@ -23,7 +23,7 @@ const LAST_STEP_INDEX = TUTORIAL_STEPS.length - 1;
  */
 const DIALOG_TRANSITION =
 	"transition-[width,padding] duration-300 ease-out text-left";
-const STEP_DIALOG_CLASSES = `${DIALOG_TRANSITION} w-[min(58rem,94vw)]`;
+const STEP_DIALOG_CLASSES = `${DIALOG_TRANSITION} w-dialog-xl`;
 
 /**
  * Mientras se juega, el diálogo hace de `<main>` (D090): con `fillViewport`
@@ -31,14 +31,14 @@ const STEP_DIALOG_CLASSES = `${DIALOG_TRANSITION} w-[min(58rem,94vw)]`;
  * **el mismo que el de `<main>` en `FlagGame`** (`p-[0.4rem]` y, desde `sm`,
  * `p-[clamp(0.5rem,2vh,1.5rem)]`). Así la `<section>` de `CountriesPractice`
  * queda con el mismo ancho que en una partida normal: el viewport menos ese
- * padding, hasta su tope de 58rem. En móvil es una hoja a pantalla entera
+ * padding, hasta su tope (`--container-session`). En móvil es una hoja a pantalla entera
  * (sin radio: tocaría los bordes). Si se cambia el padding de `<main>`, hay
  * que cambiarlo aquí también.
  */
 const PLAYING_DIALOG_CLASSES = [
 	DIALOG_TRANSITION,
 	"max-w-none w-full p-[0.4rem] max-sm:rounded-none",
-	"sm:p-[clamp(0.5rem,2vh,1.5rem)] sm:w-[min(100vw,calc(58rem_+_2*clamp(0.5rem,2vh,1.5rem)))]",
+	"sm:p-[clamp(0.5rem,2vh,1.5rem)] sm:w-[min(100vw,calc(var(--container-session)_+_2*clamp(0.5rem,2vh,1.5rem)))]",
 ].join(" ");
 
 interface TutorialProps {

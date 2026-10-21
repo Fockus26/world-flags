@@ -20,7 +20,7 @@ export function SystemSnackbars() {
 		<div
 			role="status"
 			aria-live="polite"
-			className="pointer-events-none fixed inset-x-3 top-3 z-[300] flex flex-col gap-2 sm:inset-x-auto sm:right-3 sm:w-[min(22rem,calc(100vw-1.5rem))]"
+			className="pointer-events-none fixed inset-x-3 top-3 z-[300] flex flex-col gap-2 sm:inset-x-auto sm:right-3 sm:w-toast"
 		>
 			<ConnectivitySnackbar />
 			<SessionEndedSnackbar />

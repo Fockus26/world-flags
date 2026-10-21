@@ -68,7 +68,7 @@ export function AnswerForm({
 
 	return (
 		<form
-			className="grid shrink-0 gap-[0.45rem] min-[43rem]:gap-[0.65rem]"
+			className="@container grid shrink-0 grid-cols-1 gap-[0.45rem] min-[43rem]:gap-[0.65rem]"
 			onSubmit={onSubmit}
 		>
 			<label
@@ -117,7 +117,9 @@ export function AnswerForm({
 			)}
 
 			{!isAnswerChecked && (
-				<div className="grid grid-cols-[2fr_1fr] gap-2">
+				// En rem, el umbral crece con la letra: con el texto al 200 % a
+				// 320 px los dos botones no caben en fila y se apilan (D213).
+				<div className="grid grid-cols-[2fr_1fr] gap-2 @max-3xs:grid-cols-1">
 					<Button type="submit" disabled={!answer.trim()}>
 						Comprobar
 					</Button>

@@ -39,9 +39,29 @@ desborda a 320 px.
 |---|---|---|
 | `--container-card` | `32rem` | pantallas de estado: 404 (`404.astro`) y error (`ErrorBoundary`) |
 | `--container-card-wide` | `38rem` | `Results` (récord, resumen y botones) |
+| `--container-session` | `58rem` | sesiones: `Session`, `DailyPractice`, `CountriesPractice`, `CountriesRush` (`w-full max-w-session`); tope del diálogo del tutorial mientras se juega |
 
-Los modales y las sesiones aún llevan `w-[min(Xrem,92vw)]` / `w-[min(100%,58rem)]`
-heredados — no sumar más; al tocarlos, pasarlos a un token de esta tabla.
+## Anchos de diálogo y aviso (D213)
+
+Estos llevan dentro el `min()` con su margen al viewport y se usan como `w-*`
+(`w-dialog` = el antiguo `w-[min(28rem,92vw)]`). Los que pasan del `max-w-md` (28rem)
+de HeroUI necesitan `max-w-none`.
+
+| Token | Valor | Dónde |
+|---|---|---|
+| `--container-dialog-sm` | `min(24rem, 92vw)` | `RequiredUpdateDialog` (`size="sm"`) |
+| `--container-dialog` | `min(28rem, 92vw)` | `ConfigurationModal`, `ReleaseNotesModal` |
+| `--container-dialog-wide` | `min(34rem, 92vw)` | `CountryPickerModal`, `LeaderboardModal` (con `max-w-none`) |
+| `--container-dialog-xl` | `min(58rem, 94vw)` | `AchievementsModal` (con `max-w-none`), pasos del tutorial |
+| `--container-toast` | `min(22rem, 100vw - 1.5rem)` | `SystemSnackbars`, `AchievementToasts` (`sm:w-toast`) |
+
+`ConfigurationModal` y `ReleaseNotesModal` pedían 30 y 32rem, pero el `max-w-md` de
+HeroUI los dejaba en 28rem: el token es el ancho que se veía.
+
+Sin `min-width` en `html`: en rem crece con la letra del navegador y con el texto al
+200 % deja la página más ancha que el viewport (D213). Las rejillas que contienen un
+campo de texto llevan `grid-cols-1` (`minmax(0,1fr)`): con la columna implícita
+`auto`, el ancho intrínseco del `<input>` empujaba la columna fuera del viewport.
 
 ## Sombras
 

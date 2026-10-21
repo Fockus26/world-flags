@@ -132,7 +132,7 @@ export function AchievementToasts() {
 			role="status"
 			aria-live="polite"
 			aria-atomic="false"
-			className="pointer-events-none fixed inset-x-3 bottom-3 z-[300] flex flex-col-reverse gap-2 sm:inset-x-auto sm:right-3 sm:w-[min(22rem,calc(100vw-1.5rem))]"
+			className="pointer-events-none fixed inset-x-3 bottom-3 z-[300] flex flex-col-reverse gap-2 sm:inset-x-auto sm:right-3 sm:w-toast"
 		>
 			{toasts.map((toast) => (
 				<AchievementToastCard

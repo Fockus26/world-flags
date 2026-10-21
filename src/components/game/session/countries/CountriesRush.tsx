@@ -342,7 +342,7 @@ export function CountriesRush() {
 
 	return (
 		<>
-			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-[min(100%,58rem)] flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
+			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
 				<Header
 					regionLabel={scopeLabel}
 					// `Header` siempre muestra `currentIndex + 1`: aquí no hay
@@ -369,7 +369,7 @@ export function CountriesRush() {
 
 				{!hasSurrendered ? (
 					<form
-						className="mt-[0.65rem] grid shrink-0 gap-[0.45rem] min-[30rem]:mt-[clamp(0.75rem,2vh,1.5rem)] min-[43rem]:gap-[0.65rem]"
+						className="mt-[0.65rem] grid shrink-0 grid-cols-1 gap-[0.45rem] min-[30rem]:mt-[clamp(0.75rem,2vh,1.5rem)] min-[43rem]:gap-[0.65rem]"
 						onSubmit={handleSubmit}
 					>
 						<label
@@ -403,7 +403,7 @@ export function CountriesRush() {
 						</Button>
 					</form>
 				) : (
-					<div className="mt-[0.65rem] grid shrink-0 gap-[0.45rem] min-[30rem]:mt-[clamp(0.75rem,2vh,1.5rem)] min-[43rem]:gap-[0.65rem]">
+					<div className="mt-[0.65rem] grid shrink-0 grid-cols-1 gap-[0.45rem] min-[30rem]:mt-[clamp(0.75rem,2vh,1.5rem)] min-[43rem]:gap-[0.65rem]">
 						<p className="m-0 text-center text-text-placeholder">
 							Encontraste {foundCount} de {totalCount}.
 						</p>
