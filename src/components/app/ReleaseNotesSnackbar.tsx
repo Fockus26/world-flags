@@ -81,10 +81,15 @@ export function ReleaseNotesSnackbar() {
 						</span>
 					</div>
 
-					<div className="flex gap-2">
+					{/* Si no caben en una fila (texto al 200 % a 320 px, D216),
+					    "Ver novedades" baja a la siguiente. `flex-1` (base 0)
+					    en vez del ancho completo de `Button`: si no, cada botón
+					    ocuparía su propia fila siempre. */}
+					<div className="flex flex-wrap gap-2">
 						<Button
 							color="neutral"
 							variant="soft"
+							className="flex-1"
 							onFocus={rememberReturnFocus}
 							onClick={() => {
 								returnFocus();
@@ -95,6 +100,7 @@ export function ReleaseNotesSnackbar() {
 						</Button>
 						<Button
 							color="primary"
+							className="flex-1"
 							onFocus={rememberReturnFocus}
 							onClick={() => {
 								returnFocus();

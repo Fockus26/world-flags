@@ -321,6 +321,18 @@
 	}
 }
 
+/*
+ * Padding de los diálogos con tope en el viewport (D216, `--spacing-dialog-inset`).
+ * En la capa `components`, detrás del `p-6` de HeroUI: gana por orden, y el
+ * padding propio que pase un diálogo por `className` (utilidad) sigue
+ * mandando, como el de la partida del recorrido.
+ */
+@layer components {
+	.modal__dialog {
+		padding: var(--spacing-dialog-inset);
+	}
+}
+
 @layer components {
 	.record-confetti-piece {
 		animation: confetti-fall var(--confetti-duration) ease-in

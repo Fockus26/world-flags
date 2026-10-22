@@ -1,7 +1,7 @@
 import { CheckCircle, Lock } from "iconoir-react";
 import { useEffect, useRef } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { type AchievementView, useAchievements } from "@/hooks/useAchievements";
 import type { GameType } from "@/types/country";
 import {
@@ -95,7 +95,10 @@ function AchievementCard({
 				    desbloqueado suma el anillo de arriba MÁS esta etiqueta de
 				    texto: nunca solo el anillo, que sería una señal solo de forma/color. */}
 				<span className="flex min-w-0 flex-wrap items-center gap-1.5">
-					<strong className="text-body-sm text-surface-soft">
+					{/* `min-w-0 break-words`: un nombre de una sola palabra más
+					    ancho que la tarjeta (texto al 200 % a 320 px, D216) se
+					    parte en vez de salirse. */}
+					<strong className="min-w-0 break-words text-body-sm text-surface-soft">
 						{achievement.name}
 					</strong>
 
@@ -197,12 +200,11 @@ export function AchievementsModal({
 			className="w-dialog-xl max-w-none text-left"
 			ariaLabelledby="achievements-title"
 		>
-			<header className="mb-3 flex items-center justify-between gap-3">
-				<h2 id="achievements-title" className="m-0">
-					Logros
-				</h2>
-				<ModalCloseButton onClose={onClose} />
-			</header>
+			<ModalHeader
+				titleId="achievements-title"
+				title="Logros"
+				onClose={onClose}
+			/>
 
 			<p className="mt-0 mb-4 text-label text-text-placeholder">
 				Llevas <strong>{unlockedCount}</strong> de {totalCount} desbloqueados.

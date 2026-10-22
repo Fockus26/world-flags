@@ -2,7 +2,7 @@ import { NavArrowDown } from "iconoir-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { countries } from "@/data/countries";
 import { REGION_LABELS, REGIONS, type Region } from "@/types/country";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
@@ -255,12 +255,11 @@ export function CountryPickerModal({
 			className="w-dialog-wide max-w-none text-left"
 			ariaLabelledby="country-picker-title"
 		>
-			<header className="mb-3 flex items-center justify-between gap-3">
-				<h2 id="country-picker-title" className="m-0">
-					Elegir países
-				</h2>
-				<ModalCloseButton onClose={onClose} />
-			</header>
+			<ModalHeader
+				titleId="country-picker-title"
+				title="Elegir países"
+				onClose={onClose}
+			/>
 
 			<div className="mt-0 mb-3 flex items-start justify-between gap-3">
 				<p className="text-label text-text-placeholder">
@@ -373,11 +372,25 @@ export function CountryPickerModal({
 				})}
 			</div>
 
+			{/* `whitespace-normal`: con el texto al 200 % a 320 px (D216) "Usar N
+			    países" no cabe en su media fila y parte en dos líneas; el alto
+			    pasa a mínimo (el `h-11 md:h-10` de HeroUI) para que quepan. A
+			    tamaño normal cabe en una y no cambia. */}
 			<div className="mt-4 grid grid-cols-2 gap-3">
-				<Button type="button" color="neutral" onClick={onClose}>
+				<Button
+					type="button"
+					color="neutral"
+					className="h-auto min-h-11 whitespace-normal md:min-h-10"
+					onClick={onClose}
+				>
 					Cancelar
 				</Button>
-				<Button type="button" color="primary" onClick={handleConfirm}>
+				<Button
+					type="button"
+					color="primary"
+					className="h-auto min-h-11 whitespace-normal md:min-h-10"
+					onClick={handleConfirm}
+				>
 					Usar {selectedCatalogCount} país
 					{selectedCatalogCount === 1 ? "" : "es"}
 				</Button>

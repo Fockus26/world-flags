@@ -116,6 +116,14 @@
 	--container-dialog-wide: min(34rem, 92vw);
 	--container-dialog-xl: min(58rem, 94vw);
 	--container-toast: min(22rem, calc(100vw - 1.5rem));
+
+	/* Padding de los diálogos (D216): el `p-6` (1.5rem) de HeroUI, con
+	   tope en el 7.5 % del viewport. A tamaño normal no cambia nada desde
+	   320 px (7.5vw = 24px = 1.5rem); con el texto al 200 % a 320 px
+	   deja 24px por lado en vez de 48 y el contenido gana casi 50px.
+	   No se llama `--spacing-dialog`: Tailwind resuelve `w-dialog` antes
+	   en `--spacing-*` que en `--container-*` y pisaría ese ancho. */
+	--spacing-dialog-inset: min(1.5rem, 7.5vw);
 	--container-session: 58rem;
 
 	/* ===========================

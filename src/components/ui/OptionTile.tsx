@@ -95,7 +95,12 @@ export function OptionTile({
 				})}
 				className="pointer-events-none absolute size-px opacity-0"
 			/>
-			<span className="px-3 py-2 text-xs font-bold sm:text-sm">{children}</span>
+			{/* `min-w-0 break-words text-center`: con el texto al 200 % a 320 px
+			    (D216) "Por continente" no cabe en su casilla y parte en líneas
+			    en vez de salirse por los dos lados. */}
+			<span className="min-w-0 px-3 py-2 text-center text-xs font-bold break-words sm:text-sm">
+				{children}
+			</span>
 		</label>
 	);
 }
