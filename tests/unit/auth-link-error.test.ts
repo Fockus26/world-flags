@@ -9,9 +9,39 @@ import { describe, test } from "node:test";
 import {
 	authLinkErrorFromMessage,
 	authLinkErrorMessage,
+	deliverInlineAuthLinkError,
 	readAuthLinkError,
+	registerInlineAuthLinkError,
 	withoutAuthLinkError,
 } from "@/utils/auth-link-error";
+
+describe("error del popup dentro de Configuración (D224)", () => {
+	test("sin AuthSection a la vista va al aviso; con ella, al formulario", () => {
+		const received: string[] = [];
+
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+
+		const release = registerInlineAuthLinkError((kind) => received.push(kind));
+
+		assert.equal(deliverInlineAuthLinkError("other"), true);
+		assert.deepEqual(received, ["other"]);
+
+		release();
+
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+	});
+
+	test("soltar un registro antiguo no suelta el nuevo (remontaje)", () => {
+		const releaseOld = registerInlineAuthLinkError(() => {});
+		const releaseNew = registerInlineAuthLinkError(() => {});
+
+		releaseOld();
+
+		assert.equal(deliverInlineAuthLinkError("expired"), true);
+
+		releaseNew();
+	});
+});
 
 const ORIGIN = "https://world-flags-hazel.vercel.app";
 const EXPIRED =

@@ -15,10 +15,7 @@ import {
 
 import { leaderboardCache } from "@/utils/leaderboard-cache";
 
-import {
-	consumeVoluntarySignOut,
-	rememberSession,
-} from "@/utils/session-end";
+import { consumeVoluntarySignOut, rememberSession } from "@/utils/session-end";
 
 function applySession(dispatch: AppDispatch, session: Session | null) {
 	dispatch(

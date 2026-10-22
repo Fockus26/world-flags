@@ -5,6 +5,7 @@ import {
 	type AuthLinkErrorKind,
 	authLinkErrorFromMessage,
 	authLinkErrorMessage,
+	deliverInlineAuthLinkError,
 	readAuthLinkError,
 	withoutAuthLinkError,
 } from "@/utils/auth-link-error";
@@ -49,7 +50,10 @@ export function AuthLinkErrorSnackbar() {
 
 			const found = authLinkErrorFromMessage(event.data);
 
-			if (found) setKind(found);
+			// Con Configuración abierta (desde donde se pulsó "Continuar con
+			// Google"), el error sale en su formulario: este aviso quedaría
+			// detrás del diálogo modal (D224).
+			if (found && !deliverInlineAuthLinkError(found)) setKind(found);
 		}
 
 		window.addEventListener("message", handleMessage);

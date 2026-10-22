@@ -65,6 +65,43 @@ export function authLinkErrorFromMessage(
 }
 
 /**
+ * Error del popup de "Continuar con Google" dicho dentro de Configuración
+ * (D224): el botón está ahí, así que no hace falta mandar a otra parte.
+ * Copy provisional (CONTENT_CHECKLIST).
+ */
+export const AUTH_POPUP_ERROR_INLINE_COPY =
+	"No se pudo entrar con Google. Vuelve a intentarlo.";
+
+type InlineAuthLinkErrorHandler = (kind: AuthLinkErrorKind) => void;
+
+let inlineHandler: InlineAuthLinkErrorHandler | null = null;
+
+/**
+ * `AuthSection`, mientras muestra su formulario dentro del diálogo modal de
+ * Configuración, recoge el error del popup (D224). El contenedor de avisos
+ * queda fuera del diálogo (`inert`, tapado por el fondo): ni se anunciaba
+ * ni se alcanzaba hasta cerrarlo. Devuelve la función que lo suelta.
+ */
+export function registerInlineAuthLinkError(
+	handler: InlineAuthLinkErrorHandler,
+): () => void {
+	inlineHandler = handler;
+
+	return () => {
+		if (inlineHandler === handler) inlineHandler = null;
+	};
+}
+
+/** Lo entrega a `AuthSection` si está a la vista; `false` si va al aviso. */
+export function deliverInlineAuthLinkError(kind: AuthLinkErrorKind): boolean {
+	if (!inlineHandler) return false;
+
+	inlineHandler(kind);
+
+	return true;
+}
+
+/**
  * La misma URL sin los parámetros de error, para dejar la barra limpia
  * (y que recargar no repita el aviso). Si el hash solo traía el error,
  * se quita entero.
