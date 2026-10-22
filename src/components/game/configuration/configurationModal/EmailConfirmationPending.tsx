@@ -91,17 +91,20 @@ export function EmailConfirmationPending({
 			inFlight = true;
 			lastCheckAt = Date.now();
 
-			const { errorCode } = await signInWithEmail(email, password);
+			const result = await signInWithEmail(email, password);
 
 			inFlight = false;
 
+			if (finished) return;
+
+			const next = nextPollState(invalidStreak, result);
+
 			// Entró: `AuthSection` cambia de vista y esto se desmonta.
-			if (finished || errorCode === null) return;
+			if (next.signedIn) return;
 
+			// Un 5xx o la red caída vuelven a programarse con la espera
+			// creciente, como un "sin confirmar" (D218).
 			attempt += 1;
-
-			const next = nextPollState(invalidStreak, errorCode);
-
 			invalidStreak = next.invalidStreak;
 
 			if (next.stop) {

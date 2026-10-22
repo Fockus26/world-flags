@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { type AuthErrorField, validateNewPassword } from "@/utils/auth-errors";
-import { focusIfLost } from "@/utils/focus";
+import { focusIfLost, isFocusOnAncestorOf } from "@/utils/focus";
 import { EmailConfirmationPending } from "./EmailConfirmationPending";
 
 type AuthMode = "signin" | "signup";
@@ -126,6 +126,9 @@ export function AuthSection() {
 	 * del diálogo (D214). Si se perdió, vuelve al botón, donde estaba: el
 	 * error ya se anuncia (`role="alert"`) y apunta a los campos señalados.
 	 * Si sigue en el botón (lo normal), no se toca.
+	 *
+	 * Con doble clic, el segundo cae sobre el botón ya deshabilitado y el foco
+	 * sube al contenedor del diálogo: también cuenta como perdido (D218).
 	 */
 	function keepFocusAfterError() {
 		focusIfLost(
@@ -133,6 +136,8 @@ export function AuthSection() {
 				formRef.current?.querySelector<HTMLButtonElement>(
 					'button[type="submit"]',
 				) ?? null,
+			undefined,
+			(active) => isFocusOnAncestorOf(formRef.current, active),
 		);
 	}
 

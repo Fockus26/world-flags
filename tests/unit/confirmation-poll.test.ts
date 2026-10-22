@@ -37,12 +37,32 @@ describe("pollDelay", () => {
 });
 
 describe("nextPollState", () => {
-	test("dos invalid_credentials seguidos paran el sondeo", () => {
-		const first = nextPollState(0, "invalid_credentials");
-		assert.deepEqual(first, { invalidStreak: 1, stop: null });
+	const failed = (errorCode: string | null) => ({
+		error: "mensaje",
+		errorCode,
+	});
 
-		const second = nextPollState(first.invalidStreak, "invalid_credentials");
-		assert.deepEqual(second, { invalidStreak: 2, stop: "credentials" });
+	test("sin error: entró", () => {
+		assert.deepEqual(nextPollState(1, { error: null, errorCode: null }), {
+			invalidStreak: 0,
+			signedIn: true,
+			stop: null,
+		});
+	});
+
+	test("dos invalid_credentials seguidos paran el sondeo", () => {
+		const first = nextPollState(0, failed("invalid_credentials"));
+		assert.deepEqual(first, { invalidStreak: 1, signedIn: false, stop: null });
+
+		const second = nextPollState(
+			first.invalidStreak,
+			failed("invalid_credentials"),
+		);
+		assert.deepEqual(second, {
+			invalidStreak: 2,
+			signedIn: false,
+			stop: "credentials",
+		});
 	});
 
 	test("sin confirmar, red o límite: sigue y reinicia la cuenta", () => {
@@ -51,10 +71,21 @@ describe("nextPollState", () => {
 			"over_request_rate_limit",
 			"unexpected_failure",
 		]) {
-			assert.deepEqual(nextPollState(1, code), {
+			assert.deepEqual(nextPollState(1, failed(code)), {
 				invalidStreak: 0,
+				signedIn: false,
 				stop: null,
 			});
 		}
+	});
+
+	// D218: `AuthRetryableFetchError` (503, red cortada) trae error sin
+	// código. Antes se tomaba como "entró" y el sondeo no volvía a programarse.
+	test("fallo de transporte (error sin código): no entró, sigue", () => {
+		assert.deepEqual(nextPollState(1, failed(null)), {
+			invalidStreak: 0,
+			signedIn: false,
+			stop: null,
+		});
 	});
 });

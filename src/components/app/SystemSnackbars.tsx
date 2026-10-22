@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AuthLinkErrorSnackbar } from "./AuthLinkErrorSnackbar";
 import { ConnectivitySnackbar } from "./ConnectivitySnackbar";
 import { DailyReminderSnackbar } from "./DailyReminderSnackbar";
 import { GuestProgressDiscardedSnackbar } from "./GuestProgressDiscardedSnackbar";
@@ -9,7 +10,8 @@ import { UpdateAvailableSnackbar } from "./UpdateAvailableSnackbar";
 /**
  * Contenedor único, arriba a la derecha, para los avisos "de sistema" (no de
  * juego, por eso separados de `AchievementToasts`): conexión (D052), versión
- * nueva disponible, sesión cerrada sin pedirlo (D210), progreso de invitado
+ * nueva disponible, sesión cerrada sin pedirlo (D210), enlace de Auth que no
+ * sirvió (D218), progreso de invitado
  * descartado al entrar (D212), novedades de la versión recién instalada (D058) y la
  * pregunta de recordatorio diario. Un solo contenedor apilable evita que se
  * superpongan si llegaran a coincidir. La conexión va primero: es el estado
@@ -26,6 +28,7 @@ export function SystemSnackbars() {
 		>
 			<ConnectivitySnackbar />
 			<SessionEndedSnackbar />
+			<AuthLinkErrorSnackbar />
 			<GuestProgressDiscardedSnackbar />
 			{!updateDismissed && (
 				<UpdateAvailableSnackbar onDismiss={() => setUpdateDismissed(true)} />

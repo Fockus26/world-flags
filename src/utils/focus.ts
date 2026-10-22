@@ -30,20 +30,40 @@ export function focusWhenVisible(
  * desmontarse (animación de salida), el destino puede montar un render
  * después o estar todavía de espaldas en el giro de `PageFlip`. Mientras el foco
  * esté en otro sitio válido (dentro del diálogo todavía abierto) no lo toca.
+ *
+ * `isLost` amplía qué cuenta como perdido: p. ej. el propio contenedor del
+ * diálogo, adonde sube el foco al pulsar un botón deshabilitado (D218).
  */
 export function focusIfLost(
 	getElement: () => HTMLElement | null,
 	attemptsLeft = 90,
+	isLost?: (active: Element) => boolean,
 ) {
 	const element = getElement();
 	const active = document.activeElement;
 	if (element && active === element) return;
-	if (element && (active === null || active === document.body)) {
+	if (
+		element &&
+		(active === null || active === document.body || isLost?.(active))
+	) {
 		element.focus();
 		if (document.activeElement === element) return;
 	}
 	if (attemptsLeft <= 0) return;
-	requestAnimationFrame(() => focusIfLost(getElement, attemptsLeft - 1));
+	requestAnimationFrame(() =>
+		focusIfLost(getElement, attemptsLeft - 1, isLost),
+	);
+}
+
+/**
+ * El foco está en un contenedor de `element` (el diálogo, una sección):
+ * no es un sitio útil, el siguiente Tab salta al principio del diálogo.
+ */
+export function isFocusOnAncestorOf(
+	element: Element | null,
+	active: Element,
+): boolean {
+	return element !== null && active !== element && active.contains(element);
 }
 
 /**

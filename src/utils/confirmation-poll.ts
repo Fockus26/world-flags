@@ -40,19 +40,41 @@ export function pollAttemptsWithin(windowMs: number): number {
 /** Por qué se dejó de sondear. */
 export type PollStopReason = "timeout" | "credentials";
 
+/** Lo que devuelve `useAuth().signInWithEmail` y le importa al sondeo. */
+export interface PollAttemptResult {
+	error: string | null;
+	errorCode: string | null;
+}
+
 /**
- * Qué hacer tras un intento, según su `error.code` (`null` = entró):
- * seguir, o parar y por qué. Solo cuenta `invalid_credentials` seguidos;
- * cualquier otro resultado (sin confirmar, red, límite) reinicia la cuenta.
+ * Qué hacer tras un intento: entró, seguir, o parar y por qué.
+ *
+ * Se decide por `error`, no por `errorCode` (D218): un fallo de transporte
+ * (`AuthRetryableFetchError`, 5xx o red cortada) llega con error y sin
+ * código, y tomarlo como "entró" dejaba el sondeo parado para siempre.
+ * Ese fallo sigue con la espera creciente como cualquier otro.
+ *
+ * Solo cuenta `invalid_credentials` seguidos; cualquier otro resultado (sin
+ * confirmar, red, límite) reinicia la cuenta.
  */
 export function nextPollState(
 	invalidStreak: number,
-	errorCode: string | null,
-): { invalidStreak: number; stop: PollStopReason | null } {
-	const streak = errorCode === "invalid_credentials" ? invalidStreak + 1 : 0;
+	result: PollAttemptResult,
+): {
+	invalidStreak: number;
+	signedIn: boolean;
+	stop: PollStopReason | null;
+} {
+	if (result.error === null) {
+		return { invalidStreak: 0, signedIn: true, stop: null };
+	}
+
+	const streak =
+		result.errorCode === "invalid_credentials" ? invalidStreak + 1 : 0;
 
 	return {
 		invalidStreak: streak,
+		signedIn: false,
 		stop: streak >= POLL_MAX_INVALID_CREDENTIALS ? "credentials" : null,
 	};
 }
