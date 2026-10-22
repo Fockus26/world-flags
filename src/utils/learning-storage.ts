@@ -1633,13 +1633,15 @@ export function savePendingAccountData(
 	userId: string,
 	data: UserLearningData,
 	base: UserLearningData,
+	/** Falso si el cierre lo pidió el usuario en otra pestaña (D219). */
+	guestFollows = true,
 ): void {
 	try {
 		const stored: StoredPendingAccount = {
 			userId,
 			data,
 			base,
-			guestFollows: true,
+			guestFollows,
 		};
 		window.localStorage.setItem(
 			PENDING_ACCOUNT_STORAGE_KEY,
@@ -1677,6 +1679,54 @@ export function detachGuestFromPendingAccount(): void {
 		);
 	} catch {
 		// Sin acceso a localStorage no hay apartado que tocar.
+	}
+}
+
+const VOLUNTARY_SIGN_OUT_STORAGE_KEY = "world-flags-voluntary-sign-out";
+
+/** Cierre de sesión pedido por el usuario en alguna pestaña (D219). */
+export interface VoluntarySignOutMark {
+	userId: string;
+	/** `Date.now()` al pedirlo: la marca caduca (`session-end.ts`). */
+	at: number;
+}
+
+/**
+ * Se escribe antes de `signOut`: así la otra pestaña, que ve el `SIGNED_OUT`
+ * por el `BroadcastChannel` de Supabase, ya la encuentra al apartar (D219).
+ */
+export function saveVoluntarySignOutMark(mark: VoluntarySignOutMark): void {
+	try {
+		window.localStorage.setItem(
+			VOLUNTARY_SIGN_OUT_STORAGE_KEY,
+			JSON.stringify(mark),
+		);
+	} catch {
+		// Sin acceso a localStorage la otra pestaña lo verá como involuntario.
+	}
+}
+
+export function getVoluntarySignOutMark(): VoluntarySignOutMark | null {
+	try {
+		const stored = window.localStorage.getItem(VOLUNTARY_SIGN_OUT_STORAGE_KEY);
+
+		if (!stored) return null;
+
+		const parsed = JSON.parse(stored) as Partial<VoluntarySignOutMark> | null;
+
+		return typeof parsed?.userId === "string" && typeof parsed.at === "number"
+			? { userId: parsed.userId, at: parsed.at }
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+export function clearVoluntarySignOutMark(): void {
+	try {
+		window.localStorage.removeItem(VOLUNTARY_SIGN_OUT_STORAGE_KEY);
+	} catch {
+		// Sin acceso a localStorage no hay marca que borrar.
 	}
 }
 

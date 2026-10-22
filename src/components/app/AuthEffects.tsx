@@ -15,7 +15,10 @@ import {
 
 import { leaderboardCache } from "@/utils/leaderboard-cache";
 
-import { consumeVoluntarySignOut } from "@/utils/session-end";
+import {
+	consumeVoluntarySignOut,
+	forgetVoluntarySignOut,
+} from "@/utils/session-end";
 
 function applySession(dispatch: AppDispatch, session: Session | null) {
 	dispatch(
@@ -55,6 +58,12 @@ export function AuthEffects() {
 				if (typeof lastUserId === "string" && !wasVoluntary) {
 					dispatch(sessionEndedUnexpectedly());
 				}
+			}
+
+			// Entró alguien que no estaba: un cierre pedido de antes no explica
+			// el próximo `SIGNED_OUT` (D219).
+			if (event === "SIGNED_IN" && lastUserId === null && userId) {
+				forgetVoluntarySignOut();
 			}
 
 			lastUserId = userId;

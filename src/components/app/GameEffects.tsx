@@ -49,6 +49,8 @@ import {
 	saveSyncBase,
 } from "@/utils/learning-storage";
 
+import { wasSignOutRequestedElsewhere } from "@/utils/session-end";
+
 /**
  * Espera antes de cada reintento de una sincronización fallida (el último
  * valor se repite mientras siga fallando). Además se reintenta en cuanto
@@ -220,6 +222,8 @@ export function GameEffects() {
 			 * con esa cuenta (D210). Se aparta aunque no haya nada pendiente:
 			 * lo que se juegue como invitado hasta volver a entrar también es
 			 * de esa cuenta (D214). El logout pedido avisa antes (`AuthSection`).
+			 * Si lo pidió el usuario en otra pestaña, lo pendiente de esta se
+			 * aparta igual, pero lo del invitado ya no es de la cuenta (D219).
 			 */
 			const syncBase = syncBaseRef.current;
 
@@ -229,6 +233,7 @@ export function GameEffects() {
 						syncBase.userId,
 						store.getState().game.learningData,
 						syncBase.data,
+						!wasSignOutRequestedElsewhere(syncBase.userId),
 					);
 				} else {
 					detachGuestFromPendingAccount();
