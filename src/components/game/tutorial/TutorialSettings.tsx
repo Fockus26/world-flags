@@ -1,6 +1,6 @@
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Fieldset } from "@/components/ui/Fieldset";
-import { OptionTile } from "@/components/ui/OptionTile";
+import { OPTION_TILE_ROW, OptionTile } from "@/components/ui/OptionTile";
 import {
 	type Difficulty,
 	GAME_MODE_LABELS,
@@ -51,7 +51,7 @@ export function TutorialSettings({
 			    (`GAME_TYPES`, `GAME_TYPE_LABELS`). Países por defecto, como un
 			    usuario nuevo (D030). */}
 			<Fieldset legend="Juego">
-				<div className="grid grid-cols-3 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					{GAME_TYPES.map((gameType) => (
 						<OptionTile
 							key={gameType}
@@ -67,7 +67,7 @@ export function TutorialSettings({
 			</Fieldset>
 
 			<Fieldset legend="Orden">
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					{(
 						[
 							["alphabetical", "Alfabético"],
@@ -88,7 +88,7 @@ export function TutorialSettings({
 			</Fieldset>
 
 			<Fieldset legend="Dificultad">
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					{(
 						[
 							["easy", "Fácil"],
@@ -115,7 +115,7 @@ export function TutorialSettings({
 			</Fieldset>
 
 			<Fieldset legend="Temporizador">
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					<OptionTile
 						name="tutorial-timer-enabled"
 						value="off"
@@ -182,7 +182,7 @@ export function TutorialModeChoice({
 	return (
 		<div className="flex flex-col gap-3">
 			<Fieldset legend="Modo de juego">
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					{GAME_MODES.map((gameMode) => (
 						<OptionTile
 							key={gameMode}

@@ -1,6 +1,6 @@
 import { type SubmitEvent, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON_TEXT } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { IconButton } from "@/components/ui/IconButton";
 import { LoadingAnnouncer } from "@/components/ui/LoadingAnnouncer";
@@ -414,7 +414,10 @@ export function Configuration() {
 						</FeedbackMessage>
 					)}
 
-					<Button type="submit" className="shrink-0">
+					{/* Los botones de la tarjeta parten su texto (D223): con el texto
+					    al 200 % a 320 px "Comenzar práctica" y "Aprender por lotes" se
+					    salían por los dos lados. A tamaño normal caben en una línea. */}
+					<Button type="submit" className={`shrink-0 ${WRAPPING_BUTTON_TEXT}`}>
 						Comenzar práctica
 					</Button>
 				</form>
@@ -426,7 +429,11 @@ export function Configuration() {
 				    que el skeleton mide lo mismo en cada breakpoint. */}
 				{isInitialLoad ? (
 					<Skeleton className="shrink-0 rounded-3xl">
-						<Button color="secondary" type="button">
+						<Button
+							color="secondary"
+							type="button"
+							className={WRAPPING_BUTTON_TEXT}
+						>
 							{dailyPracticeLabel}
 						</Button>
 					</Skeleton>
@@ -435,7 +442,7 @@ export function Configuration() {
 						<Button
 							color="secondary"
 							type="button"
-							className="shrink-0"
+							className={`shrink-0 ${WRAPPING_BUTTON_TEXT}`}
 							onClick={() => startDailyPractice(gameType)}
 						>
 							{dailyPracticeLabel}
@@ -447,7 +454,12 @@ export function Configuration() {
 				    que lo crea; con uno, su avance y lo que toca hoy. */}
 				{isInitialLoad ? (
 					<Skeleton className="shrink-0 rounded-3xl">
-						<Button color="secondary" variant="outline" type="button">
+						<Button
+							color="secondary"
+							variant="outline"
+							type="button"
+							className={WRAPPING_BUTTON_TEXT}
+						>
 							Aprender por lotes
 						</Button>
 					</Skeleton>
@@ -466,7 +478,7 @@ export function Configuration() {
 						color="secondary"
 						variant="outline"
 						type="button"
-						className="shrink-0"
+						className={`shrink-0 ${WRAPPING_BUTTON_TEXT}`}
 						onClick={() => setIsLearningPathModalOpen(true)}
 					>
 						Aprender por lotes

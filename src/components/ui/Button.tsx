@@ -192,6 +192,16 @@ function colorVars(color: ButtonColor, variant: ButtonVariant): CSSProperties {
 export const WRAPPING_BUTTON =
 	"h-auto min-h-11 min-w-fit flex-1 whitespace-normal text-center hyphens-auto wrap-anywhere md:min-h-10";
 
+/**
+ * Solo la parte de `WRAPPING_BUTTON` que deja partir el texto (D223), para
+ * los botones cuyo ancho ya lo da otro: una celda de `grid`, una columna
+ * `flex-col` o un botón suelto. Sin `flex-1`/`min-w-fit`, que en una celda
+ * de rejilla la ensancharían. A tamaño normal el texto cabe en una línea y
+ * no cambia nada.
+ */
+export const WRAPPING_BUTTON_TEXT =
+	"h-auto min-h-11 whitespace-normal text-center hyphens-auto wrap-anywhere md:min-h-10";
+
 // Foco de teclado = mismo aspecto que el hover: se pinta `--button-bg-hover`.
 // El `!` es imprescindible porque `--button-*` se fija con `style` inline en
 // el componente y sin `!important` una clase no lo puede pisar.

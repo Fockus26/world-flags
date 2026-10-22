@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON_TEXT } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
 interface ConfirmationModalProps {
@@ -46,7 +46,15 @@ export function ConfirmationModal({
 				!
 			</div>
 
-			<h2 id="exit-modal-title">{title}</h2>
+			{/* Con el texto al 200 % a 320 px (D223) "¿Abandonar" no cabe ni
+			    sola en el diálogo: guion donde el navegador sabe y, si no, parte
+			    la palabra antes que salirse. Los botones parten su texto en una
+			    columna; en dos (desde `44rem`) siguen en una línea, como antes:
+			    "Continuar practicando" ocupa parte del padding, pero no sale de
+			    su botón, y partido haría el botón más alto (medido a 768–1280). */}
+			<h2 id="exit-modal-title" className="hyphens-auto wrap-break-word">
+				{title}
+			</h2>
 
 			<p id="exit-modal-description">{description}</p>
 
@@ -55,12 +63,18 @@ export function ConfirmationModal({
 					color="neutral"
 					ref={cancelButtonRef}
 					type="button"
+					className={`${WRAPPING_BUTTON_TEXT} min-[44rem]:whitespace-nowrap`}
 					onClick={onCancel}
 				>
 					{cancelLabel}
 				</Button>
 
-				<Button color="danger" type="button" onClick={onConfirm}>
+				<Button
+					color="danger"
+					type="button"
+					className={`${WRAPPING_BUTTON_TEXT} min-[44rem]:whitespace-nowrap`}
+					onClick={onConfirm}
+				>
 					{confirmLabel}
 				</Button>
 			</div>

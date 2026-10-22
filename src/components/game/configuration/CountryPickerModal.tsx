@@ -19,6 +19,10 @@ interface CountryPickerModalProps {
 
 const spanishCollator = new Intl.Collator("es", { sensitivity: "base" });
 
+/** Botones del pie (D223): ver el comentario de la fila, abajo. */
+const FOOTER_BUTTON =
+	"h-auto min-h-11 min-w-min flex-1 whitespace-normal text-center hyphens-auto wrap-break-word md:min-h-10";
+
 const countriesByRegion = REGIONS.reduce(
 	(map, region) => {
 		map[region] = countries
@@ -73,7 +77,10 @@ function CountryCheckbox({
 				aria-hidden="true"
 				className="relative flex size-4 shrink-0 items-center justify-center rounded-xs border-2 border-neutral-border bg-surface transition-colors duration-150 after:text-micro after:leading-none after:font-black after:text-secondary-soft after:opacity-0 after:content-['✓'] sm:mt-px peer-checked:border-secondary peer-checked:bg-secondary peer-checked:after:opacity-100 peer-disabled:border-neutral-hover peer-disabled:bg-neutral-hover peer-disabled:after:text-neutral-soft peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-secondary-hover"
 			/>
-			<span className="line-clamp-2 min-w-0 wrap-break-word">
+			{/* Sin `line-clamp` (D223): con el texto al 200 % el nombre quedaba
+			    en dos líneas de dos o tres letras y puntos suspensivos ("Ca n…").
+			    Un nombre largo ocupa las líneas que necesite. */}
+			<span className="min-w-0 wrap-break-word">
 				{label}
 				{disabled && " · hoy"}
 			</span>
@@ -341,7 +348,10 @@ export function CountryPickerModal({
 											: `, ${regionCodes.length} países`}
 									</span>
 								</button>
-								<div className="ml-auto flex shrink-0 items-stretch">
+								{/* `max-w-full flex-wrap` (D223): con el texto al 200 % a
+								    320 px "Ninguno" y "Todos" juntos no caben en la
+								    sección y "Todos" baja debajo, a la derecha. */}
+								<div className="ml-auto flex max-w-full shrink-0 flex-wrap items-stretch justify-end">
 									{selectedCount > 0 && (
 										<RegionBulkButton
 											label="Ninguno"
@@ -363,7 +373,11 @@ export function CountryPickerModal({
 
 							{isExpanded && (
 								<div className="overflow-hidden motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 motion-safe:duration-200">
-									<div className="grid max-h-56 grid-cols-2 overflow-y-auto p-1 min-[30rem]:grid-cols-3">
+									{/* Una columna cuando el texto es grande (D223): el corte
+									    en `rem` de los media queries crece con el tamaño de
+									    letra del navegador, así que `min-[20rem]` vale desde
+									    320 px a tamaño normal y desde 640 px al 200 %. */}
+									<div className="grid max-h-56 grid-cols-1 overflow-y-auto p-1 min-[20rem]:grid-cols-2 min-[30rem]:grid-cols-3">
 										{regionCountries.map((country) => (
 											<CountryCheckbox
 												key={country.code}
@@ -381,15 +395,19 @@ export function CountryPickerModal({
 				})}
 			</div>
 
-			{/* `whitespace-normal`: con el texto al 200 % a 320 px (D216) "Usar N
-			    países" no cabe en su media fila y parte en dos líneas; el alto
-			    pasa a mínimo (el `h-11 md:h-10` de HeroUI) para que quepan. A
-			    tamaño normal cabe en una y no cambia. */}
-			<div className="mt-4 grid grid-cols-2 gap-3">
+			{/* Fila `flex-wrap` (D223): con el texto al 200 % a 320 px (D216)
+			    "Cancelar" no cabía ni solo en su media fila y se salía del botón.
+			    Cada botón `flex-1` (a partes iguales, como la rejilla de antes) y
+			    `min-w-min`: puede partir su texto entre palabras ("Usar 197 /
+			    países" ya lo hacía a 320 px con letra normal), pero no ser más
+			    estrecho que su palabra más larga; si así no caben, el segundo
+			    baja de línea. Por eso `wrap-break-word` y no el `wrap-anywhere`
+			    de `WRAPPING_BUTTON`, que deja el mínimo en una letra. */}
+			<div className="mt-4 flex flex-wrap gap-3">
 				<Button
 					type="button"
 					color="neutral"
-					className="h-auto min-h-11 whitespace-normal md:min-h-10"
+					className={FOOTER_BUTTON}
 					onClick={onClose}
 				>
 					Cancelar
@@ -397,7 +415,7 @@ export function CountryPickerModal({
 				<Button
 					type="button"
 					color="primary"
-					className="h-auto min-h-11 whitespace-normal md:min-h-10"
+					className={FOOTER_BUTTON}
 					onClick={handleConfirm}
 				>
 					Usar {selectedCatalogCount} país

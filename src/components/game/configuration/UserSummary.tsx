@@ -70,9 +70,14 @@ export function UserSummary({
 			// Los props aún son los por defecto: nada de esto es del usuario.
 			inert={isLoading}
 		>
+			{/* Texto grande en pantalla estrecha (D223): por debajo de `20rem`
+			    (nunca a tamaño normal, desde 320 px; al 200 %, por debajo de
+			    640 px) el avatar, que también crece, dejaba 0 px al nombre y el
+			    progreso se salía por debajo del menú ⋮. Ahí la tarjeta apila el
+			    avatar y el texto, con esquinas de tarjeta en vez de píldora. */}
 			<button
 				type="button"
-				className="group flex w-full touch-manipulation cursor-pointer items-center gap-3 rounded-full bg-surface pr-4 text-left text-surface-soft transition-[background-color,transform] duration-180 ease-in-out hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-surface-soft"
+				className="group flex w-full touch-manipulation cursor-pointer items-center gap-3 rounded-full bg-surface pr-4 text-left text-surface-soft transition-[background-color,transform] duration-180 ease-in-out hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-surface-soft max-[20rem]:flex-col max-[20rem]:items-start max-[20rem]:gap-0 max-[20rem]:rounded-2xl"
 				onClick={onOpenModal}
 			>
 				{/* Nombre desde el contenido, sin `aria-label` (WCAG 2.5.3): empieza
@@ -98,7 +103,7 @@ export function UserSummary({
 				)}
 
 				<span
-					className="flex min-w-0 flex-1 flex-col gap-1 py-1 sm:py-2.5"
+					className="flex min-w-0 flex-1 flex-col gap-1 py-1 sm:py-2.5 max-[20rem]:self-stretch max-[20rem]:pb-3 max-[20rem]:pl-4"
 					aria-hidden="true"
 				>
 					<span className="flex min-w-0 items-baseline gap-2">
@@ -125,11 +130,14 @@ export function UserSummary({
 						</span>
 					</span>
 
-					<span className="flex items-center gap-2">
+					{/* `flex-wrap` (D223): si barra y "45% · 30/197" no caben juntos,
+					    el texto baja debajo de la barra y, si ni solo cabe, se parte;
+					    la barra nunca baja de `min-w-8`. A tamaño normal caben. */}
+					<span className="flex flex-wrap items-center gap-2">
 						{/* Puramente visual: el % ya lo anuncia el texto sr-only del botón
 						    y el texto de al lado, así que la barra va aria-hidden. */}
 						<span
-							className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-sm bg-surface-hover transition-colors group-hover:bg-surface"
+							className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-sm bg-surface-hover transition-colors group-hover:bg-surface"
 							aria-hidden="true"
 						>
 							{isLoading ? (
@@ -142,7 +150,7 @@ export function UserSummary({
 							)}
 						</span>
 
-						<span className="shrink-0 whitespace-nowrap text-tiny font-semibold text-text-placeholder">
+						<span className="max-w-full shrink-0 wrap-break-word text-tiny font-semibold text-text-placeholder">
 							{isLoading ? (
 								<Skeleton shape="line">{progressLabel}</Skeleton>
 							) : (
