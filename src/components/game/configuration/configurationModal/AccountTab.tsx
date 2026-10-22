@@ -7,7 +7,10 @@ import {
 	type AvatarStyle,
 	type UserProfile,
 } from "@/types/progress";
-import { LEADERBOARD_DISPLAY_NAME_MAX_LENGTH } from "@/utils/leaderboard-validation";
+import {
+	isBlankDisplayName,
+	LEADERBOARD_DISPLAY_NAME_MAX_LENGTH,
+} from "@/utils/leaderboard-validation";
 import { AuthSection } from "./AuthSection";
 import { Avatar } from "./Avatar";
 
@@ -29,7 +32,7 @@ export function AccountTab({ profile, onSaveProfile }: AccountTabProps) {
 	function handleNameBlur() {
 		const normalizedName = name.trim();
 
-		if (!normalizedName) {
+		if (isBlankDisplayName(normalizedName)) {
 			setName(profile.name);
 			return;
 		}

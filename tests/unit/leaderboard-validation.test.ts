@@ -32,9 +32,11 @@ import { AVATAR_STYLES } from "@/types/progress";
 import {
 	getLeaderboardMinimums,
 	getRushMinTimeMs,
+	isBlankDisplayName,
 	isLeaderboardTimeRejected,
 	isPlausibleRushTime,
 	LEADERBOARD_DISPLAY_NAME_MAX_LENGTH,
+	LEADERBOARD_INVISIBLE_CODE_POINTS,
 	LEADERBOARD_MIN_MS_PER_ANSWER,
 	LEADERBOARD_TIME_REJECTED_CODE,
 	shouldRetryLeaderboardUpload,
@@ -189,21 +191,22 @@ describe("lo demás que valida el trigger (D211)", () => {
 		assert.ok(sql.includes("detail = 'display_name en blanco'"));
 	});
 
-	test("lo que el SQL cuenta como espacio es lo que recorta el cliente (D217)", () => {
-		const start = sql.indexOf("btrim(\n\t\tnew.display_name,");
+	test("lo que el SQL cuenta como en blanco es lo del cliente (D217, D221)", () => {
+		const start = sql.indexOf("translate(\n\t\tnew.display_name,");
 		assert.ok(start > 0);
-		const btrimArgs = sql.slice(start, sql.indexOf(") = ''", start));
-		const sqlBlank = [...btrimArgs.matchAll(/chr\((\d+)\)/g)].map(([, code]) =>
+		const args = sql.slice(start, sql.indexOf(") = ''", start));
+		const sqlBlank = [...args.matchAll(/chr\((\d+)\)/g)].map(([, code]) =>
 			Number(code),
 		);
-		const jsBlank: number[] = [];
+		// Espacios de `trim` (D217) + invisibles (D221).
+		const jsBlank = new Set<number>(LEADERBOARD_INVISIBLE_CODE_POINTS);
 		for (let code = 0; code <= 0xffff; code++) {
-			if (String.fromCharCode(code).trim() === "") jsBlank.push(code);
+			if (String.fromCharCode(code).trim() === "") jsBlank.add(code);
 		}
 
 		assert.deepEqual(
 			[...sqlBlank].sort((a, b) => a - b),
-			jsBlank,
+			[...jsBlank].sort((a, b) => a - b),
 		);
 	});
 
@@ -238,6 +241,46 @@ describe("nombre que va al ranking (D211)", () => {
 			toLeaderboardDisplayName(`${"a".repeat(23)} b`, "X"),
 			"a".repeat(23),
 		);
+	});
+});
+
+describe("nombres invisibles (D221)", () => {
+	const reported = [
+		0x200b, 0x200c, 0x200d, 0x2060, 0xfeff, 0x3164, 0xffa0, 0x115f, 0x1160,
+		0x2800, 0x180e,
+	];
+
+	test("cada invisible del hallazgo, solo o repetido, cae al respaldo", () => {
+		for (const code of reported) {
+			const char = String.fromCodePoint(code);
+			assert.equal(isBlankDisplayName(char), true, code.toString(16));
+			assert.equal(
+				toLeaderboardDisplayName(char.repeat(5), "Explorador"),
+				"Explorador",
+			);
+		}
+	});
+
+	test("mezclados con espacios también", () => {
+		const mixed = " \u200b\u00a0\u3164\t\u2800 ";
+		assert.equal(toLeaderboardDisplayName(mixed, "Explorador"), "Explorador");
+	});
+
+	test("con letras siguen valiendo, tal cual", () => {
+		assert.equal(isBlankDisplayName("A\u200bna"), false);
+		assert.equal(toLeaderboardDisplayName("A\u200bna", "X"), "A\u200bna");
+		assert.equal(toLeaderboardDisplayName("\u3164Ana", "X"), "\u3164Ana");
+	});
+
+	test("si al cortar a 24 solo quedan invisibles, respaldo", () => {
+		const name = `${"\u200b".repeat(24)}Ana`;
+		assert.equal(toLeaderboardDisplayName(name, "Explorador"), "Explorador");
+	});
+
+	test("vacío o espacios siguen en blanco (D217)", () => {
+		assert.equal(isBlankDisplayName(""), true);
+		assert.equal(isBlankDisplayName("  \u3000"), true);
+		assert.equal(isBlankDisplayName("Ana"), false);
 	});
 });
 

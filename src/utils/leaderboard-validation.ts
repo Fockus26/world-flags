@@ -8,9 +8,9 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * Validación del ranking en el servidor (D112–D114, D211, D217). La hace un
+ * Validación del ranking en el servidor (D112–D114, D211, D217, D221). La hace un
  * trigger en `leaderboard_entries` (hoy, la migración
- * `supabase/migrations/20261021120000_leaderboard_nombre_en_blanco.sql`): este
+ * `supabase/migrations/20261022120000_leaderboard_nombre_invisible.sql`): este
  * módulo guarda los números de los que sale ese SQL, para que un test los
  * compare con el catálogo, y el código con el que el trigger rechaza. El
  * cliente usa los mismos mínimos para no guardar como mejor marca un tiempo
@@ -79,12 +79,60 @@ export function getLeaderboardMinimums(): Record<string, number> {
 export const LEADERBOARD_DISPLAY_NAME_MAX_LENGTH = 24;
 
 /**
+ * Caracteres invisibles que no cuentan como nombre (D221): `trim` no los quita,
+ * pero en el ranking se ven como un hueco. Ancho cero y marcas de dirección,
+ * rellenos Hangul, el braille en blanco, el separador mongol, los selectores de
+ * variante y el guion blando (casi todo `Default_Ignorable_Code_Point` del
+ * plano básico). Mezclados con letras sí valen: solo se rechaza un nombre hecho
+ * únicamente de esto y de espacios. La migración
+ * `20261022120000_leaderboard_nombre_invisible.sql` lleva la misma lista (un
+ * test las compara).
+ */
+export const LEADERBOARD_INVISIBLE_CODE_POINTS: readonly number[] = [
+	0x00ad,
+	0x034f,
+	0x061c,
+	0x115f,
+	0x1160,
+	0x17b4,
+	0x17b5,
+	...range(0x180b, 0x180f),
+	...range(0x200b, 0x200f),
+	...range(0x202a, 0x202e),
+	...range(0x2060, 0x2064),
+	...range(0x2066, 0x206f),
+	0x2800,
+	0x3164,
+	...range(0xfe00, 0xfe0f),
+	0xfeff,
+	0xffa0,
+];
+
+function range(from: number, to: number): number[] {
+	return Array.from({ length: to - from + 1 }, (_, i) => from + i);
+}
+
+const INVISIBLE_CHARS = new Set(
+	LEADERBOARD_INVISIBLE_CODE_POINTS.map((code) => String.fromCodePoint(code)),
+);
+
+/**
+ * ¿El nombre queda en blanco a la vista? Vacío, solo espacios (los de `trim`,
+ * D217) o solo invisibles (D221): lo que el trigger rechaza.
+ */
+export function isBlankDisplayName(name: string): boolean {
+	return Array.from(name).every(
+		(char) => INVISIBLE_CHARS.has(char) || char.trim() === "",
+	);
+}
+
+/**
  * El nombre tal como va al ranking (D211): sin espacios en los extremos y
  * cortado a `LEADERBOARD_DISPLAY_NAME_MAX_LENGTH` caracteres (por puntos de
  * código, como `char_length` en Postgres). Un perfil con un nombre más largo
- * (escrito por otra vía) no deja de subir sus marcas; uno vacío o solo de
- * espacios usa `fallback`, porque el trigger lo rechaza (D217: cuenta como
- * espacio lo mismo que quita `trim`).
+ * (escrito por otra vía) no deja de subir sus marcas; uno que queda en blanco
+ * (solo espacios, D217, o solo invisibles, D221) usa `fallback`, porque el
+ * trigger lo rechaza.
  */
 export function toLeaderboardDisplayName(
 	name: string,
@@ -95,7 +143,7 @@ export function toLeaderboardDisplayName(
 		.join("")
 		.trim();
 
-	return clamped || fallback;
+	return isBlankDisplayName(clamped) ? fallback : clamped;
 }
 
 /**
