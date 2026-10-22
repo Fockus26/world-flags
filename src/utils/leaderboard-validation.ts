@@ -8,9 +8,9 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * Validación del ranking en el servidor (D112–D114, D211). La hace un trigger
- * en `leaderboard_entries` (hoy, la migración
- * `supabase/migrations/20261020120000_leaderboard_validar_todo.sql`): este
+ * Validación del ranking en el servidor (D112–D114, D211, D217). La hace un
+ * trigger en `leaderboard_entries` (hoy, la migración
+ * `supabase/migrations/20261021120000_leaderboard_nombre_en_blanco.sql`): este
  * módulo guarda los números de los que sale ese SQL, para que un test los
  * compare con el catálogo, y el código con el que el trigger rechaza. El
  * cliente usa los mismos mínimos para no guardar como mejor marca un tiempo
@@ -82,7 +82,9 @@ export const LEADERBOARD_DISPLAY_NAME_MAX_LENGTH = 24;
  * El nombre tal como va al ranking (D211): sin espacios en los extremos y
  * cortado a `LEADERBOARD_DISPLAY_NAME_MAX_LENGTH` caracteres (por puntos de
  * código, como `char_length` en Postgres). Un perfil con un nombre más largo
- * (escrito por otra vía) no deja de subir sus marcas; uno vacío usa `fallback`.
+ * (escrito por otra vía) no deja de subir sus marcas; uno vacío o solo de
+ * espacios usa `fallback`, porque el trigger lo rechaza (D217: cuenta como
+ * espacio lo mismo que quita `trim`).
  */
 export function toLeaderboardDisplayName(
 	name: string,
