@@ -1,5 +1,6 @@
 import { Xmark } from "iconoir-react";
 import { useEffect, useRef, useState } from "react";
+import { SNACKBAR_TEXT } from "@/components/app/snackbar-classes";
 import {
 	type AchievementToastView,
 	useAchievementToasts,
@@ -67,7 +68,7 @@ function AchievementToastCard({
 			// fotogramas y todas a la vez si entraron juntas. Ahora la salida se
 			// queda en su último fotograma (`fill-mode-forwards`) y la tarjeta
 			// se quita justo cuando termina, sin adivinar su duración.
-			className={`pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-[color-mix(in_oklab,var(--success)_45%,transparent)] bg-success-soft p-3 shadow-xl duration-200 ${
+			className={`pointer-events-auto flex w-full flex-wrap items-start gap-3 rounded-lg border border-[color-mix(in_oklab,var(--success)_45%,transparent)] bg-success-soft p-3 shadow-xl duration-200 ${
 				isLeaving
 					? "animate-out fade-out-0 slide-out-to-right-4 fill-mode-forwards"
 					: "animate-in fade-in-0 slide-in-from-right-4"
@@ -84,7 +85,7 @@ function AchievementToastCard({
 				{toast.emoji}
 			</span>
 
-			<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+			<span className={SNACKBAR_TEXT}>
 				{/* La etiqueta va en color neutro, no verde: a este tamaño de
 				    texto ni `success` (2.71:1) ni `success-hover` (3.92:1) llegan
 				    a los 4.5:1 de AA. El verde queda para el fondo, el borde y el
@@ -100,7 +101,7 @@ function AchievementToastCard({
 
 			<button
 				type="button"
-				className="shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-1 text-text-placeholder transition-colors duration-150 hover:text-surface-soft focus-visible:text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
+				className="ml-auto shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-1 text-text-placeholder transition-colors duration-150 hover:text-surface-soft focus-visible:text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
 				aria-label={`Descartar aviso de logro: ${toast.name}`}
 				onClick={() => setIsLeaving(true)}
 			>
@@ -119,6 +120,11 @@ function AchievementToastCard({
  *
  * Un solo contenedor `aria-live="polite"`: cada snackbar es un anuncio, así
  * que anida dentro sin su propio `aria-live` para no duplicar la lectura.
+ *
+ * Mismo trato que `SystemSnackbars` (D222): nunca más alto que la pantalla
+ * (`max-h-snackbars`, scroll dentro), con padding `box-content` y la posición
+ * desplazada lo mismo para no recortar la sombra. `overflow-x-hidden`: la
+ * entrada y salida deslizan en horizontal y no deben abrir un scroll lateral.
  */
 export function AchievementToasts() {
 	const { toasts, dismiss } = useAchievementToasts();
@@ -132,7 +138,7 @@ export function AchievementToasts() {
 			role="status"
 			aria-live="polite"
 			aria-atomic="false"
-			className="pointer-events-none fixed inset-x-3 bottom-3 z-[300] flex flex-col-reverse gap-2 sm:inset-x-auto sm:right-3 sm:w-toast"
+			className="pointer-events-none fixed inset-x-0 bottom-0 z-[300] box-content flex max-h-snackbars flex-col-reverse gap-2 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-8 pb-3 sm:inset-x-auto sm:right-0 sm:w-toast"
 		>
 			{toasts.map((toast) => (
 				<AchievementToastCard
