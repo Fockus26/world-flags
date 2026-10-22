@@ -23,7 +23,9 @@ interface ModalHeaderProps {
  * larga (`flex-basis: min-content`) y luego crece: la fila solo se parte
  * cuando ni esa palabra cabe junto a "Cerrar"; mientras quepa, el título se
  * reparte en líneas a su lado, como hasta ahora. Una palabra más ancha que el
- * diálogo se corta (`break-words` + `min-w-0`) en vez de salirse.
+ * diálogo se parte con guion donde el español lo permite (`hyphens-auto`,
+ * `lang="es"` del documento, D220) o, si no, se corta (`break-words` +
+ * `min-w-0`) en vez de salirse.
  */
 export function ModalHeader({
 	titleId,
@@ -37,7 +39,7 @@ export function ModalHeader({
 		>
 			<h2
 				id={titleId}
-				className="m-0 min-w-0 grow basis-[min-content] break-words"
+				className="m-0 min-w-0 grow basis-[min-content] break-words hyphens-auto"
 			>
 				{title}
 			</h2>

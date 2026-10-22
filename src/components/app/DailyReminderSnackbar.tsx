@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setLearningData } from "@/store/slices/gameSlice";
@@ -136,29 +136,37 @@ export function DailyReminderSnackbar() {
 				</span>
 			</div>
 
+			{/* Si no caben en una fila (texto al 200 % a 320 px), el segundo
+			    botón baja de línea (D220). */}
 			{explanation ? (
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					{/* Cerrar cuenta como "no": sin permiso no hay recordatorio, y
 					    volver a preguntar en cada partida sería insistir. */}
 					<Button
 						ref={firstActionRef}
 						color="neutral"
+						className={WRAPPING_BUTTON}
 						variant="soft"
 						onClick={() => answer(false)}
 					>
 						{explanation.canRetry ? "Cerrar" : "Entendido"}
 					</Button>
 					{explanation.canRetry && (
-						<Button color="primary" onClick={handleAccept}>
+						<Button
+							color="primary"
+							className={WRAPPING_BUTTON}
+							onClick={handleAccept}
+						>
 							Reintentar
 						</Button>
 					)}
 				</div>
 			) : (
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<Button
 						ref={firstActionRef}
 						color="neutral"
+						className={WRAPPING_BUTTON}
 						variant="soft"
 						onClick={() => answer(false)}
 						disabled={isSubscribing}
@@ -167,6 +175,7 @@ export function DailyReminderSnackbar() {
 					</Button>
 					<Button
 						color="primary"
+						className={WRAPPING_BUTTON}
 						onClick={handleAccept}
 						disabled={isSubscribing}
 					>

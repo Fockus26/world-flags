@@ -135,7 +135,8 @@ export function TutorialSettings({
 				</div>
 
 				<AutoHeight show={configuration.timerEnabled} className="mt-1.5">
-					<div className="flex gap-2">
+					{/* Como en Configuración (D220): si no caben, bajan de línea. */}
+					<div className="flex flex-wrap gap-2 [&>label]:min-w-fit [&>label]:flex-1">
 						{TIMER_DURATIONS.map((duration) => (
 							<OptionTile
 								key={duration}

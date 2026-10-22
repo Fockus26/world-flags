@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CountriesPractice } from "@/components/game/session/countries/CountriesPractice";
 import { Session } from "@/components/game/session/Session";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Modal } from "@/components/ui/Modal";
 import { useSandboxRuntime } from "@/hooks/useSandboxRuntime";
@@ -202,12 +202,18 @@ export function Tutorial({ onClose }: TutorialProps) {
 				    Jugando, la cabecera entera se oculta a la vista (D120): sin
 				    aviso ni "Saltar tutorial" no le queda nada visible, y `sr-only`
 				    la saca del `flex` (es `absolute`), así que tampoco se come el
-				    `gap` y la partida se queda con todo el alto. */}
+				    `gap` y la partida se queda con todo el alto.
+				    Con el texto al 200 % a 320 px (D220) título y botón no caben
+				    juntos: "Saltar tutorial" baja de línea (a la derecha) en vez de
+				    salirse. Como en `ModalHeader` (D216), el título entra con su
+				    palabra más larga (`basis-[min-content]`) y crece hasta su ancho
+				    de siempre (`max-w-max`): la fila solo se parte cuando ni esa
+				    palabra cabe al lado del botón. */}
 				<header
 					className={
 						isPlaying
 							? "sr-only"
-							: "flex min-h-10 items-start justify-between gap-3"
+							: "flex min-h-10 flex-wrap items-start justify-between gap-x-3 gap-y-2"
 					}
 				>
 					{/* `tabIndex={-1}` solo para poder enfocarlo al cambiar de paso;
@@ -222,7 +228,7 @@ export function Tutorial({ onClose }: TutorialProps) {
 						id={HEADING_ID}
 						ref={headingRef}
 						tabIndex={-1}
-						className="m-0 min-w-0 text-base font-bold text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft sm:text-lg"
+						className="m-0 min-w-0 max-w-max grow basis-[min-content] break-words text-base font-bold text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft sm:text-lg"
 					>
 						<span className="block text-xs font-bold text-text-placeholder">
 							{TUTORIAL_TEXTS.stepLabel(stepIndex + 1, TUTORIAL_STEPS.length)}
@@ -239,6 +245,7 @@ export function Tutorial({ onClose }: TutorialProps) {
 							color="danger"
 							type="button"
 							fullWidth={false}
+							className="ml-auto h-auto min-h-11 whitespace-normal md:min-h-10"
 							onClick={onClose}
 						>
 							{TUTORIAL_TEXTS.skip}
@@ -285,19 +292,21 @@ export function Tutorial({ onClose }: TutorialProps) {
 				</div>
 
 				{/* Mientras se juega manda la partida: sus propios controles
-				    ("Comprobar", "Saltar", "Abandonar") y nada más (D120). */}
+				    ("Comprobar", "Saltar", "Abandonar") y nada más (D120).
+				    Si no caben en una fila, "Siguiente" baja de línea (D220). */}
 				{!isPlaying && (
-					<footer className="flex gap-2">
+					<footer className="flex flex-wrap gap-2">
 						<Button
 							variant="outline"
 							color="neutral"
 							type="button"
+							className={WRAPPING_BUTTON}
 							disabled={stepIndex === 0}
 							onClick={goBack}
 						>
 							{TUTORIAL_TEXTS.back}
 						</Button>
-						<Button type="button" onClick={goNext}>
+						<Button type="button" className={WRAPPING_BUTTON} onClick={goNext}>
 							{stepIndex === LAST_STEP_INDEX
 								? TUTORIAL_TEXTS.finish
 								: TUTORIAL_TEXTS.next}
