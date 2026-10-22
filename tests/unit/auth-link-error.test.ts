@@ -7,6 +7,8 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import {
+	authLinkErrorFromMessage,
+	authLinkErrorMessage,
 	readAuthLinkError,
 	withoutAuthLinkError,
 } from "@/utils/auth-link-error";
@@ -68,6 +70,27 @@ describe("withoutAuthLinkError", () => {
 		assert.equal(
 			withoutAuthLinkError(new URL(`${ORIGIN}/?${EXPIRED}&otro=1#seccion`)),
 			"/?otro=1#seccion",
+		);
+	});
+});
+
+describe("mensaje del popup de Google", () => {
+	test("ida y vuelta", () => {
+		for (const kind of ["expired", "other"] as const) {
+			assert.equal(authLinkErrorFromMessage(authLinkErrorMessage(kind)), kind);
+		}
+	});
+
+	test("ignora mensajes ajenos o con un tipo desconocido", () => {
+		assert.equal(authLinkErrorFromMessage(null), null);
+		assert.equal(authLinkErrorFromMessage("expired"), null);
+		assert.equal(authLinkErrorFromMessage({ kind: "expired" }), null);
+		assert.equal(
+			authLinkErrorFromMessage({
+				type: "world-flags:auth-link-error",
+				kind: "toString",
+			}),
+			null,
 		);
 	});
 });

@@ -3,9 +3,27 @@ import { Button } from "@/components/ui/Button";
 import {
 	AUTH_LINK_ERROR_COPY,
 	type AuthLinkErrorKind,
+	authLinkErrorFromMessage,
+	authLinkErrorMessage,
 	readAuthLinkError,
 	withoutAuthLinkError,
 } from "@/utils/auth-link-error";
+
+/** La ventana que abrió esta, si es de la app (mismo origen) y sigue abierta. */
+function openerSameOrigin(): Window | null {
+	try {
+		const opener = window.opener as Window | null;
+
+		return opener &&
+			!opener.closed &&
+			opener.location.origin === window.location.origin
+			? opener
+			: null;
+	} catch {
+		// Otro origen: leer `location` lanza.
+		return null;
+	}
+}
 
 /**
  * Aviso de que el enlace de Auth con el que se llegó no sirvió (D218): el
@@ -25,17 +43,42 @@ export function AuthLinkErrorSnackbar() {
 	const returnFocusRef = useRef<HTMLElement | null>(null);
 
 	useEffect(() => {
+		// Ventana principal: el popup de Google le pasa su error y se cierra.
+		function handleMessage(event: MessageEvent) {
+			if (event.origin !== window.location.origin) return;
+
+			const found = authLinkErrorFromMessage(event.data);
+
+			if (found) setKind(found);
+		}
+
+		window.addEventListener("message", handleMessage);
+
 		const url = new URL(window.location.href);
 		const found = readAuthLinkError(url);
 
-		if (!found) return;
+		if (found) {
+			window.history.replaceState(
+				window.history.state,
+				"",
+				withoutAuthLinkError(url),
+			);
 
-		window.history.replaceState(
-			window.history.state,
-			"",
-			withoutAuthLinkError(url),
-		);
-		setKind(found);
+			// Popup de "Entrar con Google" que vuelve con error: el aviso va a
+			// la ventana que lo abrió y el popup se cierra (con éxito ya lo
+			// cierra `AuthEffects`). Sin `opener` (lo cortó la navegación),
+			// el aviso sale aquí.
+			const opener = openerSameOrigin();
+
+			if (opener) {
+				opener.postMessage(authLinkErrorMessage(found), window.location.origin);
+				window.close();
+			} else {
+				setKind(found);
+			}
+		}
+
+		return () => window.removeEventListener("message", handleMessage);
 	}, []);
 
 	if (!kind) {

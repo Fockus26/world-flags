@@ -42,6 +42,28 @@ export function readAuthLinkError(url: URL): AuthLinkErrorKind | null {
 	return null;
 }
 
+const MESSAGE_TYPE = "world-flags:auth-link-error";
+
+/** Lo que el popup de Google manda a la ventana que lo abrió. */
+export function authLinkErrorMessage(kind: AuthLinkErrorKind) {
+	return { type: MESSAGE_TYPE, kind };
+}
+
+/** El aviso que pide un mensaje de `postMessage`, o `null` si no es uno. */
+export function authLinkErrorFromMessage(
+	data: unknown,
+): AuthLinkErrorKind | null {
+	if (typeof data !== "object" || data === null) return null;
+
+	const { type, kind } = data as { type?: unknown; kind?: unknown };
+
+	if (type !== MESSAGE_TYPE || typeof kind !== "string") return null;
+
+	return Object.hasOwn(AUTH_LINK_ERROR_COPY, kind)
+		? (kind as AuthLinkErrorKind)
+		: null;
+}
+
 /**
  * La misma URL sin los parámetros de error, para dejar la barra limpia
  * (y que recargar no repita el aviso). Si el hash solo traía el error,
