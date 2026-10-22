@@ -111,6 +111,16 @@ export function isNetworkFailure(error: unknown): boolean {
 	return typeof navigator !== "undefined" && !navigator.onLine;
 }
 
+/**
+ * Se registra en consola solo un fallo del servidor inesperado. Sin red es un
+ * estado que la UI ya comunica (D050); un token rechazado se refresca y se
+ * reintenta solo (D210), y quien lo maneja registra únicamente si el último
+ * intento también falla (D214).
+ */
+function shouldLogCloudError(error: CloudRequestError): boolean {
+	return error.kind === "server" && !error.sessionRejected;
+}
+
 function toCloudRequestError(
 	error: { message: string; code?: string },
 	status: number,
@@ -163,7 +173,7 @@ export async function fetchRemoteLearningData(
 		// Abortada a propósito (timeout o cancelación): quien la abortó ya
 		// sabe por qué. Sin red tampoco se registra: es un estado esperado,
 		// que la UI ya comunica (D050).
-		if (!signal?.aborted && cloudError.kind === "server") {
+		if (!signal?.aborted && shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, error);
 		}
 
@@ -275,7 +285,7 @@ export async function pushLearningData(
 			"Failed to push learning data",
 		);
 
-		if (!signal?.aborted && cloudError.kind === "server") {
+		if (!signal?.aborted && shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, error);
 		}
 
@@ -450,7 +460,7 @@ export async function fetchLeaderboard(
 			"Failed to fetch leaderboard",
 		);
 
-		if (cloudError.kind === "server") {
+		if (shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, error);
 		}
 
@@ -496,7 +506,7 @@ export async function syncLeaderboardProfile(
 			"Failed to read own leaderboard entries",
 		);
 
-		if (cloudError.kind === "server") {
+		if (shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, error);
 		}
 
@@ -528,7 +538,7 @@ export async function syncLeaderboardProfile(
 			"Failed to update own leaderboard profile",
 		);
 
-		if (cloudError.kind === "server") {
+		if (shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, updateError);
 		}
 
@@ -590,7 +600,7 @@ export async function upsertLeaderboardEntry(
 			"Failed to update leaderboard entry",
 		);
 
-		if (cloudError.kind === "server") {
+		if (shouldLogCloudError(cloudError)) {
 			console.error(cloudError.message, error);
 		}
 

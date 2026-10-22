@@ -7,7 +7,9 @@
  *
  * También el apartado de lo pendiente cuando la sesión se cierra sola
  * (`savePendingAccountData`/`restorePendingAccountData`) y la marca de
- * cierre voluntario (`session-end.ts`).
+ * cierre voluntario (`session-end.ts`). Y, con D214, que lo jugado como
+ * invitado tras ese cierre involuntario se sume a lo apartado al volver a
+ * entrar, en vez de perderse sin aviso.
  */
 import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
@@ -15,12 +17,14 @@ import { beforeEach, describe, test } from "node:test";
 import type { UserLearningData } from "@/types/progress";
 import {
 	createDefaultLearningData,
+	detachGuestFromPendingAccount,
 	getLearningData,
 	getSyncBase,
 	registerRegionGame,
 	restorePendingAccountData,
 	saveLearningData,
 	savePendingAccountData,
+	saveReviewResult,
 	saveUserProfile,
 	updateLastConfiguration,
 } from "@/utils/learning-storage";
@@ -292,14 +296,19 @@ describe("lo pendiente de una sesión cerrada sola (D210)", () => {
 
 		savePendingAccountData("user-a", pending, base);
 
-		// Mientras tanto, el invitado juega en este dispositivo.
+		// Mientras tanto, el invitado no juega (datos vacíos).
 		saveLearningData(createDefaultLearningData());
 
-		assert.equal(restorePendingAccountData("user-a"), true);
+		assert.deepEqual(restorePendingAccountData("user-a"), {
+			restored: true,
+			discardedGuest: null,
+		});
 		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+		assert.deepEqual(getLearningData().regionGameScores.europe, [7]);
+		assert.equal(getLearningData().profile.name, "Alejandro");
 		assert.equal(JSON.stringify(getSyncBase("user-a")), JSON.stringify(base));
 		// Se repone una sola vez.
-		assert.equal(restorePendingAccountData("user-a"), false);
+		assert.equal(restorePendingAccountData("user-a").restored, false);
 	});
 
 	test("otra cuenta no lo toma, y se conserva para la suya", () => {
@@ -308,9 +317,72 @@ describe("lo pendiente de una sesión cerrada sola (D210)", () => {
 
 		savePendingAccountData("user-a", pending, base);
 
-		assert.equal(restorePendingAccountData("user-b"), false);
+		assert.equal(restorePendingAccountData("user-b").restored, false);
 		assert.equal(getSyncBase("user-b"), null);
-		assert.equal(restorePendingAccountData("user-a"), true);
+		assert.equal(restorePendingAccountData("user-a").restored, true);
+	});
+});
+
+describe("lo jugado como invitado tras el cierre involuntario (D214)", () => {
+	test("se suma a lo apartado de la cuenta al volver a entrar", () => {
+		const base = saveReviewResult(sharedData(), "fr", "good");
+		const pending = registerRegionGame(base, "asia", 8, T_B);
+
+		savePendingAccountData("user-a", pending, base);
+
+		// El logout dejó los datos del invitado vacíos; juega jp y kr.
+		let guest = createDefaultLearningData();
+		guest = saveReviewResult(guest, "jp", "good");
+		guest = saveReviewResult(guest, "kr", "again");
+
+		assert.deepEqual(restorePendingAccountData("user-a"), {
+			restored: true,
+			discardedGuest: null,
+		});
+
+		const restored = getLearningData();
+
+		assert.deepEqual(Object.keys(restored.countryHistory).sort(), [
+			"fr",
+			"jp",
+			"kr",
+		]);
+		assert.deepEqual(restored.regionGameScores.asia, [8]);
+		// Lo que el invitado no tocó no pisa lo de la cuenta.
+		assert.equal(restored.profile.name, "Alejandro");
+		assert.equal(restored.lastConfiguration?.mode, "practice");
+		// La base sigue siendo la de la nube: lo del invitado sale como
+		// pendiente de subir.
+		assert.equal(JSON.stringify(getSyncBase("user-a")), JSON.stringify(base));
+	});
+
+	test("sin cambios pendientes de la cuenta, lo del invitado también vale", () => {
+		const base = sharedData();
+
+		savePendingAccountData("user-a", base, base);
+		saveReviewResult(createDefaultLearningData(), "jp", "good");
+
+		restorePendingAccountData("user-a");
+
+		assert.ok(getLearningData().countryHistory.jp);
+		assert.deepEqual(getLearningData().regionGameScores.europe, [7]);
+	});
+
+	test("si otra cuenta entró y salió entre medias, lo del invitado no se suma y se avisa", () => {
+		const base = sharedData();
+
+		savePendingAccountData("user-a", base, base);
+
+		// Otra cuenta sale de este dispositivo: lo que venga ya no es de A.
+		detachGuestFromPendingAccount();
+
+		const guest = saveReviewResult(createDefaultLearningData(), "jp", "good");
+
+		const result = restorePendingAccountData("user-a");
+
+		assert.equal(result.restored, true);
+		assert.equal(JSON.stringify(result.discardedGuest), JSON.stringify(guest));
+		assert.equal(getLearningData().countryHistory.jp, undefined);
 	});
 });
 

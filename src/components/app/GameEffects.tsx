@@ -37,6 +37,7 @@ import {
 import {
 	clearLearningData,
 	createDefaultLearningData,
+	detachGuestFromPendingAccount,
 	getLearningData,
 	getSyncBase,
 	hasLearningProgress,
@@ -216,19 +217,21 @@ export function GameEffects() {
 			 * La sesión se cerró sin pedirlo aquí (otra pestaña, token
 			 * rechazado): lo que esta pestaña tenía sin subir se aparta antes
 			 * de que el logout lo borre, y vuelve como cola al entrar de nuevo
-			 * con esa cuenta (D210). El logout pedido avisa antes (`AuthSection`).
+			 * con esa cuenta (D210). Se aparta aunque no haya nada pendiente:
+			 * lo que se juegue como invitado hasta volver a entrar también es
+			 * de esa cuenta (D214). El logout pedido avisa antes (`AuthSection`).
 			 */
 			const syncBase = syncBaseRef.current;
 
-			if (
-				previousStatus === "authenticated" &&
-				store.getState().auth.endedUnexpectedly &&
-				syncBase
-			) {
-				const accountData = store.getState().game.learningData;
-
-				if (hasPendingChanges(accountData, syncBase.data)) {
-					savePendingAccountData(syncBase.userId, accountData, syncBase.data);
+			if (previousStatus === "authenticated") {
+				if (store.getState().auth.endedUnexpectedly && syncBase) {
+					savePendingAccountData(
+						syncBase.userId,
+						store.getState().game.learningData,
+						syncBase.data,
+					);
+				} else {
+					detachGuestFromPendingAccount();
 				}
 			}
 
@@ -309,10 +312,16 @@ export function GameEffects() {
 			 * Lo que quedó sin subir cuando la sesión de esta cuenta se cerró
 			 * sola (D210) vuelve como datos locales + base: la cola de D049,
 			 * que la sincronización de abajo fusiona y sube. Lo jugado como
-			 * invitado entre medias se descarta, como en D056.
+			 * invitado entre medias va con ello: es el mismo jugador (D214).
+			 * Si no lo era (otra cuenta entró y salió entre medias), se
+			 * descarta con el aviso de D212.
 			 */
 			if (!failedSync) {
-				restorePendingAccountData(user.id);
+				const { discardedGuest } = restorePendingAccountData(user.id);
+
+				if (discardedGuest && hasLearningProgress(discardedGuest)) {
+					dispatch(setGuestProgressDiscarded(true));
+				}
 			}
 
 			/**
@@ -392,8 +401,11 @@ export function GameEffects() {
 
 				const kind = isNetworkFailure(error) ? "network" : "server";
 
-				// Sin red es un estado esperado que la UI ya comunica (D050).
-				if (kind === "server") {
+				const sessionRejected = isSessionRejected(error);
+
+				// Sin red es un estado esperado que la UI ya comunica (D050). Un
+				// token rechazado se registra solo si no se recupera (D214).
+				if (kind === "server" && !sessionRejected) {
 					console.error("Failed to hydrate authenticated user:", error);
 				}
 
@@ -427,12 +439,16 @@ export function GameEffects() {
 				// Token rechazado: refrescar y reintentar ya, o cerrar la
 				// sesión. Un refresco bueno también re-ejecuta este efecto
 				// (cambia `user`); el reintento de aquí cubre el caso en que no.
-				if (isSessionRejected(error)) {
+				if (sessionRejected) {
 					const alreadyRefreshed = refreshedSessionRef.current === user.id;
 
 					refreshedSessionRef.current = user.id;
 
 					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
+						if (!retry) {
+							console.error("Failed to hydrate authenticated user:", error);
+						}
+
 						if (retry && !cancelled && !isSyncing) {
 							void hydrateAuthenticatedUser();
 						}
@@ -575,7 +591,10 @@ export function GameEffects() {
 
 				const kind = isNetworkFailure(error) ? "network" : "server";
 
-				if (kind === "server") {
+				const sessionRejected = isSessionRejected(error);
+
+				// Un token rechazado se registra solo si no se recupera (D214).
+				if (kind === "server" && !sessionRejected) {
 					console.error("Failed to sync learning data:", error);
 				}
 
@@ -584,12 +603,14 @@ export function GameEffects() {
 				failures += 1;
 
 				// Token rechazado: refrescar y reintentar ya, o cerrar la sesión.
-				if (isSessionRejected(error)) {
+				if (sessionRejected) {
 					const alreadyRefreshed = refreshedSessionRef.current === userId;
 
 					refreshedSessionRef.current = userId;
 
 					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
+						if (!retry) console.error("Failed to sync learning data:", error);
+
 						if (retry && !controller.signal.aborted) void runSync();
 					});
 
