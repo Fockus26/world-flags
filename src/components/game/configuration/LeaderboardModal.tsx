@@ -4,7 +4,7 @@ import { AnimatedHeight } from "@/components/ui/AnimatedHeight";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { LoadingAnnouncer } from "@/components/ui/LoadingAnnouncer";
 import { Modal } from "@/components/ui/Modal";
-import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/hooks/useAuth";
@@ -505,12 +505,11 @@ export function LeaderboardModal({
 			className="w-dialog-wide max-w-none text-left"
 			ariaLabelledby="leaderboard-title"
 		>
-			<header className="mb-3 flex items-center justify-between gap-3">
-				<h2 id="leaderboard-title" className="m-0">
-					Ranking — {REGION_LABELS[region]}
-				</h2>
-				<ModalCloseButton onClose={onClose} />
-			</header>
+			<ModalHeader
+				titleId="leaderboard-title"
+				title={`Ranking — ${REGION_LABELS[region]}`}
+				onClose={onClose}
+			/>
 
 			<GameTypeToggle
 				legend="Ranking de"

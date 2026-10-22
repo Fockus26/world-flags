@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { ReleaseNotesModal } from "@/components/app/ReleaseNotesModal";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { APP_VERSION } from "@/data/changelog";
 import type {
 	Difficulty,
@@ -131,18 +131,32 @@ export function ConfigurationModal({
 			className="w-dialog text-left"
 			ariaLabelledby="user-modal-title"
 		>
-			<header className="mb-3 flex items-center justify-between">
-				<h2 id="user-modal-title">Perfil y configuración</h2>
-				<ModalCloseButton onClose={onClose} />
-			</header>
+			<ModalHeader
+				titleId="user-modal-title"
+				title="Perfil y configuración"
+				onClose={onClose}
+				isCompact
+			/>
 
 			<Tabs
 				selectedKey={activeTab}
 				onSelectionChange={(key) => setActiveTab(key as ConfigurationModalTab)}
 			>
-				<Tabs.List aria-label="Secciones" className="mb-4">
-					<Tabs.Tab id="account">Usuario</Tabs.Tab>
-					<Tabs.Tab id="game">Juego</Tabs.Tab>
+				{/* Con el texto muy grande en pantallas estrechas (D216) las
+				    pestañas no caben en una fila y bajan a otra: cada una entra
+				    con su texto (`flex-1`, base 0) y la lista se parte solo
+				    cuando la suma no cabe. A tamaño normal siguen en una fila a
+				    partes iguales, como el `w-max min-w-full` de HeroUI. */}
+				<Tabs.List
+					aria-label="Secciones"
+					className="mb-4 w-full flex-wrap gap-y-1"
+				>
+					<Tabs.Tab id="account" className="flex-1">
+						Usuario
+					</Tabs.Tab>
+					<Tabs.Tab id="game" className="flex-1">
+						Juego
+					</Tabs.Tab>
 				</Tabs.List>
 
 				{/*
@@ -209,11 +223,16 @@ export function ConfigurationModal({
 				    miden 285 px en 259 px de pie (medido), así que sin esto se
 				    salían. Al envolver, se apilan alineados a la derecha. */}
 				<div className="flex flex-wrap items-center justify-end gap-1">
+					{/* `whitespace-normal`: con el texto al 200 % a 320 px (D216)
+					    "Cómo se juega" no cabe ni sola en la fila y parte en dos
+					    líneas; el alto pasa a mínimo (el `h-11 md:h-10` de HeroUI)
+					    para que quepan. A tamaño normal cabe y no cambia. */}
 					<Button
 						variant="text"
 						color="neutral"
 						type="button"
 						fullWidth={false}
+						className="h-auto min-h-11 whitespace-normal md:min-h-10"
 						onClick={onOpenTutorial}
 					>
 						Cómo se juega

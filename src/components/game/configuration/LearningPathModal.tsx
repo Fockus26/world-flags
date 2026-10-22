@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Fieldset } from "@/components/ui/Fieldset";
 import { Modal } from "@/components/ui/Modal";
-import { ModalCloseButton } from "@/components/ui/ModalCloseButton";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { OptionTile } from "@/components/ui/OptionTile";
 import { GAME_TYPE_NOUNS, type GameType } from "@/types/country";
 import {
@@ -79,12 +79,11 @@ export function LearningPathModal({
 			ariaLabelledby="learning-path-title"
 			ariaDescribedby="learning-path-description"
 		>
-			<header className="mb-3 flex items-center justify-between gap-3">
-				<h2 id="learning-path-title" className="m-0">
-					Aprender por lotes
-				</h2>
-				<ModalCloseButton onClose={onClose} />
-			</header>
+			<ModalHeader
+				titleId="learning-path-title"
+				title="Aprender por lotes"
+				onClose={onClose}
+			/>
 
 			<p
 				id="learning-path-description"
