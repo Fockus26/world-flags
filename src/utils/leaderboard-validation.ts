@@ -8,9 +8,9 @@ import {
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 
 /**
- * Validación del ranking en el servidor (D112–D114, D211, D217, D221). La hace un
+ * Validación del ranking en el servidor (D112–D114, D211, D217, D221, D225). La hace un
  * trigger en `leaderboard_entries` (hoy, la migración
- * `supabase/migrations/20261022120000_leaderboard_nombre_invisible.sql`): este
+ * `supabase/migrations/20261023120000_leaderboard_invisibles_suplementarios.sql`): este
  * módulo guarda los números de los que sale ese SQL, para que un test los
  * compare con el catálogo, y el código con el que el trigger rechaza. El
  * cliente usa los mismos mínimos para no guardar como mejor marca un tiempo
@@ -83,9 +83,9 @@ export const LEADERBOARD_DISPLAY_NAME_MAX_LENGTH = 24;
  * pero en el ranking se ven como un hueco. Ancho cero y marcas de dirección,
  * rellenos Hangul, el braille en blanco, el separador mongol, los selectores de
  * variante y el guion blando (casi todo `Default_Ignorable_Code_Point` del
- * plano básico). Mezclados con letras sí valen: solo se rechaza un nombre hecho
+ * plano básico) y, desde D225, los de fuera del plano básico que se ven vacíos. Mezclados con letras sí valen: solo se rechaza un nombre hecho
  * únicamente de esto y de espacios. La migración
- * `20261022120000_leaderboard_nombre_invisible.sql` lleva la misma lista (un
+ * `20261023120000_leaderboard_invisibles_suplementarios.sql` lleva la misma lista (un
  * test las compara).
  */
 export const LEADERBOARD_INVISIBLE_CODE_POINTS: readonly number[] = [
@@ -106,6 +106,13 @@ export const LEADERBOARD_INVISIBLE_CODE_POINTS: readonly number[] = [
 	...range(0xfe00, 0xfe0f),
 	0xfeff,
 	0xffa0,
+	// Fuera del plano básico (D225): taquigrafía, formato musical, etiquetas y
+	// selectores de variante suplementarios.
+	...range(0x1bca0, 0x1bca3),
+	...range(0x1d173, 0x1d17a),
+	0xe0001,
+	...range(0xe0020, 0xe007f),
+	...range(0xe0100, 0xe01ef),
 ];
 
 function range(from: number, to: number): number[] {
