@@ -3,8 +3,14 @@
 > Liviano a propósito. La narrativa de lo cerrado vive en `PHASE_LOG/`.
 
 **Ola:** no se usan olas ahora (tandas sueltas). La próxima tanda cierra con `wave-qa` (kit 3.4.0).
-
 ## Estado actual
+
+**Tanda 2026-10-22 · ola 4 cerrada sin más QA (decisión del dueño, 2026-10-22).** #121–#124 mergeados (main aa56e9d); QA de cierre `plans/qa-tanda-2026-10-22.md` (6 medios, 5 bajos) → arreglos en ola 4b, PRs abiertos para el dueño: #126 (H, D225, none), #127 (G, D224, patch), #128 (E, D222, patch), #129 (F, D223, patch). Prompts: `plans/orquestacion-2026-10-22-prompts.md`. Slots wt1–wt4 ocupados hasta el merge (`wt free` tras mergear).
+**No se lanza otra wave-qa** tras el merge: los arreglos los cerró cada worker reproduciendo el hallazgo. Nuevo flujo de QA en `context/QA_LEDGER.md` (solo lo no verificado o lo cuyos archivos cambien) y KIT_FEEDBACK filas 37–41.
+**Acciones del dueño:** mergear #126–#129; tras #126, en producción `supabase/leaderboard-limpieza-d225.sql` (revisión → borrado) y `supabase db push` (también cubre D221 si no se aplicó; su limpieza: `leaderboard-limpieza-d221.sql`).
+**Sin verificar (no abre QA):** aviso de hidratación de React visto una vez en dev; palabras que no caben ni solas al 200 % a 320 sin diccionario de guiones (límite aceptado, D216/D220).
+
+
 
 **Tanda de cierre 2026-10-13** (`plans/tanda-2026-10-13-cierre.md`): C1–C4 hechas el 2026-10-19 en una sola sesión, sin workers (PC nueva: el kit no está instalado), ninguna verificada en navegador.
 
