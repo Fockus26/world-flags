@@ -116,6 +116,10 @@
 	--container-dialog-wide: min(34rem, 92vw);
 	--container-dialog-xl: min(58rem, 94vw);
 	--container-toast: min(22rem, calc(100vw - 1.5rem));
+	/* Alto máximo de la pila de avisos (D222): la pantalla menos el
+	   `pt-3` y el `pb-8` del contenedor (`box-content`), que dejan sitio a
+	   la sombra de las tarjetas. Lo que no cabe hace scroll dentro. */
+	--spacing-snackbars: calc(100dvh - 2.75rem);
 
 	/* Padding de los diálogos (D216): el `p-6` (1.5rem) de HeroUI, con
 	   tope en el 7.5 % del viewport. A tamaño normal no cambia nada desde

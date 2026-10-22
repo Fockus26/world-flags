@@ -9,6 +9,7 @@ import {
 } from "@/utils/daily-reminder-explanations";
 import { saveDailyReminderAnswer } from "@/utils/learning-storage";
 import { subscribeToDailyReminder } from "@/utils/push-notifications";
+import { SNACKBAR_TEXT } from "./snackbar-classes";
 
 type Status = "question" | "subscribing" | ExplainedDailyReminderResult;
 
@@ -120,12 +121,12 @@ export function DailyReminderSnackbar() {
 			ref={containerRef}
 			className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4"
 		>
-			<div className="flex items-start gap-3">
+			<div className="flex flex-wrap items-start gap-3">
 				<span className="shrink-0 text-heading leading-none" aria-hidden="true">
 					{explanation?.emoji ?? "🔔"}
 				</span>
 
-				<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+				<span className={SNACKBAR_TEXT}>
 					<strong className="text-body-sm text-surface-soft">
 						{explanation?.title ?? "¿Te aviso mañana para seguir tu racha?"}
 					</strong>

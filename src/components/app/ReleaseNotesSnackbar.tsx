@@ -1,7 +1,8 @@
 import { type FocusEvent, useRef, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { useReleaseNotes } from "@/hooks/useReleaseNotes";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
+import { SNACKBAR_TEXT } from "./snackbar-classes";
 
 /**
  * Aviso de que la app se actualizó en este dispositivo, con acceso a sus
@@ -66,30 +67,32 @@ export function ReleaseNotesSnackbar() {
 					ref={cardRef}
 					className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4"
 				>
-					<div className="flex items-start gap-3">
-						<span className="shrink-0 text-2xl leading-none" aria-hidden="true">
+					<div className="flex flex-wrap items-start gap-3">
+						<span
+							className="shrink-0 text-heading leading-none"
+							aria-hidden="true"
+						>
 							✨
 						</span>
 
-						<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
-							<strong className="text-sm text-surface-soft">
+						<span className={SNACKBAR_TEXT}>
+							<strong className="text-body-sm text-surface-soft">
 								Novedades de la versión {announcedRelease.version}
 							</strong>
-							<span className="text-xs text-text-placeholder">
+							<span className="text-caption text-text-placeholder">
 								La app se actualizó. Mira qué ha cambiado.
 							</span>
 						</span>
 					</div>
 
 					{/* Si no caben en una fila (texto al 200 % a 320 px, D216),
-					    "Ver novedades" baja a la siguiente. `flex-1` (base 0)
-					    en vez del ancho completo de `Button`: si no, cada botón
-					    ocuparía su propia fila siempre. */}
+					    "Ver novedades" baja a la siguiente, y si ni sola cabe
+					    parte su texto dentro del botón (D220, D222). */}
 					<div className="flex flex-wrap gap-2">
 						<Button
 							color="neutral"
 							variant="soft"
-							className="flex-1"
+							className={WRAPPING_BUTTON}
 							onFocus={rememberReturnFocus}
 							onClick={() => {
 								returnFocus();
@@ -100,7 +103,7 @@ export function ReleaseNotesSnackbar() {
 						</Button>
 						<Button
 							color="primary"
-							className="flex-1"
+							className={WRAPPING_BUTTON}
 							onFocus={rememberReturnFocus}
 							onClick={() => {
 								returnFocus();
