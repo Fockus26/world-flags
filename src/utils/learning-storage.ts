@@ -1687,7 +1687,12 @@ const VOLUNTARY_SIGN_OUT_STORAGE_KEY = "world-flags-voluntary-sign-out";
 /** Cierre de sesión pedido por el usuario en alguna pestaña (D219). */
 export interface VoluntarySignOutMark {
 	userId: string;
-	/** `Date.now()` al pedirlo: la marca caduca (`session-end.ts`). */
+	/**
+	 * `session_id` de la sesión que se pidió cerrar (D224), o `null` si no se
+	 * pudo leer del token (o la marca es de antes de D224).
+	 */
+	sessionId: string | null;
+	/** `Date.now()` al pedirlo (`session-end.ts`). */
 	at: number;
 }
 
@@ -1715,7 +1720,12 @@ export function getVoluntarySignOutMark(): VoluntarySignOutMark | null {
 		const parsed = JSON.parse(stored) as Partial<VoluntarySignOutMark> | null;
 
 		return typeof parsed?.userId === "string" && typeof parsed.at === "number"
-			? { userId: parsed.userId, at: parsed.at }
+			? {
+					userId: parsed.userId,
+					sessionId:
+						typeof parsed.sessionId === "string" ? parsed.sessionId : null,
+					at: parsed.at,
+				}
 			: null;
 	} catch {
 		return null;

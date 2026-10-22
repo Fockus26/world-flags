@@ -140,8 +140,9 @@ export function useAuth() {
 		// (D210), y las otras pestañas no suman a la cuenta lo que se juegue
 		// después como invitado (D219). `SIGNED_OUT` llega antes de que
 		// `signOut` resuelva; si no llegó (falló), la marca no debe quedar para
-		// un cierre posterior. La compartida caduca sola: las otras pestañas
-		// pueden leerla aún después de que esta resuelva.
+		// un cierre posterior. La compartida se queda: las otras pestañas
+		// pueden leerla mucho después (congeladas), y solo vale para la sesión
+		// que se cierra ahora (D224).
 		markVoluntarySignOut(user?.id ?? null);
 		const { error } = await supabase.auth.signOut();
 

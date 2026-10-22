@@ -32,10 +32,10 @@ import {
 import {
 	cancelVoluntarySignOut,
 	consumeVoluntarySignOut,
-	forgetVoluntarySignOut,
-	isRecentVoluntarySignOut,
+	isVoluntarySignOutOf,
 	markVoluntarySignOut,
-	VOLUNTARY_SIGN_OUT_TTL_MS,
+	rememberSession,
+	sessionIdFromAccessToken,
 	wasSignOutRequestedElsewhere,
 } from "@/utils/session-end";
 import {
@@ -403,18 +403,38 @@ describe("marca de cierre voluntario", () => {
 	});
 });
 
-describe("cierre pedido con otras pestañas abiertas (D219)", () => {
+describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 	const NOW = Date.parse("2026-10-22T10:00:00.000Z");
+	const HOUR = 60 * 60 * 1000;
+
+	/** Un token de acceso con su `session_id`, como los de Supabase (sin firma real). */
+	function accessToken(sessionId: string): string {
+		const encode = (value: object) =>
+			btoa(JSON.stringify(value))
+				.replace(/\+/g, "-")
+				.replace(/\//g, "_")
+				.replace(/=+$/, "");
+
+		return `${encode({ alg: "HS256" })}.${encode({ sub: "user-a", session_id: sessionId })}.firma`;
+	}
+
+	/** `AuthEffects` ve abrirse una sesión (cerrando antes la que hubiera). */
+	function openSession(userId: string, token: string | null, at: number) {
+		rememberSession(null, null, at);
+		rememberSession(userId, token, at);
+	}
 
 	/**
 	 * Lo que hace la pestaña que NO pidió el cierre al ver el `SIGNED_OUT`
-	 * (`GameEffects`): aparta lo suyo, con `guestFollows` según la marca.
+	 * (`AuthEffects` y luego `GameEffects`): aparta lo suyo, con
+	 * `guestFollows` según la marca.
 	 */
 	function otherTabSeesSignOut(
 		userId: string,
 		data: UserLearningData,
 		at: number,
 	) {
+		rememberSession(null, null, at);
 		savePendingAccountData(
 			userId,
 			data,
@@ -423,9 +443,23 @@ describe("cierre pedido con otras pestañas abiertas (D219)", () => {
 		);
 	}
 
-	test("la marca compartida se escribe antes del cierre y sobrevive a la de la pestaña", () => {
+	beforeEach(() => openSession("user-a", accessToken("s1"), NOW - HOUR));
+
+	test("sessionIdFromAccessToken lee el session_id y tolera tokens raros", () => {
+		assert.equal(sessionIdFromAccessToken(accessToken("s1")), "s1");
+		assert.equal(sessionIdFromAccessToken(null), null);
+		assert.equal(sessionIdFromAccessToken("sin-puntos"), null);
+		assert.equal(sessionIdFromAccessToken("a.%%%.c"), null);
+	});
+
+	test("la marca compartida se escribe antes del cierre, nombra la sesión y sobrevive a la de la pestaña", () => {
 		markVoluntarySignOut("user-a", NOW);
 
+		assert.deepEqual(getVoluntarySignOutMark(), {
+			userId: "user-a",
+			sessionId: "s1",
+			at: NOW,
+		});
 		// La pestaña que cerró consume solo la suya; las otras aún la leen.
 		assert.equal(consumeVoluntarySignOut(), true);
 		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 500), true);
@@ -466,13 +500,41 @@ describe("cierre pedido con otras pestañas abiertas (D219)", () => {
 		assert.equal(getLearningData().countryHistory.ca, undefined);
 	});
 
-	test("caducada, la marca no convierte en pedido un cierre involuntario posterior", () => {
+	test("una pestaña congelada que procesa el cierre horas después tampoco suma lo del invitado", () => {
 		const base = sharedData();
 
 		markVoluntarySignOut("user-a", NOW);
 		consumeVoluntarySignOut();
+		detachGuestFromPendingAccount();
 
-		otherTabSeesSignOut("user-a", base, NOW + VOLUNTARY_SIGN_OUT_TTL_MS + 1);
+		otherTabSeesSignOut("user-a", base, NOW + 3 * HOUR);
+
+		saveReviewResult(createDefaultLearningData(), "ca", "good");
+		const result = restorePendingAccountData("user-a");
+
+		assert.notEqual(result.discardedGuest, null);
+		assert.equal(getLearningData().countryHistory.ca, undefined);
+	});
+
+	test("congelada mientras se vuelve a entrar: el SIGNED_OUT atrasado sigue siendo el pedido", () => {
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+
+		// La otra pestaña vuelve a entrar (sesión s2) y no borra la marca; la
+		// congelada aún recuerda s1 y procesa su `SIGNED_OUT` al despertar.
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR), true);
+	});
+
+	test("un cierre involuntario de una sesión posterior no hereda la marca", () => {
+		const base = sharedData();
+
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+		rememberSession(null, null, NOW + 100);
+
+		// Se vuelve a entrar (otra sesión) y, días después, el token se rechaza.
+		openSession("user-a", accessToken("s2"), NOW + HOUR);
+		otherTabSeesSignOut("user-a", base, NOW + 72 * HOUR);
 
 		saveReviewResult(createDefaultLearningData(), "ca", "good");
 		const result = restorePendingAccountData("user-a");
@@ -481,38 +543,102 @@ describe("cierre pedido con otras pestañas abiertas (D219)", () => {
 		assert.ok(getLearningData().countryHistory.ca);
 	});
 
-	test("isRecentVoluntarySignOut: otra cuenta, sin marca, caducada o del futuro no cuentan", () => {
-		const mark = { userId: "user-a", at: NOW };
+	test("refrescar el token no cambia de sesión", () => {
+		markVoluntarySignOut("user-a", NOW);
+		rememberSession("user-a", accessToken("s1"), NOW + 30_000);
 
-		assert.equal(isRecentVoluntarySignOut(mark, "user-a", NOW), true);
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 60_000), true);
+	});
+
+	test("isVoluntarySignOutOf: misma sesión sí; otra sesión, otra cuenta o sin marca, no", () => {
+		const mark = { userId: "user-a", sessionId: "s1", at: NOW };
+		const ended = {
+			userId: "user-a",
+			sessionId: "s1",
+			since: NOW - HOUR,
+			open: false,
+		};
+
+		assert.equal(isVoluntarySignOutOf(mark, ended, "user-a", NOW), true);
 		assert.equal(
-			isRecentVoluntarySignOut(mark, "user-a", NOW + VOLUNTARY_SIGN_OUT_TTL_MS),
+			isVoluntarySignOutOf(mark, ended, "user-a", NOW + 24 * HOUR),
 			true,
 		);
 		assert.equal(
-			isRecentVoluntarySignOut(
-				mark,
+			isVoluntarySignOutOf(mark, { ...ended, sessionId: "s2" }, "user-a", NOW),
+			false,
+		);
+		assert.equal(isVoluntarySignOutOf(mark, ended, "user-b", NOW), false);
+		assert.equal(
+			isVoluntarySignOutOf(
+				{ ...mark, userId: "user-b" },
+				{ ...ended, userId: "user-b" },
 				"user-a",
-				NOW + VOLUNTARY_SIGN_OUT_TTL_MS + 1,
+				NOW,
 			),
 			false,
 		);
-		assert.equal(isRecentVoluntarySignOut(mark, "user-b", NOW), false);
-		assert.equal(isRecentVoluntarySignOut(null, "user-a", NOW), false);
-		assert.equal(isRecentVoluntarySignOut(mark, "user-a", NOW - 1), false);
+		assert.equal(isVoluntarySignOutOf(null, ended, "user-a", NOW), false);
+		assert.equal(isVoluntarySignOutOf(mark, null, "user-a", NOW), false);
 	});
 
-	test("si signOut falla, o alguien vuelve a entrar, la marca desaparece", () => {
+	test("isVoluntarySignOutOf sin session_id: compara con el instante de la sesión", () => {
+		const mark = { userId: "user-a", sessionId: null, at: NOW };
+		const ended = {
+			userId: "user-a",
+			sessionId: null,
+			since: NOW - HOUR,
+			open: false,
+		};
+
+		assert.equal(
+			isVoluntarySignOutOf(mark, ended, "user-a", NOW + 24 * HOUR),
+			true,
+		);
+		// Sesión que empezó después de la marca: es otra, no la hereda.
+		assert.equal(
+			isVoluntarySignOutOf(
+				mark,
+				{ ...ended, since: NOW + 1 },
+				"user-a",
+				NOW + HOUR,
+			),
+			false,
+		);
+		// Marca del futuro (reloj cambiado): no cuenta.
+		assert.equal(isVoluntarySignOutOf(mark, ended, "user-a", NOW - 1), false);
+	});
+
+	test("sin session_id, volver a entrar con la misma cuenta abre otra sesión", () => {
+		openSession("user-a", null, NOW - HOUR);
+		markVoluntarySignOut("user-a", NOW);
+		rememberSession(null, null, NOW + 10);
+		rememberSession("user-a", null, NOW + HOUR);
+
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR), false);
+	});
+
+	test("una marca de antes de D224 (sin sessionId) se lee con sessionId null", () => {
+		storage.setItem(
+			"world-flags-voluntary-sign-out",
+			JSON.stringify({ userId: "user-a", at: NOW }),
+		);
+
+		assert.deepEqual(getVoluntarySignOutMark(), {
+			userId: "user-a",
+			sessionId: null,
+			at: NOW,
+		});
+		// La sesión empezó antes: cuenta por el instante.
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 1), true);
+	});
+
+	test("si signOut falla, la marca desaparece", () => {
 		markVoluntarySignOut("user-a", NOW);
 		cancelVoluntarySignOut();
 
 		assert.equal(consumeVoluntarySignOut(), false);
 		assert.equal(getVoluntarySignOutMark(), null);
-
-		markVoluntarySignOut("user-a", NOW);
-		consumeVoluntarySignOut();
-		forgetVoluntarySignOut();
-
 		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 1), false);
 	});
 
