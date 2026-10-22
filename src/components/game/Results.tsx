@@ -1,6 +1,6 @@
 import { Trophy } from "iconoir-react";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useGame } from "@/hooks/useGame";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,9 +19,13 @@ import { RecordConfetti } from "./RecordConfetti";
 // El titular de cada variante (solo se monta una). `tabIndex={-1}`: al
 // aparecer Resultados el foco va aquí; si no, se quedaba en `<body>` porque lo
 // de detrás pasa a `inert` (P51).
+// `max-w-full hyphens-auto wrap-anywhere`: con el texto al 200 % a 320 px
+// (D220) "¡Completado!" no cabe ni sola y la tarjeta (`overflow-hidden`) la
+// recortaba; ahora parte con guion donde el navegador sabe y, si no, por donde
+// llegue. A tamaño normal cabe y no cambia.
 const RESULTS_TITLE_ID = "results-title";
 const RESULTS_TITLE_CLASS =
-	"my-[0.35rem] mb-2 text-heading-sm leading-[1.08] text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft sm:text-stat";
+	"my-[0.35rem] mb-2 max-w-full hyphens-auto wrap-anywhere text-heading-sm leading-[1.08] text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft sm:text-stat";
 
 /**
  * Número de Resultados que cuenta de 0 a `value` (D154). Lo que se ve está
@@ -259,15 +263,26 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 			    (`AchievementToasts`, montado en `FlagGame`) en el momento en que
 			    se desbloquean, incluso a mitad de partida. */}
 
-			<div
-				className={`mt-6 grid w-full max-w-md gap-3 sm:mt-8 ${canRestart ? "grid-cols-2" : "grid-cols-1"}`}
-			>
-				<Button color="neutral" type="button" onClick={onExit}>
+			{/* Fila `flex-wrap` (D220): si los dos no caben (texto al 200 % a
+			    320 px), el segundo baja de línea; a tamaño normal se reparten a
+			    partes iguales, como la rejilla de dos columnas de antes. */}
+			<div className="mt-6 flex w-full max-w-md flex-wrap gap-3 sm:mt-8">
+				<Button
+					color="neutral"
+					type="button"
+					className={WRAPPING_BUTTON}
+					onClick={onExit}
+				>
 					Volver al inicio
 				</Button>
 
 				{canRestart && (
-					<Button color="primary" type="button" onClick={onRestart}>
+					<Button
+						color="primary"
+						type="button"
+						className={WRAPPING_BUTTON}
+						onClick={onRestart}
+					>
 						{learningPath
 							? `Seguir aprendiendo (${learningPathTodayCount})`
 							: "Repetir práctica"}
