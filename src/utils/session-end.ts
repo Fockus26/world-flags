@@ -27,11 +27,15 @@ export interface SeenSession {
 	open: boolean;
 }
 
-/**
- * Se conserva tras el `SIGNED_OUT`: `GameEffects` aparta después, en un
- * efecto, y necesita saber qué sesión se cerró.
- */
 let lastSession: SeenSession | null = null;
+
+/**
+ * La última sesión que se cerró aquí. `GameEffects` aparta después, en un
+ * efecto, y necesita saber cuál fue; aparte de `lastSession` porque una
+ * pestaña congelada puede procesar el `SIGNED_IN` siguiente antes de que
+ * ese efecto corra (D224).
+ */
+let lastEnded: SeenSession | null = null;
 
 /**
  * `session_id` del JWT de acceso de Supabase, o `null` si no se puede leer.
@@ -69,7 +73,10 @@ export function rememberSession(
 	now: number = Date.now(),
 ): void {
 	if (!userId) {
-		if (lastSession) lastSession = { ...lastSession, open: false };
+		if (lastSession?.open) {
+			lastSession = { ...lastSession, open: false };
+			lastEnded = lastSession;
+		}
 		return;
 	}
 
@@ -159,7 +166,7 @@ export function wasSignOutRequestedElsewhere(
 ): boolean {
 	return isVoluntarySignOutOf(
 		getVoluntarySignOutMark(),
-		lastSession,
+		lastEnded,
 		userId,
 		now,
 	);

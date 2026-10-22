@@ -443,6 +443,12 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		);
 	}
 
+	/** Esta pestaña ve el `SIGNED_OUT` y pregunta si se pidió en otra. */
+	function endedElsewhere(at: number) {
+		rememberSession(null, null, at);
+		return wasSignOutRequestedElsewhere("user-a", at);
+	}
+
 	beforeEach(() => openSession("user-a", accessToken("s1"), NOW - HOUR));
 
 	test("sessionIdFromAccessToken lee el session_id y tolera tokens raros", () => {
@@ -462,7 +468,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		});
 		// La pestaña que cerró consume solo la suya; las otras aún la leen.
 		assert.equal(consumeVoluntarySignOut(), true);
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 500), true);
+		assert.equal(endedElsewhere(NOW + 500), true);
 	});
 
 	test("la otra pestaña aparta sin sumar lo del invitado, aunque escriba después del detach", () => {
@@ -522,7 +528,24 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 
 		// La otra pestaña vuelve a entrar (sesión s2) y no borra la marca; la
 		// congelada aún recuerda s1 y procesa su `SIGNED_OUT` al despertar.
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR), true);
+		assert.equal(endedElsewhere(NOW + 2 * HOUR), true);
+	});
+
+	test("congelada: SIGNED_OUT y SIGNED_IN seguidos antes de que GameEffects aparte", () => {
+		// Al despertar, `AuthEffects` procesa los dos eventos atrasados (el
+		// cierre pedido en otra pestaña y la nueva entrada, sesión s2) antes
+		// de que corra el efecto de `GameEffects` que aparta: la sesión que
+		// cuenta es la que se cerró, no la que acaba de abrirse.
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+
+		rememberSession(null, null, NOW + 2 * HOUR);
+		rememberSession("user-a", accessToken("s2"), NOW + 2 * HOUR);
+
+		assert.equal(
+			wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR + 10),
+			true,
+		);
 	});
 
 	test("un cierre involuntario de una sesión posterior no hereda la marca", () => {
@@ -547,7 +570,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		markVoluntarySignOut("user-a", NOW);
 		rememberSession("user-a", accessToken("s1"), NOW + 30_000);
 
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 60_000), true);
+		assert.equal(endedElsewhere(NOW + 60_000), true);
 	});
 
 	test("isVoluntarySignOutOf: misma sesión sí; otra sesión, otra cuenta o sin marca, no", () => {
@@ -615,7 +638,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		rememberSession(null, null, NOW + 10);
 		rememberSession("user-a", null, NOW + HOUR);
 
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR), false);
+		assert.equal(endedElsewhere(NOW + 2 * HOUR), false);
 	});
 
 	test("una marca de antes de D224 (sin sessionId) se lee con sessionId null", () => {
@@ -630,7 +653,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 			at: NOW,
 		});
 		// La sesión empezó antes: cuenta por el instante.
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 1), true);
+		assert.equal(endedElsewhere(NOW + 1), true);
 	});
 
 	test("si signOut falla, la marca desaparece", () => {
@@ -639,13 +662,13 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 
 		assert.equal(consumeVoluntarySignOut(), false);
 		assert.equal(getVoluntarySignOutMark(), null);
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 1), false);
+		assert.equal(endedElsewhere(NOW + 1), false);
 	});
 
 	test("una marca corrupta se ignora", () => {
 		storage.setItem("world-flags-voluntary-sign-out", "{no es json");
 
 		assert.equal(getVoluntarySignOutMark(), null);
-		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW), false);
+		assert.equal(endedElsewhere(NOW), false);
 	});
 });
