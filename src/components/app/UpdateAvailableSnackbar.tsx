@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 
 /**
@@ -37,11 +37,21 @@ export function UpdateAvailableSnackbar({
 				</span>
 			</div>
 
-			<div className="flex gap-2">
-				<Button color="neutral" variant="soft" onClick={onDismiss}>
+			{/* Si no caben en una fila (texto al 200 %), "Actualizar" baja (D220). */}
+			<div className="flex flex-wrap gap-2">
+				<Button
+					color="neutral"
+					variant="soft"
+					className={WRAPPING_BUTTON}
+					onClick={onDismiss}
+				>
 					Ahora no
 				</Button>
-				<Button color="primary" onClick={applyUpdate}>
+				<Button
+					color="primary"
+					className={WRAPPING_BUTTON}
+					onClick={applyUpdate}
+				>
 					Actualizar
 				</Button>
 			</div>

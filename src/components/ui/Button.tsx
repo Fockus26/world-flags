@@ -178,6 +178,20 @@ function colorVars(color: ButtonColor, variant: ButtonVariant): CSSProperties {
  *   texto pasa a `--btn-contained-fg` (blanco/negro según tema) para no
  *   quedar oscuro-sobre-color.
  */
+/**
+ * Para los botones de una fila `flex flex-wrap` (D220). `flex-1` (base 0) en
+ * vez del ancho completo, que pondría cada botón en su propia fila siempre;
+ * `min-w-fit`, para que la fila se parta cuando los textos enteros no caben
+ * juntos (y no antes: a tamaño normal se reparten igual que hasta ahora); y
+ * `whitespace-normal` con alto mínimo (el `h-11 md:h-10` de HeroUI), para
+ * que un botón que ni solo cabe (texto al 200 % a 320 px) parta su texto en
+ * vez de salirse. Si ni su palabra más larga cabe ("igualmente" con su
+ * padding), la parte con guion donde el navegador sabe (`hyphens-auto`) y, si
+ * no, por donde llegue (`wrap-anywhere`): mejor eso que recortar el botón.
+ */
+export const WRAPPING_BUTTON =
+	"h-auto min-h-11 min-w-fit flex-1 whitespace-normal text-center hyphens-auto wrap-anywhere md:min-h-10";
+
 // Foco de teclado = mismo aspecto que el hover: se pinta `--button-bg-hover`.
 // El `!` es imprescindible porque `--button-*` se fija con `style` inline en
 // el componente y sin `!important` una clase no lo puede pisar.

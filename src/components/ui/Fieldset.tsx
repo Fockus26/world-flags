@@ -7,7 +7,9 @@ interface FieldsetProps {
 	className?: string;
 }
 
-const fieldsetClass = "m-0 flex flex-col gap-2 border-0 p-0";
+// `min-w-0`: el `fieldset` trae `min-inline-size: min-content` y se ensancharía
+// con su contenido más ancho en vez de ceñirse al panel (texto al 200 %, D220).
+const fieldsetClass = "m-0 flex min-w-0 flex-col gap-2 border-0 p-0";
 
 const legendClass = "mb-2 p-0 text-sm font-bold text-surface-soft";
 

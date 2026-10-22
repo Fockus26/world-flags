@@ -1,6 +1,6 @@
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
@@ -248,7 +248,10 @@ export function AuthSection() {
 		return (
 			<div className="flex flex-col gap-3 animate-in fade-in-0 zoom-in-95 duration-300">
 				<p ref={signedInRef} tabIndex={-1} className="m-0 text-label">
-					Sesión iniciada como <strong>{user?.email}</strong>
+					{/* Un correo no tiene espacios: si no cabe, parte por cualquier
+					    letra en vez de salirse del panel, que lo recorta (D220). */}
+					Sesión iniciada como{" "}
+					<strong className="wrap-anywhere">{user?.email}</strong>
 				</p>
 
 				{signOutStep === "saving" && (
@@ -271,13 +274,17 @@ export function AuthSection() {
 				)}
 
 				{/* El botón de cerrar sesión no se desmonta ni se deshabilita al
-				    pasar por los avisos: así el foco de teclado no se pierde. */}
-				<div className="flex gap-2">
+				    pasar por los avisos: así el foco de teclado no se pierde.
+				    Si no caben en una fila (320–390 px, o texto al 200 %), el
+				    segundo baja de línea; uno que ni solo cabe parte su texto
+				    (D220). */}
+				<div className="flex flex-wrap gap-2">
 					{signOutStep === "confirm" && (
 						<Button
 							color="neutral"
 							variant="soft"
 							type="button"
+							className={WRAPPING_BUTTON}
 							onClick={() => setSignOutStep("idle")}
 						>
 							Cancelar
@@ -286,6 +293,7 @@ export function AuthSection() {
 					<Button
 						color="danger"
 						type="button"
+						className={WRAPPING_BUTTON}
 						onClick={handleSignOut}
 						aria-describedby={
 							signOutStep === "idle" ? undefined : "sign-out-status"

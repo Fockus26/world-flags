@@ -174,10 +174,14 @@ export function RegionOption({
 					min-[44rem]:px-3
 				"
 			>
+				{/* El nombre no se recorta (D220): si no cabe entero al lado de la
+				    nota y la casilla (320 px, o texto al 200 %), esas bajan a una
+				    segunda línea, a la derecha; un nombre que ni solo cabe parte. */}
 				<span
 					className="
 						flex
 						min-w-0
+						flex-wrap
 						items-center
 						justify-between
 						gap-2
@@ -186,9 +190,7 @@ export function RegionOption({
 					<span
 						className="
 							min-w-0
-							overflow-hidden
-							text-ellipsis
-							whitespace-nowrap
+							break-words
 							text-label
 							font-extrabold
 							min-[44rem]:text-body-sm
@@ -197,7 +199,7 @@ export function RegionOption({
 						{label}
 					</span>
 
-					<span className="flex shrink-0 items-center gap-1.5">
+					<span className="ml-auto flex shrink-0 items-center gap-1.5">
 						{isLoading && (
 							<Skeleton shape="line" className="text-xs font-black">
 								{SCORE_SIZING_SAMPLE}

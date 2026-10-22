@@ -261,8 +261,12 @@ export function CountryPickerModal({
 				onClose={onClose}
 			/>
 
-			<div className="mt-0 mb-3 flex items-start justify-between gap-3">
-				<p className="text-label text-text-placeholder">
+			{/* Con el texto al 200 % a 320 px (D220) "Limpiar todo" no cabe al
+			    lado del texto y baja de línea, a la derecha. Igual que en
+			    `ModalHeader` (D216): el texto entra con su palabra más larga y
+			    crece hasta llenar la fila, así que a tamaño normal no cambia. */}
+			<div className="mt-0 mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+				<p className="min-w-0 max-w-max grow basis-[min-content] text-label text-text-placeholder">
 					Elige los países que quieres practicar. Cuentan como práctica solo
 					ellos, no todo el continente. Los ya practicados hoy aparecen
 					bloqueados.
@@ -271,7 +275,7 @@ export function CountryPickerModal({
 					<button
 						type="button"
 						onClick={clearAll}
-						className="shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-caption font-bold text-secondary-hover underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
+						className="ml-auto shrink-0 cursor-pointer whitespace-nowrap rounded-sm px-1 text-caption font-bold text-secondary-hover underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-hover"
 					>
 						Limpiar todo ({selectedCatalogCount})
 					</button>
@@ -298,19 +302,24 @@ export function CountryPickerModal({
 							    izquierdo hasta "Ninguno"/"Todos"), y estos también llegan
 							    de arriba abajo. 44 px en móvil. El anillo de foco va por
 							    dentro (`-outline-offset-2`): la sección recorta lo que
-							    sale de su borde. */}
-							<div className="flex items-stretch bg-surface-hover">
+							    sale de su borde.
+							    El nombre del continente no se recorta (D220): si no cabe
+							    entero al lado de "Ninguno"/"Todos" (320 px, o texto al
+							    200 %), esos bajan a una segunda línea, a la derecha. El
+							    botón entra con su ancho en una línea (`basis-auto`) y
+							    crece; un nombre que ni solo cabe parte. */}
+							<div className="flex flex-wrap items-stretch bg-surface-hover">
 								<button
 									type="button"
 									onClick={() => toggleRegionExpanded(region)}
 									aria-expanded={isExpanded}
-									className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent py-2 pr-2 pl-2.5 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-surface-soft sm:min-h-9"
+									className="flex min-h-11 min-w-0 grow basis-auto cursor-pointer items-center gap-2 border-0 bg-transparent py-2 pr-2 pl-2.5 text-left transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-surface-soft sm:min-h-9"
 								>
 									<NavArrowDown
 										className={`size-4 shrink-0 text-text-placeholder transition-transform duration-150 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
 										aria-hidden="true"
 									/>
-									<span className="truncate text-label font-extrabold text-surface-soft">
+									<span className="min-w-0 break-words text-label font-extrabold text-surface-soft">
 										{REGION_LABELS[region]}
 									</span>
 									{/* Nombre desde el contenido, sin `aria-label` (WCAG 2.5.3):
@@ -332,7 +341,7 @@ export function CountryPickerModal({
 											: `, ${regionCodes.length} países`}
 									</span>
 								</button>
-								<div className="flex shrink-0 items-stretch">
+								<div className="ml-auto flex shrink-0 items-stretch">
 									{selectedCount > 0 && (
 										<RegionBulkButton
 											label="Ninguno"

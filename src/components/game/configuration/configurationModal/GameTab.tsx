@@ -77,9 +77,12 @@ export function GameTab({
 
 	return (
 		<div className="flex flex-col gap-5">
+			{/* Leyendas con "?" (`HelpHint`) en `flex-wrap`: con el texto al
+			    200 % a 320 px (D220) el "?" baja de línea en vez de ensanchar el
+			    `fieldset` y salirse del panel, que lo recorta. */}
 			<Fieldset
 				legend={
-					<span className="inline-flex items-center gap-2">
+					<span className="inline-flex flex-wrap items-center gap-2">
 						Modo de juego
 						{/* "Cada respuesta" vale para los tres juegos; el castigo no sale en Países (D075: su rush no tiene). */}
 						<HelpHint
@@ -147,7 +150,9 @@ export function GameTab({
 						</div>
 
 						<AutoHeight show={timerEnabled} className="mt-1.5">
-							<div className="flex gap-2">
+							{/* Si no caben en una fila (texto al 200 %, D220), bajan
+							    de línea: cada una ocupa al menos su texto. */}
+							<div className="flex flex-wrap gap-2 [&>label]:min-w-fit [&>label]:flex-1">
 								{TIMER_DURATIONS.map((duration) => (
 									<OptionTile
 										key={duration}
@@ -165,7 +170,7 @@ export function GameTab({
 
 					<Fieldset
 						legend={
-							<span className="inline-flex items-center gap-2">
+							<span className="inline-flex flex-wrap items-center gap-2">
 								Dificultad
 								<HelpHint label="Fácil: acepta respuestas sin acentos (ej. 'mexico'). Difícil: exige los acentos exactos (ej. 'méxico')." />
 							</span>
@@ -227,7 +232,7 @@ export function GameTab({
 
 			<Fieldset
 				legend={
-					<span className="inline-flex items-center gap-2">
+					<span className="inline-flex flex-wrap items-center gap-2">
 						Notificaciones
 						<HelpHint label="Un recordatorio diario para seguir tu racha, a la hora en que lo activas. Vale solo para este dispositivo." />
 					</span>
