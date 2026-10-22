@@ -1,6 +1,7 @@
 import { type FocusEvent, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { SNACKBAR_TEXT } from "./snackbar-classes";
 
 /**
  * Aviso de que lo jugado como invitado no pasó a la cuenta (D212): al entrar
@@ -40,12 +41,12 @@ export function GuestProgressDiscardedSnackbar() {
 
 	return (
 		<div className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4">
-			<div className="flex items-start gap-3">
+			<div className="flex flex-wrap items-start gap-3">
 				<span className="shrink-0 text-heading leading-none" aria-hidden="true">
 					☁️
 				</span>
 
-				<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+				<span className={SNACKBAR_TEXT}>
 					<strong className="text-body-sm text-surface-soft">
 						Se cargó el progreso de tu cuenta
 					</strong>

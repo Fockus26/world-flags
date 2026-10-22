@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { SNACKBAR_TEXT } from "./snackbar-classes";
 
 /**
  * Un corte breve (ascensor, túnel) no merece aviso: solo se muestra si dura
@@ -89,7 +90,7 @@ export function ConnectivitySnackbar() {
 
 		return (
 			<div className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4">
-				<div className="flex items-start gap-3">
+				<div className="flex flex-wrap items-start gap-3">
 					<span
 						className="shrink-0 text-heading leading-none"
 						aria-hidden="true"
@@ -97,7 +98,7 @@ export function ConnectivitySnackbar() {
 						{isOffline ? "📡" : "⚠️"}
 					</span>
 
-					<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+					<span className={SNACKBAR_TEXT}>
 						<strong className="text-body-sm text-surface-soft">
 							{isOffline ? "Sin conexión" : "No se pudo sincronizar"}
 						</strong>
@@ -127,12 +128,12 @@ export function ConnectivitySnackbar() {
 
 	if (showReconnected) {
 		return (
-			<div className="pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-[color-mix(in_oklab,var(--success)_45%,transparent)] bg-success-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4">
+			<div className="pointer-events-auto flex w-full flex-wrap items-start gap-3 rounded-lg border border-[color-mix(in_oklab,var(--success)_45%,transparent)] bg-success-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4">
 				<span className="shrink-0 text-heading leading-none" aria-hidden="true">
 					✅
 				</span>
 
-				<span className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+				<span className={SNACKBAR_TEXT}>
 					<strong className="text-body-sm text-surface-soft">
 						{isAuthenticated ? "Progreso sincronizado" : "Conexión recuperada"}
 					</strong>
@@ -143,9 +144,11 @@ export function ConnectivitySnackbar() {
 					</span>
 				</span>
 
+				{/* Si el texto baja bajo el emoji (D222), la X baja tras él a
+				    la derecha. */}
 				<button
 					type="button"
-					className="shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-1 text-text-placeholder transition-colors duration-150 hover:text-surface-soft focus-visible:text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
+					className="ml-auto shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-1 text-text-placeholder transition-colors duration-150 hover:text-surface-soft focus-visible:text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
 					aria-label="Descartar aviso de conexión"
 					onClick={() => setShowReconnected(false)}
 				>
