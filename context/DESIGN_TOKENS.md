@@ -58,6 +58,13 @@ de HeroUI necesitan `max-w-none`.
 `ConfigurationModal` y `ReleaseNotesModal` pedían 30 y 32rem, pero el `max-w-md` de
 HeroUI los dejaba en 28rem: el token es el ancho que se veía.
 
+**Padding de diálogo (D216):** `--spacing-dialog-inset: min(1.5rem, 7.5vw)`, aplicado a
+`.modal__dialog` en `global.css` (capa `components`, detrás del `p-6` de HeroUI; el
+padding que un diálogo pase por `className` sigue mandando). Desde 320 px con letra
+normal es el mismo 1.5rem; con el texto al 200 % a 320 px deja 24 px por lado en vez
+de 48. No se llama `--spacing-dialog`: Tailwind resolvería `w-dialog` en `--spacing-*`
+antes que en `--container-*` y pisaría el ancho.
+
 Sin `min-width` en `html`: en rem crece con la letra del navegador y con el texto al
 200 % deja la página más ancha que el viewport (D213). Las rejillas que contienen un
 campo de texto llevan `grid-cols-1` (`minmax(0,1fr)`): con la columna implícita
