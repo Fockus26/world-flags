@@ -20,6 +20,7 @@ import {
 	detachGuestFromPendingAccount,
 	getLearningData,
 	getSyncBase,
+	getVoluntarySignOutMark,
 	registerRegionGame,
 	restorePendingAccountData,
 	saveLearningData,
@@ -29,8 +30,13 @@ import {
 	updateLastConfiguration,
 } from "@/utils/learning-storage";
 import {
+	cancelVoluntarySignOut,
 	consumeVoluntarySignOut,
+	forgetVoluntarySignOut,
+	isRecentVoluntarySignOut,
 	markVoluntarySignOut,
+	VOLUNTARY_SIGN_OUT_TTL_MS,
+	wasSignOutRequestedElsewhere,
 } from "@/utils/session-end";
 import {
 	MAX_SYNC_ATTEMPTS,
@@ -390,9 +396,130 @@ describe("marca de cierre voluntario", () => {
 	test("vale para un solo cierre", () => {
 		assert.equal(consumeVoluntarySignOut(), false);
 
-		markVoluntarySignOut();
+		markVoluntarySignOut(null);
 
 		assert.equal(consumeVoluntarySignOut(), true);
 		assert.equal(consumeVoluntarySignOut(), false);
+	});
+});
+
+describe("cierre pedido con otras pestañas abiertas (D219)", () => {
+	const NOW = Date.parse("2026-10-22T10:00:00.000Z");
+
+	/**
+	 * Lo que hace la pestaña que NO pidió el cierre al ver el `SIGNED_OUT`
+	 * (`GameEffects`): aparta lo suyo, con `guestFollows` según la marca.
+	 */
+	function otherTabSeesSignOut(
+		userId: string,
+		data: UserLearningData,
+		at: number,
+	) {
+		savePendingAccountData(
+			userId,
+			data,
+			data,
+			!wasSignOutRequestedElsewhere(userId, at),
+		);
+	}
+
+	test("la marca compartida se escribe antes del cierre y sobrevive a la de la pestaña", () => {
+		markVoluntarySignOut("user-a", NOW);
+
+		// La pestaña que cerró consume solo la suya; las otras aún la leen.
+		assert.equal(consumeVoluntarySignOut(), true);
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 500), true);
+	});
+
+	test("la otra pestaña aparta sin sumar lo del invitado, aunque escriba después del detach", () => {
+		const base = sharedData();
+
+		// Pestaña 2 pide el cierre: marca y, al ver su `SIGNED_OUT`, detach.
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+		detachGuestFromPendingAccount();
+
+		// Pestaña 1 ve el cierre como ajeno y aparta después (la carrera del QA).
+		otherTabSeesSignOut("user-a", base, NOW + 200);
+
+		// Se juega como invitado y se vuelve a entrar con la misma cuenta.
+		const guest = saveReviewResult(createDefaultLearningData(), "ca", "good");
+		const result = restorePendingAccountData("user-a");
+
+		assert.equal(result.restored, true);
+		assert.equal(JSON.stringify(result.discardedGuest), JSON.stringify(guest));
+		assert.equal(getLearningData().countryHistory.ca, undefined);
+	});
+
+	test("si la otra pestaña aparta antes del detach, el resultado es el mismo", () => {
+		const base = sharedData();
+
+		markVoluntarySignOut("user-a", NOW);
+		otherTabSeesSignOut("user-a", base, NOW + 50);
+		consumeVoluntarySignOut();
+		detachGuestFromPendingAccount();
+
+		saveReviewResult(createDefaultLearningData(), "ca", "good");
+		const result = restorePendingAccountData("user-a");
+
+		assert.notEqual(result.discardedGuest, null);
+		assert.equal(getLearningData().countryHistory.ca, undefined);
+	});
+
+	test("caducada, la marca no convierte en pedido un cierre involuntario posterior", () => {
+		const base = sharedData();
+
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+
+		otherTabSeesSignOut("user-a", base, NOW + VOLUNTARY_SIGN_OUT_TTL_MS + 1);
+
+		saveReviewResult(createDefaultLearningData(), "ca", "good");
+		const result = restorePendingAccountData("user-a");
+
+		assert.equal(result.discardedGuest, null);
+		assert.ok(getLearningData().countryHistory.ca);
+	});
+
+	test("isRecentVoluntarySignOut: otra cuenta, sin marca, caducada o del futuro no cuentan", () => {
+		const mark = { userId: "user-a", at: NOW };
+
+		assert.equal(isRecentVoluntarySignOut(mark, "user-a", NOW), true);
+		assert.equal(
+			isRecentVoluntarySignOut(mark, "user-a", NOW + VOLUNTARY_SIGN_OUT_TTL_MS),
+			true,
+		);
+		assert.equal(
+			isRecentVoluntarySignOut(
+				mark,
+				"user-a",
+				NOW + VOLUNTARY_SIGN_OUT_TTL_MS + 1,
+			),
+			false,
+		);
+		assert.equal(isRecentVoluntarySignOut(mark, "user-b", NOW), false);
+		assert.equal(isRecentVoluntarySignOut(null, "user-a", NOW), false);
+		assert.equal(isRecentVoluntarySignOut(mark, "user-a", NOW - 1), false);
+	});
+
+	test("si signOut falla, o alguien vuelve a entrar, la marca desaparece", () => {
+		markVoluntarySignOut("user-a", NOW);
+		cancelVoluntarySignOut();
+
+		assert.equal(consumeVoluntarySignOut(), false);
+		assert.equal(getVoluntarySignOutMark(), null);
+
+		markVoluntarySignOut("user-a", NOW);
+		consumeVoluntarySignOut();
+		forgetVoluntarySignOut();
+
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW + 1), false);
+	});
+
+	test("una marca corrupta se ignora", () => {
+		storage.setItem("world-flags-voluntary-sign-out", "{no es json");
+
+		assert.equal(getVoluntarySignOutMark(), null);
+		assert.equal(wasSignOutRequestedElsewhere("user-a", NOW), false);
 	});
 });

@@ -11,6 +11,7 @@ import {
 	isExistingAccountError,
 } from "@/utils/auth-errors";
 import {
+	cancelVoluntarySignOut,
 	consumeVoluntarySignOut,
 	markVoluntarySignOut,
 } from "@/utils/session-end";
@@ -136,11 +137,19 @@ export function useAuth() {
 
 	const signOut = async () => {
 		// Este cierre lo pidió el usuario: sin aviso de "se cerró tu sesión"
-		// (D210). `SIGNED_OUT` llega antes de que `signOut` resuelva; si no
-		// llegó (falló), la marca no debe quedar para un cierre posterior.
-		markVoluntarySignOut();
-		await supabase.auth.signOut();
-		consumeVoluntarySignOut();
+		// (D210), y las otras pestañas no suman a la cuenta lo que se juegue
+		// después como invitado (D219). `SIGNED_OUT` llega antes de que
+		// `signOut` resuelva; si no llegó (falló), la marca no debe quedar para
+		// un cierre posterior. La compartida caduca sola: las otras pestañas
+		// pueden leerla aún después de que esta resuelva.
+		markVoluntarySignOut(user?.id ?? null);
+		const { error } = await supabase.auth.signOut();
+
+		if (error) {
+			cancelVoluntarySignOut();
+		} else {
+			consumeVoluntarySignOut();
+		}
 	};
 
 	return {
