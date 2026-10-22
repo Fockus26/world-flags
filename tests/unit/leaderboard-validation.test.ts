@@ -191,7 +191,7 @@ describe("lo demás que valida el trigger (D211)", () => {
 		assert.ok(sql.includes("detail = 'display_name en blanco'"));
 	});
 
-	test("lo que el SQL cuenta como en blanco es lo del cliente (D217, D221)", () => {
+	test("lo que el SQL cuenta como en blanco es lo del cliente (D217, D221, D225)", () => {
 		const start = sql.indexOf("translate(\n\t\tnew.display_name,");
 		assert.ok(start > 0);
 		const args = sql.slice(start, sql.indexOf(") = ''", start));
@@ -244,7 +244,7 @@ describe("nombre que va al ranking (D211)", () => {
 	});
 });
 
-describe("nombres invisibles (D221)", () => {
+describe("nombres invisibles (D221, D225)", () => {
 	const reported = [
 		0x200b, 0x200c, 0x200d, 0x2060, 0xfeff, 0x3164, 0xffa0, 0x115f, 0x1160,
 		0x2800, 0x180e,
@@ -258,6 +258,41 @@ describe("nombres invisibles (D221)", () => {
 				toLeaderboardDisplayName(char.repeat(5), "Explorador"),
 				"Explorador",
 			);
+		}
+	});
+
+	test("los de fuera del plano básico también (D225)", () => {
+		const supplementary = [
+			0xe0001, 0xe0020, 0xe0041, 0xe007f, 0xe0100, 0xe01ef, 0x1d173, 0x1d17a,
+			0x1bca0, 0x1bca3,
+		];
+		for (const code of supplementary) {
+			const char = String.fromCodePoint(code);
+			assert.equal(isBlankDisplayName(char), true, code.toString(16));
+			assert.equal(
+				toLeaderboardDisplayName(char.repeat(5), "Explorador"),
+				"Explorador",
+			);
+		}
+		// 30 etiquetas: se cortan a 24 caracteres (no unidades UTF-16) y quedan en blanco.
+		const tags = String.fromCodePoint(0xe0041).repeat(30);
+		assert.equal(toLeaderboardDisplayName(tags, "Explorador"), "Explorador");
+		assert.equal(isBlankDisplayName(`A${tags}`), false);
+		// La bandera de Inglaterra lleva etiquetas, pero se ve: no está en blanco.
+		assert.equal(
+			isBlankDisplayName(
+				"\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+			),
+			false,
+		);
+	});
+
+	test("el SQL los quita con chr de 4 bytes (D225)", () => {
+		// En una base UTF-8 `chr(n)` con n > 0xFFFF es un carácter y `translate`
+		// trabaja por carácter: basta con que estén en la lista.
+		const sql = readFileSync(SQL_PATH, "utf8");
+		for (const code of [0xe0020, 0xe007f, 0xe0100, 0xe01ef, 0x1d173]) {
+			assert.ok(sql.includes(`chr(${code})`), code.toString(16));
 		}
 	});
 
