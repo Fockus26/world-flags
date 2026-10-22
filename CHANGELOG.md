@@ -9,6 +9,18 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.7] - 2026-10-22
+
+### Corregido
+
+- "Revisa tu correo" sigue comprobando si confirmaste aunque falle la conexión o
+  el servicio de cuentas un momento, en vez de quedarse parado sin avisar.
+- Si abres un enlace de confirmación que ya no vale (por ejemplo, el de un
+  correo anterior), ahora te avisa y te dice que uses el del correo más reciente
+  o pidas otro.
+- Tras pulsar dos veces seguidas "Iniciar sesión" con una contraseña incorrecta,
+  el foco del teclado se queda en el botón.
+
 ## [2.10.6] - 2026-10-22
 
 ### Corregido
