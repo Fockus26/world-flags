@@ -46,6 +46,49 @@ interface ConfigurationModalProps {
 	onOpenTutorial: () => void;
 }
 
+interface PanelsHeight {
+	height?: number;
+	animate: boolean;
+}
+
+/**
+ * Solo se anima al encoger. Al crecer (otra pestaña más alta, o un aviso que
+ * aparece dentro de la activa) el contenido ya ocupa su alto final: animando,
+ * el `overflow-hidden` lo recortaba ~300 ms y el pie quedaba encima de su
+ * final (D224). Al encoger el contenido ya cabe, así que el encogido suave no
+ * tapa nada. Con movimiento reducido no hay transición (`global.css`).
+ */
+function nextPanelsHeight(
+	previous: PanelsHeight,
+	height: number,
+): PanelsHeight {
+	if (previous.height === height) return previous;
+
+	return {
+		height,
+		animate: previous.height !== undefined && height < previous.height,
+	};
+}
+
+const HEIGHT_TRANSITION = "transition-[height] duration-300 ease-in-out";
+
+/**
+ * Al crecer, el contenedor toma el alto nuevo ya, en el mismo cuadro: el
+ * `ResizeObserver` avisa antes de pintar, pero el render de React con el
+ * alto nuevo llega uno o dos cuadros después y, mientras, el final quedaba
+ * recortado bajo el pie (D224). Sin transición, para no animar ese salto;
+ * el render siguiente deja la clase, la transición y el alto igual que aquí.
+ */
+function growPanelsNow(panel: HTMLElement, height: number) {
+	const box = panel.parentElement;
+
+	if (!box || height <= box.getBoundingClientRect().height) return;
+
+	box.classList.remove(...HEIGHT_TRANSITION.split(" "));
+	box.style.transition = "none";
+	box.style.height = `${height}px`;
+}
+
 export function ConfigurationModal({
 	isOpen,
 	onClose,
@@ -64,7 +107,8 @@ export function ConfigurationModal({
 	onOpenTutorial,
 }: ConfigurationModalProps) {
 	const [activeTab, setActiveTab] = useState<ConfigurationModalTab>("account");
-	const [panelsHeight, setPanelsHeight] = useState<number>();
+	const [panels, setPanels] = useState<PanelsHeight>({ animate: false });
+
 	const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
 
 	/**
@@ -146,7 +190,10 @@ export function ConfigurationModal({
 
 		const measure = () => {
 			if (activeTabRef.current === "account") {
-				setPanelsHeight(node.getBoundingClientRect().height);
+				const height = node.getBoundingClientRect().height;
+
+				growPanelsNow(node, height);
+				setPanels((previous) => nextPanelsHeight(previous, height));
 			}
 		};
 
@@ -161,7 +208,10 @@ export function ConfigurationModal({
 
 		const measure = () => {
 			if (activeTabRef.current === "game") {
-				setPanelsHeight(node.getBoundingClientRect().height);
+				const height = node.getBoundingClientRect().height;
+
+				growPanelsNow(node, height);
+				setPanels((previous) => nextPanelsHeight(previous, height));
 			}
 		};
 
@@ -238,8 +288,13 @@ export function ConfigurationModal({
 					pestañas se verían encimadas en vez de una debajo de la otra.
 				*/}
 				<div
-					className="relative overflow-hidden transition-[height] duration-300 ease-in-out"
-					style={{ height: panelsHeight }}
+					className={`relative overflow-hidden ${panels.animate ? HEIGHT_TRANSITION : ""}`}
+					style={{
+						height: panels.height,
+						// Sin animar, ni la transición mínima de movimiento reducido
+						// (`global.css`): también pintaba un cuadro recortado.
+						transition: panels.animate ? undefined : "none",
+					}}
 				>
 					{/*
 						HeroUI tipa `Tabs.Panel`'s `className` como `string` a secas
