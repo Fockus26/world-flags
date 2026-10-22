@@ -9,6 +9,41 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.6] - 2026-10-22
+
+### Corregido
+
+- Si el servicio de cuentas no responde, al iniciar sesión ya no se dice "Sin
+  conexión" cuando sí tienes internet: se avisa de que el servicio no responde y
+  de que pruebes en un momento.
+- Si tu sesión se cierra sola y sigues jugando como invitado, lo que juegues se
+  suma a tu cuenta al volver a entrar, en vez de perderse.
+- Tras un inicio de sesión fallido, el foco del teclado se queda en el botón de
+  iniciar sesión.
+- "Revisa tu correo" ya no se queda esperando para siempre: comprueba cada vez
+  con más calma, para a los pocos minutos con un botón "Ya confirmé", y si la
+  contraseña que escribiste no sirve para entrar te dice que entres con el
+  enlace del correo o con la contraseña con la que creaste la cuenta.
+- Si cierras sesión a propósito con otra pestaña del juego abierta, lo que se
+  juegue después como invitado ya no se suma a tu cuenta al volver a entrar: se
+  descarta y se avisa, igual que con una sola pestaña.
+- Con la letra del navegador muy grande en un móvil estrecho, los diálogos ya no
+  dejan fuera de la pantalla el título, las pestañas ni el botón de cerrar: lo
+  que no cabe baja a la línea siguiente. También el aviso de Novedades.
+- En la pantalla de error, después de pulsar Reintentar el foco del teclado y
+  del lector de pantalla ya no se pierde: vuelve al aviso si el fallo sigue, o
+  al título del juego si todo vuelve a funcionar.
+- La página "Esta página no existe" y la pantalla de error caben enteras en
+  móviles estrechos con la letra del navegador muy grande.
+- En pantallas estrechas o con el texto del móvil muy grande, los nombres de los
+  continentes ya se leen enteros (antes salía "Nort…"), y los pares de botones
+  (cerrar sesión, tutorial, resultados, aviso de recordatorio y de versión
+  nueva) bajan de línea en vez de quedar medio fuera de pantalla.
+- Con el texto muy grande, en Configuración se lee entero el correo de tu sesión
+  y la ayuda de Notificaciones ya no queda cortada.
+- Con el texto muy grande, el titular de Resultados ("¡Completado!") ya no queda
+  cortado.
+
 ## [2.10.5] - 2026-10-21
 
 ### Corregido
