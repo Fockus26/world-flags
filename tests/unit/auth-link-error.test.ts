@@ -53,6 +53,17 @@ describe("withoutAuthLinkError", () => {
 		assert.equal(withoutAuthLinkError(new URL(`${ORIGIN}/#${EXPIRED}`)), "/");
 	});
 
+	test("quita también la marca `sb` de Supabase y deja lo ajeno", () => {
+		assert.equal(
+			withoutAuthLinkError(new URL(`${ORIGIN}/#${EXPIRED}&sb`)),
+			"/",
+		);
+		assert.equal(
+			withoutAuthLinkError(new URL(`${ORIGIN}/#${EXPIRED}&sb=&otro=1`)),
+			"/#otro=1",
+		);
+	});
+
 	test("quita el error de la query y conserva lo demás", () => {
 		assert.equal(
 			withoutAuthLinkError(new URL(`${ORIGIN}/?${EXPIRED}&otro=1#seccion`)),

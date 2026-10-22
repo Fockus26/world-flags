@@ -8,6 +8,10 @@
 
 const ERROR_PARAMS = ["error", "error_code", "error_description"] as const;
 
+function isErrorParam(name: string): boolean {
+	return (ERROR_PARAMS as readonly string[]).includes(name);
+}
+
 /** Copy provisional (D218, CONTENT_CHECKLIST). */
 export const AUTH_LINK_ERROR_COPY = {
 	expired: {
@@ -51,11 +55,18 @@ export function withoutAuthLinkError(url: URL): string {
 		clean.searchParams.delete(name);
 	}
 
-	// Un hash que no es de Auth (`#seccion`) se deja tal cual.
+	// Un hash que no es de Auth (`#seccion`) se deja tal cual. En el de
+	// Auth va también `sb`, la marca de Supabase: se quita con el error.
 	if (ERROR_PARAMS.some((name) => hash.has(name))) {
-		for (const name of ERROR_PARAMS) hash.delete(name);
+		const rest = clean.hash
+			.replace(/^#/, "")
+			.split("&")
+			.filter((part) => {
+				const name = decodeURIComponent(part.split("=")[0] ?? "");
+				return name !== "" && name !== "sb" && !isErrorParam(name);
+			})
+			.join("&");
 
-		const rest = hash.toString();
 		clean.hash = rest ? `#${rest}` : "";
 	}
 
