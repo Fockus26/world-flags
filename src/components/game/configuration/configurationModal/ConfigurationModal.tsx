@@ -1,10 +1,12 @@
 import { Tabs } from "@heroui/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReleaseNotesModal } from "@/components/app/ReleaseNotesModal";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Modal } from "@/components/ui/Modal";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { APP_VERSION } from "@/data/changelog";
+import { useAuth } from "@/hooks/useAuth";
 import type {
 	Difficulty,
 	GameMode,
@@ -12,6 +14,10 @@ import type {
 	TimerDuration,
 } from "@/types/country";
 import type { UserProfile } from "@/types/progress";
+import {
+	AUTH_POPUP_ERROR_INLINE_COPY,
+	registerInlineAuthLinkError,
+} from "@/utils/auth-link-error";
 import { AccountTab } from "./AccountTab";
 import { GameTab } from "./GameTab";
 
@@ -60,6 +66,47 @@ export function ConfigurationModal({
 	const [activeTab, setActiveTab] = useState<ConfigurationModalTab>("account");
 	const [panelsHeight, setPanelsHeight] = useState<number>();
 	const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
+
+	/**
+	 * Error del popup de Google que llega con el diálogo abierto pero sin el
+	 * formulario de `AuthSection` a la vista (se cambió de pestaña interna
+	 * o se volvió a personalización mientras volvía): sale aquí arriba, dentro
+	 * del diálogo y anunciado, en vez de en el aviso general, que queda
+	 * detrás (D224). Se va con "Entendido", al cerrar el diálogo o al entrar.
+	 */
+	const [popupError, setPopupError] = useState<{ attempt: number } | null>(
+		null,
+	);
+	const popupAttemptRef = useRef(0);
+	const { status } = useAuth();
+
+	useEffect(() => {
+		if (!isOpen) {
+			setPopupError(null);
+			return;
+		}
+
+		return registerInlineAuthLinkError("dialog", () => {
+			popupAttemptRef.current += 1;
+			setPopupError({ attempt: popupAttemptRef.current });
+		});
+	}, [isOpen]);
+
+	useEffect(() => {
+		if (status === "authenticated") setPopupError(null);
+	}, [status]);
+
+	const popupErrorRef = useRef<HTMLDivElement>(null);
+
+	function dismissPopupError() {
+		// El botón desaparece con el aviso: el foco pasa a la pestaña activa
+		// en vez de caer en el contenedor del diálogo.
+		popupErrorRef.current
+			?.closest('[role="dialog"]')
+			?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+			?.focus();
+		setPopupError(null);
+	}
 
 	// Se lee dentro del callback de más abajo para saber si el panel que se
 	// acaba de (re)montar es el que está activo — un `useState` normal
@@ -137,6 +184,31 @@ export function ConfigurationModal({
 				onClose={onClose}
 				isCompact
 			/>
+
+			{popupError && (
+				<div ref={popupErrorRef} className="mb-4 flex flex-col gap-2">
+					<FeedbackMessage
+						key={popupError.attempt}
+						variant="danger"
+						size="sm"
+						role="alert"
+					>
+						{AUTH_POPUP_ERROR_INLINE_COPY}
+					</FeedbackMessage>
+					<div className="flex justify-end">
+						<Button
+							color="neutral"
+							variant="soft"
+							type="button"
+							fullWidth={false}
+							className={WRAPPING_BUTTON}
+							onClick={dismissPopupError}
+						>
+							Entendido
+						</Button>
+					</div>
+				</div>
+			)}
 
 			<Tabs
 				selectedKey={activeTab}

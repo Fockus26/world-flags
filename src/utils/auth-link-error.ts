@@ -74,29 +74,46 @@ export const AUTH_POPUP_ERROR_INLINE_COPY =
 
 type InlineAuthLinkErrorHandler = (kind: AuthLinkErrorKind) => void;
 
-let inlineHandler: InlineAuthLinkErrorHandler | null = null;
+/**
+ * Quién recoge el error del popup dentro de Configuración, por orden:
+ * `form`, el formulario de `AuthSection` (junto al botón que se pulsó);
+ * `dialog`, el propio diálogo, mientras está abierto aunque se haya
+ * cambiado de pestaña interna y `AuthSection` ya no esté montada.
+ */
+export type InlineAuthLinkErrorTarget = "form" | "dialog";
+
+const inlineHandlers: Record<
+	InlineAuthLinkErrorTarget,
+	InlineAuthLinkErrorHandler | null
+> = { form: null, dialog: null };
 
 /**
- * `AuthSection`, mientras muestra su formulario dentro del diálogo modal de
- * Configuración, recoge el error del popup (D224). El contenedor de avisos
- * queda fuera del diálogo (`inert`, tapado por el fondo): ni se anunciaba
- * ni se alcanzaba hasta cerrarlo. Devuelve la función que lo suelta.
+ * Recoge el error del popup dentro del diálogo modal de Configuración
+ * (D224). El contenedor de avisos queda fuera del diálogo (`inert`, tapado
+ * por el fondo): ni se anunciaba ni se alcanzaba hasta cerrarlo. Devuelve
+ * la función que lo suelta (soltar un registro antiguo no suelta el nuevo).
  */
 export function registerInlineAuthLinkError(
+	target: InlineAuthLinkErrorTarget,
 	handler: InlineAuthLinkErrorHandler,
 ): () => void {
-	inlineHandler = handler;
+	inlineHandlers[target] = handler;
 
 	return () => {
-		if (inlineHandler === handler) inlineHandler = null;
+		if (inlineHandlers[target] === handler) inlineHandlers[target] = null;
 	};
 }
 
-/** Lo entrega a `AuthSection` si está a la vista; `false` si va al aviso. */
+/**
+ * Lo entrega al formulario si está a la vista, si no al diálogo abierto;
+ * `false` si no hay ninguno y va al aviso general.
+ */
 export function deliverInlineAuthLinkError(kind: AuthLinkErrorKind): boolean {
-	if (!inlineHandler) return false;
+	const handler = inlineHandlers.form ?? inlineHandlers.dialog;
 
-	inlineHandler(kind);
+	if (!handler) return false;
+
+	handler(kind);
 
 	return true;
 }

@@ -21,7 +21,9 @@ describe("error del popup dentro de Configuración (D224)", () => {
 
 		assert.equal(deliverInlineAuthLinkError("other"), false);
 
-		const release = registerInlineAuthLinkError((kind) => received.push(kind));
+		const release = registerInlineAuthLinkError("form", (kind) =>
+			received.push(kind),
+		);
 
 		assert.equal(deliverInlineAuthLinkError("other"), true);
 		assert.deepEqual(received, ["other"]);
@@ -31,9 +33,32 @@ describe("error del popup dentro de Configuración (D224)", () => {
 		assert.equal(deliverInlineAuthLinkError("other"), false);
 	});
 
+	test("diálogo abierto sin el formulario: lo recoge el diálogo; con él, el formulario", () => {
+		const received: string[] = [];
+
+		const releaseDialog = registerInlineAuthLinkError("dialog", () =>
+			received.push("dialog"),
+		);
+
+		assert.equal(deliverInlineAuthLinkError("other"), true);
+
+		const releaseForm = registerInlineAuthLinkError("form", () =>
+			received.push("form"),
+		);
+
+		deliverInlineAuthLinkError("other");
+		releaseForm();
+		// Se cambió de pestaña interna: vuelve a recogerlo el diálogo.
+		deliverInlineAuthLinkError("other");
+		releaseDialog();
+
+		assert.deepEqual(received, ["dialog", "form", "dialog"]);
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+	});
+
 	test("soltar un registro antiguo no suelta el nuevo (remontaje)", () => {
-		const releaseOld = registerInlineAuthLinkError(() => {});
-		const releaseNew = registerInlineAuthLinkError(() => {});
+		const releaseOld = registerInlineAuthLinkError("form", () => {});
+		const releaseNew = registerInlineAuthLinkError("form", () => {});
 
 		releaseOld();
 

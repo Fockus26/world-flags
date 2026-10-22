@@ -270,7 +270,7 @@ export function AuthSection() {
 	useEffect(() => {
 		if (view !== "form") return;
 
-		return registerInlineAuthLinkError(() => {
+		return registerInlineAuthLinkError("form", () => {
 			attemptRef.current += 1;
 			setGoogleError({ attempt: attemptRef.current });
 			// Al cerrarse el popup el foco suele seguir en el botón; si se
