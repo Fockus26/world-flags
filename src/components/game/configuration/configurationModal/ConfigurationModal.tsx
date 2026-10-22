@@ -1,10 +1,12 @@
 import { Tabs } from "@heroui/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReleaseNotesModal } from "@/components/app/ReleaseNotesModal";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Modal } from "@/components/ui/Modal";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { APP_VERSION } from "@/data/changelog";
+import { useAuth } from "@/hooks/useAuth";
 import type {
 	Difficulty,
 	GameMode,
@@ -12,6 +14,10 @@ import type {
 	TimerDuration,
 } from "@/types/country";
 import type { UserProfile } from "@/types/progress";
+import {
+	AUTH_POPUP_ERROR_INLINE_COPY,
+	registerInlineAuthLinkError,
+} from "@/utils/auth-link-error";
 import { AccountTab } from "./AccountTab";
 import { GameTab } from "./GameTab";
 
@@ -40,6 +46,49 @@ interface ConfigurationModalProps {
 	onOpenTutorial: () => void;
 }
 
+interface PanelsHeight {
+	height?: number;
+	animate: boolean;
+}
+
+/**
+ * Solo se anima al encoger. Al crecer (otra pestaña más alta, o un aviso que
+ * aparece dentro de la activa) el contenido ya ocupa su alto final: animando,
+ * el `overflow-hidden` lo recortaba ~300 ms y el pie quedaba encima de su
+ * final (D224). Al encoger el contenido ya cabe, así que el encogido suave no
+ * tapa nada. Con movimiento reducido no hay transición (`global.css`).
+ */
+function nextPanelsHeight(
+	previous: PanelsHeight,
+	height: number,
+): PanelsHeight {
+	if (previous.height === height) return previous;
+
+	return {
+		height,
+		animate: previous.height !== undefined && height < previous.height,
+	};
+}
+
+const HEIGHT_TRANSITION = "transition-[height] duration-300 ease-in-out";
+
+/**
+ * Al crecer, el contenedor toma el alto nuevo ya, en el mismo cuadro: el
+ * `ResizeObserver` avisa antes de pintar, pero el render de React con el
+ * alto nuevo llega uno o dos cuadros después y, mientras, el final quedaba
+ * recortado bajo el pie (D224). Sin transición, para no animar ese salto;
+ * el render siguiente deja la clase, la transición y el alto igual que aquí.
+ */
+function growPanelsNow(panel: HTMLElement, height: number) {
+	const box = panel.parentElement;
+
+	if (!box || height <= box.getBoundingClientRect().height) return;
+
+	box.classList.remove(...HEIGHT_TRANSITION.split(" "));
+	box.style.transition = "none";
+	box.style.height = `${height}px`;
+}
+
 export function ConfigurationModal({
 	isOpen,
 	onClose,
@@ -58,8 +107,50 @@ export function ConfigurationModal({
 	onOpenTutorial,
 }: ConfigurationModalProps) {
 	const [activeTab, setActiveTab] = useState<ConfigurationModalTab>("account");
-	const [panelsHeight, setPanelsHeight] = useState<number>();
+	const [panels, setPanels] = useState<PanelsHeight>({ animate: false });
+
 	const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false);
+
+	/**
+	 * Error del popup de Google que llega con el diálogo abierto pero sin el
+	 * formulario de `AuthSection` a la vista (se cambió de pestaña interna
+	 * o se volvió a personalización mientras volvía): sale aquí arriba, dentro
+	 * del diálogo y anunciado, en vez de en el aviso general, que queda
+	 * detrás (D224). Se va con "Entendido", al cerrar el diálogo o al entrar.
+	 */
+	const [popupError, setPopupError] = useState<{ attempt: number } | null>(
+		null,
+	);
+	const popupAttemptRef = useRef(0);
+	const { status } = useAuth();
+
+	useEffect(() => {
+		if (!isOpen) {
+			setPopupError(null);
+			return;
+		}
+
+		return registerInlineAuthLinkError("dialog", () => {
+			popupAttemptRef.current += 1;
+			setPopupError({ attempt: popupAttemptRef.current });
+		});
+	}, [isOpen]);
+
+	useEffect(() => {
+		if (status === "authenticated") setPopupError(null);
+	}, [status]);
+
+	const popupErrorRef = useRef<HTMLDivElement>(null);
+
+	function dismissPopupError() {
+		// El botón desaparece con el aviso: el foco pasa a la pestaña activa
+		// en vez de caer en el contenedor del diálogo.
+		popupErrorRef.current
+			?.closest('[role="dialog"]')
+			?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+			?.focus();
+		setPopupError(null);
+	}
 
 	// Se lee dentro del callback de más abajo para saber si el panel que se
 	// acaba de (re)montar es el que está activo — un `useState` normal
@@ -99,7 +190,10 @@ export function ConfigurationModal({
 
 		const measure = () => {
 			if (activeTabRef.current === "account") {
-				setPanelsHeight(node.getBoundingClientRect().height);
+				const height = node.getBoundingClientRect().height;
+
+				growPanelsNow(node, height);
+				setPanels((previous) => nextPanelsHeight(previous, height));
 			}
 		};
 
@@ -114,7 +208,10 @@ export function ConfigurationModal({
 
 		const measure = () => {
 			if (activeTabRef.current === "game") {
-				setPanelsHeight(node.getBoundingClientRect().height);
+				const height = node.getBoundingClientRect().height;
+
+				growPanelsNow(node, height);
+				setPanels((previous) => nextPanelsHeight(previous, height));
 			}
 		};
 
@@ -137,6 +234,31 @@ export function ConfigurationModal({
 				onClose={onClose}
 				isCompact
 			/>
+
+			{popupError && (
+				<div ref={popupErrorRef} className="mb-4 flex flex-col gap-2">
+					<FeedbackMessage
+						key={popupError.attempt}
+						variant="danger"
+						size="sm"
+						role="alert"
+					>
+						{AUTH_POPUP_ERROR_INLINE_COPY}
+					</FeedbackMessage>
+					<div className="flex justify-end">
+						<Button
+							color="neutral"
+							variant="soft"
+							type="button"
+							fullWidth={false}
+							className={WRAPPING_BUTTON}
+							onClick={dismissPopupError}
+						>
+							Entendido
+						</Button>
+					</div>
+				</div>
+			)}
 
 			<Tabs
 				selectedKey={activeTab}
@@ -166,8 +288,13 @@ export function ConfigurationModal({
 					pestañas se verían encimadas en vez de una debajo de la otra.
 				*/}
 				<div
-					className="relative overflow-hidden transition-[height] duration-300 ease-in-out"
-					style={{ height: panelsHeight }}
+					className={`relative overflow-hidden ${panels.animate ? HEIGHT_TRANSITION : ""}`}
+					style={{
+						height: panels.height,
+						// Sin animar, ni la transición mínima de movimiento reducido
+						// (`global.css`): también pintaba un cuadro recortado.
+						transition: panels.animate ? undefined : "none",
+					}}
 				>
 					{/*
 						HeroUI tipa `Tabs.Panel`'s `className` como `string` a secas

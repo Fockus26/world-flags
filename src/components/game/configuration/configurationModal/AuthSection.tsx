@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { type AuthErrorField, validateNewPassword } from "@/utils/auth-errors";
+import {
+	AUTH_POPUP_ERROR_INLINE_COPY,
+	registerInlineAuthLinkError,
+} from "@/utils/auth-link-error";
 import { focusIfLost, isFocusOnAncestorOf } from "@/utils/focus";
 import { EmailConfirmationPending } from "./EmailConfirmationPending";
 
@@ -27,6 +31,7 @@ interface FormError {
 }
 
 const FORM_ERROR_ID = "auth-form-error";
+const GOOGLE_ERROR_ID = "auth-google-error";
 
 function toFormFields(field: AuthErrorField | null): FormField[] {
 	if (field === "credentials") return ["email", "password"];
@@ -113,6 +118,17 @@ export function AuthSection() {
 	const [error, setFormError] = useState<FormError | null>(null);
 	const attemptRef = useRef(0);
 
+	/**
+	 * Error del popup de Google (D224): sale aquí, junto al botón, porque el
+	 * aviso general quedaría detrás de este diálogo modal. Como el del
+	 * formulario, no se va solo; `attempt` lo remonta para volver a
+	 * anunciarlo si se repite.
+	 */
+	const [googleError, setGoogleError] = useState<{ attempt: number } | null>(
+		null,
+	);
+	const googleButtonRef = useRef<HTMLButtonElement>(null);
+
 	function setError(message: string, fields: readonly FormField[] = []) {
 		attemptRef.current += 1;
 		setFormError({ message, fields, attempt: attemptRef.current });
@@ -143,6 +159,7 @@ export function AuthSection() {
 
 	function clearError() {
 		setFormError(null);
+		setGoogleError(null);
 	}
 
 	/** Props de un campo: señalado y descrito por el error, si le toca. */
@@ -247,6 +264,23 @@ export function AuthSection() {
 		if (view === "authenticated" && previousView !== "authenticated") {
 			focusIfLost(() => signedInRef.current);
 		}
+	}, [view]);
+
+	// Solo con el formulario a la vista (el botón de Google está en él).
+	useEffect(() => {
+		if (view !== "form") return;
+
+		return registerInlineAuthLinkError("form", () => {
+			attemptRef.current += 1;
+			setGoogleError({ attempt: attemptRef.current });
+			// Al cerrarse el popup el foco suele seguir en el botón; si se
+			// perdió (`<body>` o el contenedor del diálogo), vuelve a él.
+			focusIfLost(
+				() => googleButtonRef.current,
+				undefined,
+				(active) => isFocusOnAncestorOf(googleButtonRef.current, active),
+			);
+		});
 	}, [view]);
 
 	if (view === "authenticated") {
@@ -443,15 +477,36 @@ export function AuthSection() {
 			</div>
 
 			<Button
+				ref={googleButtonRef}
 				variant="text"
 				color="neutral"
 				type="button"
 				disabled={!isOnline}
-				aria-describedby={isOnline ? undefined : "auth-offline-note"}
-				onClick={() => signInWithGoogle()}
+				aria-describedby={
+					isOnline
+						? googleError
+							? GOOGLE_ERROR_ID
+							: undefined
+						: "auth-offline-note"
+				}
+				onClick={() => {
+					clearError();
+					void signInWithGoogle();
+				}}
 			>
 				Continuar con Google
 			</Button>
+
+			{googleError && (
+				<FeedbackMessage
+					key={googleError.attempt}
+					variant="danger"
+					size="sm"
+					role="alert"
+				>
+					<span id={GOOGLE_ERROR_ID}>{AUTH_POPUP_ERROR_INLINE_COPY}</span>
+				</FeedbackMessage>
+			)}
 		</div>
 	);
 }

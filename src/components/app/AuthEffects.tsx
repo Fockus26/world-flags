@@ -15,10 +15,7 @@ import {
 
 import { leaderboardCache } from "@/utils/leaderboard-cache";
 
-import {
-	consumeVoluntarySignOut,
-	forgetVoluntarySignOut,
-} from "@/utils/session-end";
+import { consumeVoluntarySignOut, rememberSession } from "@/utils/session-end";
 
 function applySession(dispatch: AppDispatch, session: Session | null) {
 	dispatch(
@@ -60,11 +57,11 @@ export function AuthEffects() {
 				}
 			}
 
-			// Entró alguien que no estaba: un cierre pedido de antes no explica
-			// el próximo `SIGNED_OUT` (D219).
-			if (event === "SIGNED_IN" && lastUserId === null && userId) {
-				forgetVoluntarySignOut();
-			}
+			// Qué sesión hay abierta (o cuál se acaba de cerrar): la marca de un
+			// cierre pedido solo vale para esa (D224). No se borra al volver a
+			// entrar: una pestaña congelada puede procesar después el
+			// `SIGNED_OUT` de antes, y la sesión nueva ya no la hereda.
+			rememberSession(userId, session?.access_token ?? null);
 
 			lastUserId = userId;
 			applySession(dispatch, session);

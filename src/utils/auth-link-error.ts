@@ -65,6 +65,60 @@ export function authLinkErrorFromMessage(
 }
 
 /**
+ * Error del popup de "Continuar con Google" dicho dentro de Configuración
+ * (D224): el botón está ahí, así que no hace falta mandar a otra parte.
+ * Copy provisional (CONTENT_CHECKLIST).
+ */
+export const AUTH_POPUP_ERROR_INLINE_COPY =
+	"No se pudo entrar con Google. Vuelve a intentarlo.";
+
+type InlineAuthLinkErrorHandler = (kind: AuthLinkErrorKind) => void;
+
+/**
+ * Quién recoge el error del popup dentro de Configuración, por orden:
+ * `form`, el formulario de `AuthSection` (junto al botón que se pulsó);
+ * `dialog`, el propio diálogo, mientras está abierto aunque se haya
+ * cambiado de pestaña interna y `AuthSection` ya no esté montada.
+ */
+export type InlineAuthLinkErrorTarget = "form" | "dialog";
+
+const inlineHandlers: Record<
+	InlineAuthLinkErrorTarget,
+	InlineAuthLinkErrorHandler | null
+> = { form: null, dialog: null };
+
+/**
+ * Recoge el error del popup dentro del diálogo modal de Configuración
+ * (D224). El contenedor de avisos queda fuera del diálogo (`inert`, tapado
+ * por el fondo): ni se anunciaba ni se alcanzaba hasta cerrarlo. Devuelve
+ * la función que lo suelta (soltar un registro antiguo no suelta el nuevo).
+ */
+export function registerInlineAuthLinkError(
+	target: InlineAuthLinkErrorTarget,
+	handler: InlineAuthLinkErrorHandler,
+): () => void {
+	inlineHandlers[target] = handler;
+
+	return () => {
+		if (inlineHandlers[target] === handler) inlineHandlers[target] = null;
+	};
+}
+
+/**
+ * Lo entrega al formulario si está a la vista, si no al diálogo abierto;
+ * `false` si no hay ninguno y va al aviso general.
+ */
+export function deliverInlineAuthLinkError(kind: AuthLinkErrorKind): boolean {
+	const handler = inlineHandlers.form ?? inlineHandlers.dialog;
+
+	if (!handler) return false;
+
+	handler(kind);
+
+	return true;
+}
+
+/**
  * La misma URL sin los parámetros de error, para dejar la barra limpia
  * (y que recargar no repita el aviso). Si el hash solo traía el error,
  * se quita entero.

@@ -9,9 +9,64 @@ import { describe, test } from "node:test";
 import {
 	authLinkErrorFromMessage,
 	authLinkErrorMessage,
+	deliverInlineAuthLinkError,
 	readAuthLinkError,
+	registerInlineAuthLinkError,
 	withoutAuthLinkError,
 } from "@/utils/auth-link-error";
+
+describe("error del popup dentro de Configuración (D224)", () => {
+	test("sin AuthSection a la vista va al aviso; con ella, al formulario", () => {
+		const received: string[] = [];
+
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+
+		const release = registerInlineAuthLinkError("form", (kind) =>
+			received.push(kind),
+		);
+
+		assert.equal(deliverInlineAuthLinkError("other"), true);
+		assert.deepEqual(received, ["other"]);
+
+		release();
+
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+	});
+
+	test("diálogo abierto sin el formulario: lo recoge el diálogo; con él, el formulario", () => {
+		const received: string[] = [];
+
+		const releaseDialog = registerInlineAuthLinkError("dialog", () =>
+			received.push("dialog"),
+		);
+
+		assert.equal(deliverInlineAuthLinkError("other"), true);
+
+		const releaseForm = registerInlineAuthLinkError("form", () =>
+			received.push("form"),
+		);
+
+		deliverInlineAuthLinkError("other");
+		releaseForm();
+		// Se cambió de pestaña interna: vuelve a recogerlo el diálogo.
+		deliverInlineAuthLinkError("other");
+		releaseDialog();
+
+		assert.deepEqual(received, ["dialog", "form", "dialog"]);
+		assert.equal(deliverInlineAuthLinkError("other"), false);
+	});
+
+	test("soltar un registro antiguo no suelta el nuevo (remontaje)", () => {
+		const releaseOld = registerInlineAuthLinkError("form", () => {});
+		const releaseNew = registerInlineAuthLinkError("form", () => {});
+
+		releaseOld();
+
+		assert.equal(deliverInlineAuthLinkError("expired"), true);
+
+		releaseNew();
+	});
+});
 
 const ORIGIN = "https://world-flags-hazel.vercel.app";
 const EXPIRED =
