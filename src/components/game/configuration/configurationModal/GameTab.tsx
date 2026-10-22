@@ -1,7 +1,7 @@
 import { ThemeSwitcher } from "@/components/game/configuration/ThemeSwitcher";
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Fieldset } from "@/components/ui/Fieldset";
-import { OptionTile } from "@/components/ui/OptionTile";
+import { OPTION_TILE_ROW, OptionTile } from "@/components/ui/OptionTile";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useDailyReminderPreference } from "@/hooks/useDailyReminderPreference";
 import { useSoundPreference } from "@/hooks/useSoundPreference";
@@ -91,7 +91,7 @@ export function GameTab({
 					</span>
 				}
 			>
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					{GAME_MODES.map((gameMode) => (
 						<OptionTile
 							key={gameMode}
@@ -109,7 +109,7 @@ export function GameTab({
 			<AutoHeight show={mode === "practice"}>
 				<div className="flex flex-col gap-5">
 					<Fieldset legend="Orden">
-						<div className="grid grid-cols-2 gap-1.5">
+						<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 							<OptionTile
 								name="settings-order"
 								value="alphabetical"
@@ -130,7 +130,7 @@ export function GameTab({
 					</Fieldset>
 
 					<Fieldset legend="Temporizador">
-						<div className="grid grid-cols-2 gap-1.5">
+						<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 							<OptionTile
 								name="settings-timer-enabled"
 								value="off"
@@ -176,7 +176,7 @@ export function GameTab({
 							</span>
 						}
 					>
-						<div className="grid grid-cols-2 gap-1.5">
+						<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 							<OptionTile
 								name="settings-difficulty"
 								value="easy"
@@ -210,7 +210,7 @@ export function GameTab({
 				    interruptor suelto, para que la fila se lea igual que el resto
 				    de ajustes (D081). Es de este dispositivo, no de la cuenta: no
 				    viaja con la configuración a la nube. */}
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					<OptionTile
 						name="settings-sound"
 						value="off"
@@ -242,7 +242,7 @@ export function GameTab({
 				    (permiso + suscripción Push): mientras se consulta, ninguna
 				    opción va marcada. Si no se puede activar, el motivo queda
 				    debajo y el radio vuelve a "Desactivadas" (D127). */}
-				<div className="grid grid-cols-2 gap-1.5">
+				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 					<OptionTile
 						name="settings-notifications"
 						value="off"

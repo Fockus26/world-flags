@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON_TEXT } from "@/components/ui/Button";
 import type { LearningPath } from "@/types/progress";
 import type { LearningPathStatus } from "@/utils/learning-path";
 
@@ -48,27 +48,37 @@ export function LearningPathPanel({
 			aria-labelledby={LEARNING_PATH_PANEL_TITLE_ID}
 			className={`flex flex-col gap-2 rounded-xl border border-surface-border p-3 ${className ?? ""}`}
 		>
-			<div className="flex items-start justify-between gap-2">
+			{/* Patrón de `ModalHeader` (D223): si ni la palabra más larga del
+			    título cabe al lado de "Abandonar" (texto al 200 % a 320 px, el
+			    título quedaba en 35 px), "Abandonar" baja a la derecha. */}
+			<div className="flex flex-wrap items-start gap-2">
 				{/* `tabIndex={-1}`: destino del foco al empezar un aprendizaje
 				    desde el modal (el botón que lo abrió desaparece, P51). */}
 				<h2
 					id={LEARNING_PATH_PANEL_TITLE_ID}
 					tabIndex={-1}
-					className="m-0 min-w-0 text-label font-extrabold text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
+					className="m-0 min-w-0 max-w-max grow basis-[min-content] break-words hyphens-auto text-label font-extrabold text-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-soft"
 				>
 					Aprender por lotes · {path.scopeLabel}
 				</h2>
 				{!status.isComplete && (
-					<button type="button" className={linkButtonClass} onClick={onAbandon}>
+					<button
+						type="button"
+						className={`ml-auto ${linkButtonClass}`}
+						onClick={onAbandon}
+					>
 						Abandonar
 					</button>
 				)}
 			</div>
 
-			<div className="flex items-center gap-2">
+			{/* `flex-wrap` (D223): con el texto al 200 % a 320 px "Lote 1 de 5 ·
+			    0/15" no cabe junto a la barra; baja debajo y, si ni solo cabe, se
+			    parte. La barra nunca baja de `min-w-8`. */}
+			<div className="flex flex-wrap items-center gap-2">
 				{/* Visual: el mismo dato va en texto al lado. */}
 				<span
-					className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-sm bg-surface-hover"
+					className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-sm bg-surface-hover"
 					aria-hidden="true"
 				>
 					<span
@@ -76,7 +86,7 @@ export function LearningPathPanel({
 						style={{ width: `${percentage}%` }}
 					/>
 				</span>
-				<span className="shrink-0 whitespace-nowrap text-tiny font-semibold text-text-placeholder">
+				<span className="max-w-full shrink-0 wrap-break-word text-tiny font-semibold text-text-placeholder">
 					{batchLabel ? `${batchLabel} · ${progressLabel}` : progressLabel}
 				</span>
 			</div>
@@ -90,6 +100,7 @@ export function LearningPathPanel({
 						color="secondary"
 						variant="outline"
 						type="button"
+						className={WRAPPING_BUTTON_TEXT}
 						onClick={onCreateNew}
 					>
 						Nuevo aprendizaje por lotes
@@ -100,6 +111,7 @@ export function LearningPathPanel({
 					color="secondary"
 					variant="outline"
 					type="button"
+					className={WRAPPING_BUTTON_TEXT}
 					onClick={onContinue}
 				>
 					Seguir aprendiendo ({todayCount})

@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { CountriesPractice } from "@/components/game/session/countries/CountriesPractice";
 import { Session } from "@/components/game/session/Session";
-import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
+import {
+	Button,
+	WRAPPING_BUTTON,
+	WRAPPING_BUTTON_TEXT,
+} from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Modal } from "@/components/ui/Modal";
 import { useSandboxRuntime } from "@/hooks/useSandboxRuntime";
@@ -381,6 +385,7 @@ function TutorialPlayStep({
 					type="button"
 					variant="outline"
 					color="neutral"
+					className={WRAPPING_BUTTON_TEXT}
 					onClick={onStart}
 				>
 					{TUTORIAL_TEXTS.demoReplay}
@@ -391,8 +396,10 @@ function TutorialPlayStep({
 
 	// Sin partida y sin resultado: o todavía no empezó, o se abandonó con
 	// "Salir". En los dos casos lo que toca es poder (volver a) jugarla.
+	// Con el texto al 200 % a 320 px "Empezar la partida" no cabe en una
+	// línea: la parte en vez de salirse del botón (D223).
 	return (
-		<Button type="button" onClick={onStart}>
+		<Button type="button" className={WRAPPING_BUTTON_TEXT} onClick={onStart}>
 			{TUTORIAL_TEXTS.startDemo}
 		</Button>
 	);

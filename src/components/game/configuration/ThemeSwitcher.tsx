@@ -1,4 +1,4 @@
-import { OptionTile } from "@/components/ui/OptionTile";
+import { OPTION_TILE_ROW, OptionTile } from "@/components/ui/OptionTile";
 import { useTheme } from "@/hooks/useTheme";
 
 const themeOptions = [
@@ -11,7 +11,7 @@ export function ThemeSwitcher() {
 	const { theme, setTheme } = useTheme();
 
 	return (
-		<div className="grid grid-cols-3 gap-2">
+		<div className={`${OPTION_TILE_ROW} gap-2`}>
 			{themeOptions.map((option) => (
 				<OptionTile
 					key={option.value}

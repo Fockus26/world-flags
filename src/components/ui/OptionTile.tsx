@@ -37,6 +37,20 @@ interface OptionTileProps {
  * se pinta con `Highlight`/`HighlightText` (como `GameTypeToggle`). Su anillo
  * de foco pasa a `CanvasText`: fuera del ajuste, `--focus` no sigue la paleta.
  */
+/**
+ * Fila de opciones (D223), en vez de `grid grid-cols-N`: cada opción `flex-1`
+ * (a tamaño normal se reparten a partes iguales, como la rejilla) y
+ * `min-w-min`: una opción puede partir su texto entre palabras, como en la
+ * rejilla ("☀️ / Claro"), pero no ser más estrecha que su palabra más larga;
+ * si así no caben todas, la fila se parte en vez de trocear la palabra
+ * ("Pa / í / s / e / s", "1" / "0") con el texto al 200 % a 320 px. (No
+ * `min-w-fit`, como las duraciones de D220: obligaría a cada opción a ir en
+ * una línea y partiría filas que a tamaño normal ya cabían.) El `gap` lo pone
+ * cada fila, como antes.
+ */
+export const OPTION_TILE_ROW =
+	"flex flex-wrap [&>label]:min-w-min [&>label]:flex-1";
+
 export function OptionTile({
 	name,
 	value,

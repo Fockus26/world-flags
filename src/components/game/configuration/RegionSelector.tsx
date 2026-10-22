@@ -103,13 +103,21 @@ export function RegionSelector({
 				gap-3
 			"
 		>
+			{/* Una columna cuando el texto es grande (D223): con el texto al 200 %
+			    a 320 px la media columna dejaba los nombres en trozos ("Nor / tea
+			    / mér / ica"). El corte en `rem` crece con el tamaño de letra del
+			    navegador: `min-[20rem]` vale desde 320 px a tamaño normal y desde
+			    640 px al 200 %. "Todo el mundo" ocupa la fila entera
+			    (`col-span-full`: `col-span-2` en una rejilla de una columna
+			    crearía una segunda). */}
 			<div
 				className="
 					grid
-					grid-cols-2
+					grid-cols-1
 					gap-3
 					px-1
 					py-1.5
+					min-[20rem]:grid-cols-2
 					min-[44rem]:grid-cols-3
 				"
 			>
@@ -130,7 +138,7 @@ export function RegionSelector({
 					onChange={toggleWorld}
 					showPracticedLine={showPracticedLine}
 					isLoading={isLoading}
-					className="col-span-2 min-[44rem]:col-span-1"
+					className="col-span-full min-[44rem]:col-span-1"
 				/>
 
 				{REGIONS.map((region) => {

@@ -116,7 +116,10 @@ function AchievementCard({
 			</span>
 
 			<span className="flex min-w-0 flex-1 flex-col gap-1">
-				<span className="text-caption text-text-placeholder">
+				{/* `wrap-break-word` (D223): con el texto al 200 % a 320 px una
+				    palabra ("práctica", "0/36000000") no cabe ni sola en la tarjeta
+				    y se partía fuera de ella. */}
+				<span className="wrap-break-word text-caption text-text-placeholder">
 					{achievement.description}
 				</span>
 
@@ -141,7 +144,7 @@ function AchievementCard({
 					) : (
 						<Lock className="size-3.5 shrink-0" aria-hidden="true" />
 					)}
-					{statusLabel}
+					<span className="min-w-0 wrap-break-word">{statusLabel}</span>
 				</span>
 			</span>
 		</li>

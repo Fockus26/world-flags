@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { Fieldset } from "@/components/ui/Fieldset";
 import { Modal } from "@/components/ui/Modal";
 import { ModalHeader } from "@/components/ui/ModalHeader";
-import { OptionTile } from "@/components/ui/OptionTile";
+import { OPTION_TILE_ROW, OptionTile } from "@/components/ui/OptionTile";
 import { GAME_TYPE_NOUNS, type GameType } from "@/types/country";
 import {
 	LEARNING_PATH_BATCH_SIZES,
@@ -110,7 +110,7 @@ export function LearningPathModal({
 				</div>
 
 				<Fieldset legend="Orden">
-					<div className="grid grid-cols-2 gap-1.5">
+					<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 						{(Object.keys(ORDER_LABELS) as LearningPathOrder[]).map((value) => (
 							<OptionTile
 								key={value}
@@ -126,7 +126,7 @@ export function LearningPathModal({
 				</Fieldset>
 
 				<Fieldset legend="Países por lote">
-					<div className="grid grid-cols-3 gap-1.5">
+					<div className={`${OPTION_TILE_ROW} gap-1.5`}>
 						{LEARNING_PATH_BATCH_SIZES.map((size) => (
 							<OptionTile
 								key={size}
@@ -149,13 +149,21 @@ export function LearningPathModal({
 				)}
 			</div>
 
-			<div className="mt-5 grid grid-cols-2 gap-3">
-				<Button type="button" color="neutral" onClick={onClose}>
+			{/* Fila `flex-wrap` con `WRAPPING_BUTTON` (D220, D223): con el texto al
+			    200 % a 320 px "Cancelar" y "Empezar" no cabían en media fila. */}
+			<div className="mt-5 flex flex-wrap gap-3">
+				<Button
+					type="button"
+					color="neutral"
+					className={WRAPPING_BUTTON}
+					onClick={onClose}
+				>
 					Cancelar
 				</Button>
 				<Button
 					type="button"
 					color="primary"
+					className={WRAPPING_BUTTON}
 					disabled={!hasScope}
 					onClick={handleCreate}
 				>
