@@ -9,6 +9,27 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.10.8] - 2026-10-22
+
+### Corregido
+
+- Si entrar con Google falla, el error aparece en Perfil y configuración, junto
+  al botón "Continuar con Google", en vez de quedar escondido detrás de la
+  ventana hasta cerrarla.
+- Al cerrar sesión con varias pestañas abiertas, lo que se juegue después como
+  invitado ya no se suma a tu cuenta aunque otra pestaña estuviera dormida en
+  segundo plano durante más de un minuto.
+- Con el texto del navegador muy grande en un móvil, los avisos de arriba (sin
+  conexión, sesión cerrada, recordatorio diario, novedades…) y los de logro ya
+  no se salen de la pantalla: si no caben, se desplazan dentro y todos sus
+  botones se pueden ver y pulsar. Su texto ya no queda cortado en una columna
+  estrecha junto al icono.
+- Con la letra del navegador muy grande en un móvil, el inicio, Aprender por
+  lotes, Elegir países, la confirmación de Abandonar, los botones de nota, el
+  tutorial y Logros ya no cortan textos ni los sacan de sus botones: lo que no
+  cabe baja de línea. Los nombres de continente y de país ya no quedan en trozos
+  de dos o tres letras, y tu nombre vuelve a verse en la cabecera.
+
 ## [2.10.7] - 2026-10-22
 
 ### Corregido
