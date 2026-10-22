@@ -8,7 +8,8 @@
 **Tanda 2026-10-22 · ola 4 cerrada sin más QA (decisión del dueño, 2026-10-22).** #121–#124 mergeados (main aa56e9d); QA de cierre `plans/qa-tanda-2026-10-22.md` (6 medios, 5 bajos) → arreglos en ola 4b, PRs abiertos para el dueño: #126 (H, D225, none), #127 (G, D224, patch), #128 (E, D222, patch), #129 (F, D223, patch). Prompts: `plans/orquestacion-2026-10-22-prompts.md`. Slots wt1–wt4 ocupados hasta el merge (`wt free` tras mergear).
 **No se lanza otra wave-qa** tras el merge: los arreglos los cerró cada worker reproduciendo el hallazgo. Nuevo flujo de QA en `context/QA_LEDGER.md` (solo lo no verificado o lo cuyos archivos cambien) y KIT_FEEDBACK filas 37–41.
 **Acciones del dueño:** mergear #126–#129; tras #126, en producción `supabase/leaderboard-limpieza-d225.sql` (revisión → borrado) y `supabase db push` (también cubre D221 si no se aplicó; su limpieza: `leaderboard-limpieza-d221.sql`).
-**Sin verificar (no abre QA):** aviso de hidratación de React visto una vez en dev; palabras que no caben ni solas al 200 % a 320 sin diccionario de guiones (límite aceptado, D216/D220).
+**2026-10-22, después:** #126–#129 mergeados por el dueño; slots wt1–wt4 libres. Palabras largas que no caben ni solas al 200 % a 320: aceptado por el dueño. Propuesta para el kit de medidor de modelo/effort y de QA resuelta dentro de la misma ola: `plans/propuesta-kit-modelo-effort.md` (KIT_FEEDBACK 42–43), pendiente de enviar con `/kit-feedback`.
+**Sin verificar (no abre QA):** aviso de hidratación de React visto una vez en dev.
 
 
 
