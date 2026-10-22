@@ -68,15 +68,18 @@ export function ReleaseNotesSnackbar() {
 					className="pointer-events-auto flex w-full flex-col gap-3 rounded-lg border border-primary-border bg-primary-soft p-3 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-4"
 				>
 					<div className="flex flex-wrap items-start gap-3">
-						<span className="shrink-0 text-2xl leading-none" aria-hidden="true">
+						<span
+							className="shrink-0 text-heading leading-none"
+							aria-hidden="true"
+						>
 							✨
 						</span>
 
 						<span className={SNACKBAR_TEXT}>
-							<strong className="text-sm text-surface-soft">
+							<strong className="text-body-sm text-surface-soft">
 								Novedades de la versión {announcedRelease.version}
 							</strong>
-							<span className="text-xs text-text-placeholder">
+							<span className="text-caption text-text-placeholder">
 								La app se actualizó. Mira qué ha cambiado.
 							</span>
 						</span>
