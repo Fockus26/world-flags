@@ -28,12 +28,21 @@
  *   steps          click | fill+value | press | waitFor | wait (ms) | eval (JS in the page)
  *   element        captures only that element (sharper and lighter than the page)
  *   fullPage       whole page instead of the viewport
+ *   route          responses faked in the page, for states that call Auth or an API:
+ *                  [{ "url": "**\/auth/v1/user", "status": 401, "body": { "msg": "no" } }]
+ *                  (`url` is a Playwright glob; `body` an object → JSON, a string → as is).
+ *                  Why: without it a state that called Auth meant patching `fetch` by hand,
+ *                  with the risk of a call reaching the real project (melao).
  *
  * Decisions that avoid bad or hanging screenshots:
  *   - Service workers blocked: an old cached bundle is never captured.
  *   - `reducedMotion: 'reduce'`: no photos halfway through an animation.
- *   - Timeout per step and one retry per shot; if it still fails, it goes on with the
+ *   - Each path is requested once before the first shot: the first capture failed on the
+ *     route's cold compile (melao).
+ *   - Timeout per step and up to 3 attempts per shot; if it still fails, it goes on with the
  *     others and reports at the end (a failing shot does not block the PR).
+ *   - It warns if `.pr-shots.json` is older than the branch's last commit: it was the slot's
+ *     previous unit's, and the shots came out of the wrong states (melao).
  *
  * **Why node and not bun:** on Windows, Playwright launched from a Bun script hangs starting
  * Chromium (checked: 170 s without output with bun; 3 shots in seconds with node, same
@@ -45,8 +54,9 @@
  * verified by measuring the DOM. The screenshots are for whoever reviews the PR.
  */
 
+import { spawnSync } from "node:child_process";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import { chromium, type Page } from "@playwright/test";
-import { mkdir, readFile } from "node:fs/promises";
 
 type Step =
 	| { click: string }
@@ -66,17 +76,39 @@ type Shot = {
 	steps?: Step[];
 	element?: string;
 	fullPage?: boolean;
+	route?: { url: string; status?: number; body?: unknown }[];
 };
 
 const configPath = process.argv[2] ?? ".pr-shots.json";
 const OUT = ".pr-shots";
 const STEP_TIMEOUT = 10_000;
+const ATTEMPTS = 3;
 
 const config = JSON.parse(await readFile(configPath, "utf8")) as {
 	base: string;
 	shots: Shot[];
 };
 await mkdir(OUT, { recursive: true });
+
+const lastCommit =
+	Number(
+		spawnSync("git", ["log", "-1", "--format=%ct"], {
+			encoding: "utf8",
+		}).stdout.trim(),
+	) * 1000;
+if (lastCommit && (await stat(configPath)).mtimeMs < lastCommit) {
+	console.warn(
+		`! ${configPath} is older than this branch's last commit: is it the previous unit's? Rewrite it.`,
+	);
+}
+
+// One request per path before shooting: the cold compile happens here, not in the shot.
+for (const path of new Set(config.shots.map((s) => s.path ?? "/"))) {
+	await fetch(config.base + path, {
+		redirect: "manual",
+		signal: AbortSignal.timeout(180_000),
+	}).catch(() => {});
+}
 
 async function runSteps(page: Page, steps: Step[]) {
 	for (const step of steps) {
@@ -111,7 +143,7 @@ for (const shot of config.shots) {
 	for (const scheme of schemes) {
 		const file = `${OUT}/${shot.name}${shot.scheme === "both" ? `-${scheme}` : ""}.png`;
 
-		for (let attempt = 1; attempt <= 2; attempt++) {
+		for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
 			const context = await browser.newContext({
 				viewport: { width: shot.width ?? 1280, height: shot.height ?? 800 },
 				colorScheme: scheme,
@@ -124,6 +156,19 @@ for (const shot of config.shots) {
 					for (const [k, v] of Object.entries(entries))
 						localStorage.setItem(k, v);
 				}, shot.storage);
+			}
+			for (const r of shot.route ?? []) {
+				await context.route(r.url, (route) =>
+					route.fulfill({
+						status: r.status ?? 200,
+						contentType:
+							typeof r.body === "string" ? "text/plain" : "application/json",
+						body:
+							typeof r.body === "string"
+								? r.body
+								: JSON.stringify(r.body ?? {}),
+					}),
+				);
 			}
 			const page = await context.newPage();
 			try {
@@ -149,7 +194,7 @@ for (const shot of config.shots) {
 				break;
 			} catch (error) {
 				await context.close();
-				if (attempt === 2)
+				if (attempt === ATTEMPTS)
 					failed.push(`${file} — ${(error as Error).message.split("\n")[0]}`);
 			}
 		}

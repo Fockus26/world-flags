@@ -446,7 +446,13 @@ function launch(
 async function warmUp(): Promise<void> {
 	const deadline = Date.now() + 10 * 60_000;
 	while (Date.now() < deadline) {
-		if (await answers("127.0.0.1", Number(port))) break;
+		// IPv4 or IPv6, like `taken`: Astro 7 listens only on [::1] and this loop ran its whole
+		// 10 minutes before warming.
+		if (
+			(await answers("127.0.0.1", Number(port))) ||
+			(await answers("::1", Number(port)))
+		)
+			break;
 		await new Promise((r) => setTimeout(r, 1000));
 	}
 	for (const route of ["/", ...warm]) {
