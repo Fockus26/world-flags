@@ -34,9 +34,9 @@ Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
 .env.local --yes`, entorno Development; lo propio de esta máquina va en
 `.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
-Los slots del pool (`..\world-flags-wt\wtN`, D136) traen los `.env*` pero **no** el
-`context/` local: se lee y actualiza en la carpeta principal; quien no pueda escribir ahí
-lo devuelve en su informe. Estado de las ramas: `gh pr list`.
+Los worktrees (slots del pool D136, `.claude/worktrees/`) traen los `.env*` pero **no** el
+`context/` local: se lee en la carpeta principal (1.ª línea de `git worktree list`); si no
+puedes escribir ahí, devuelve los cambios en tu informe. Estado de las ramas: `gh pr list`.
 
 ---
 
@@ -68,8 +68,7 @@ su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/`
 va en git (D199). Playwright se corre con `node`.
 
-**Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
-Supabase o Tailwind (cambian rápido).
+**Docs:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria, Supabase o Tailwind.
 
 ---
 

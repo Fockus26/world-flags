@@ -5,6 +5,12 @@
  *   bun run test:related                         # = bun scripts/test-related.ts; changes vs. origin/main + uncommitted
  *   bun scripts/test-related.ts --base=main
  *   bun scripts/test-related.ts --list           # only lists, does not run
+ *   bun scripts/test-related.ts --dir=tests/unit  # only the tests in that folder (repeatable)
+ *
+ * `--dir` replaces the default folders (`tests/`, `src/`). A project with integration tests
+ * that need something running (an emulator, a database) puts it in its `test:related`
+ * script, so they stay out: otherwise a change in package.json runs everything and fails
+ * without the emulator (inversiones-js, `tests/rules` with Firebase).
  *
  * How it decides: for each test file it follows its imports (relative and tsconfig aliases,
  * e.g. `@/…`) all the way down, and picks it if any of those files changed. So a change in
@@ -31,7 +37,12 @@ const base =
 	args.find((a) => a.startsWith("--base="))?.slice(7) ?? "origin/main";
 const listOnly = args.includes("--list");
 
-const TEST_GLOBS = ["tests/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"];
+const dirs = args
+	.filter((a) => a.startsWith("--dir="))
+	.map((a) => a.slice(6).replace(/[\\/]+$/, ""));
+const TEST_GLOBS = (dirs.length ? dirs : ["tests", "src"]).map(
+	(d) => `${d}/**/*.test.{ts,tsx}`,
+);
 // If any of this changes, the graph is not enough: the whole suite runs.
 // (`package.json` is handled apart: bumping only the `version` is no reason, it happens in almost every PR.)
 const RUN_ALL_IF_CHANGED = [
