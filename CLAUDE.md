@@ -30,9 +30,9 @@ En git: `.kit-version`, `supabase/` (D199) y los documentos **fijos** de `contex
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
 Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
-`git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`bunx vercel env pull
-.env.local --yes`, entorno Development; los valores reales viven en Vercel por entorno; lo propio de
-esta máquina va en `.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
+`git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`vercel env pull
+.env.local --yes`, entorno Development; lo propio de esta máquina va en
+`.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
 Los slots del pool (`..\world-flags-wt\wtN`, D136) traen los `.env*` pero **no** el
 `context/` local: se lee y actualiza en la carpeta principal; quien no pueda escribir ahí
@@ -54,7 +54,7 @@ lo devuelve en su informe. Estado de las ramas: `gh pr list`.
 bun install
 bun run build
 bunx astro check       # typecheck
-bunx biome check ./src # lint (src/ trae errores previos; en CI no bloquea)
+bunx biome check ./src # lint
 bun run test           # tests/unit
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
@@ -92,14 +92,16 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 - Base siempre `main`. Una unidad = una rama = un PR.
 - **Versión (D057–D060, D135):** nadie toca `version`, `CHANGELOG.md` ni `APP_VERSION`
   de `public/sw.js`. Cambio que nota quien juega → `.changeset/<desc>.md` escrito a mano
-  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): es lo
-  que muestra "Novedades", nada inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
-  lo abre la Action y lo mergea el dueño; ningún agente lo edita ni lo mergea.
+  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): lo
+  muestra "Novedades". Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
+  lo abre la Action y lo mergea el dueño; ningún agente lo edita.
 - En **tu rama** commit y push sin pedir permiso (la aprobación es la revisión del PR).
   `git add` solo de los archivos de la unidad. Cambios pedidos en el PR: commits nuevos, sin amend.
 - **Nunca** push a `main`, `gh pr merge` ni auto-merge: el merge lo hace el dueño.
-- Tras el merge: `git switch main && git pull` (si el PR dejó de trackear archivos, el pull
-  los borra: cópialos fuera antes).
+- **Sesión en la nube** (`CLAUDE_CODE_REMOTE=true`): skill `cloud-session` al empezar y al
+  cerrar; anula las dos reglas de arriba (cada unidad acaba mergeada: PR + CI verde).
+- Tras el merge: `git switch main && git pull` (lo que el PR dejó de trackear, el
+  pull lo borra: cópialo fuera antes).
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historia, ni borrar ramas ajenas.
 - **Skill `git-flow`:** aplica en modo `pr` (ramas, Conventional Commits, changesets §2.1.3,
   prohibiciones). No aplican su pausa antes del commit ni su merge local. Sin `GIT_STATE.md`.
