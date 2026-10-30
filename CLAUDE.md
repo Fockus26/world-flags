@@ -63,10 +63,9 @@ bun run test:e2e       # Playwright (necesita el server corriendo)
 `functional-qa`) siempre, y los workers si el dueño lo autoriza para una tanda (cada uno en
 su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 
-**QA contra base local:** `bun run qa:local -- --port <p>` levanta Supabase en Docker
-(migraciones + seed), crea las cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`)
-y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/`
-va en git (D199). Playwright se corre con `node`.
+**QA:** `bun run qa:local -- --port <p>` — Supabase en Docker (migraciones + seed) con las
+cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`); nunca la base real (`--offline`:
+solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
 **Docs:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria, Supabase o Tailwind.
 
