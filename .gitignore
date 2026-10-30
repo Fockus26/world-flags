@@ -2,8 +2,9 @@
 dist/
 # generated types
 .astro/
-# claude (worktrees, settings locales)
-.claude/
+# claude: worktrees y settings locales (la copia del kit en .claude/ va en git)
+.claude/worktrees/
+.claude/settings.local.json
 
 # dependencies
 node_modules/

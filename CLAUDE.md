@@ -1,13 +1,12 @@
 # World Flags
 
-App web (instalable como PWA) para aprender las banderas del mundo con repetición
-espaciada estilo Anki: progreso sincronizado en la nube, modo competitivo
-cronometrado ("rush") con ranking público, y alcance de práctica flexible
-(mundo / continentes / países sueltos, combinables).
+App web (PWA) para aprender las banderas del mundo con repetición espaciada estilo Anki:
+progreso en la nube, modo cronometrado ("rush") con ranking público y práctica por mundo,
+continentes o países sueltos (combinables).
 
 **Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
-**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `/kit-update`) ·
+**Kit:** web-agent-kit, versión en `.kit-version` (`/kit-update`) ·
 **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
 
 ---
@@ -30,13 +29,13 @@ En git: `.kit-version`, `supabase/` (D199) y los documentos **fijos** de `contex
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
 inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html` de
 Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
-`git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`bunx vercel env pull
-.env.local --yes`, entorno Development; los valores reales viven en Vercel por entorno; lo propio de
-esta máquina va en `.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
+`git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`vercel env pull
+.env.local --yes`, entorno Development; lo propio de esta máquina va en
+`.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
-Los slots del pool (`..\world-flags-wt\wtN`, D136) traen los `.env*` pero **no** el
-`context/` local: se lee y actualiza en la carpeta principal; quien no pueda escribir ahí
-lo devuelve en su informe. Estado de las ramas: `gh pr list`.
+Los worktrees (slots del pool D136, `.claude/worktrees/`) traen los `.env*` pero **no** el
+`context/` local: se lee en la carpeta principal (1.ª línea de `git worktree list`); si no
+puedes escribir ahí, devuelve los cambios en tu informe. Estado de las ramas: `gh pr list`.
 
 ---
 
@@ -54,7 +53,7 @@ lo devuelve en su informe. Estado de las ramas: `gh pr list`.
 bun install
 bun run build
 bunx astro check       # typecheck
-bunx biome check ./src # lint (src/ trae errores previos; en CI no bloquea)
+bunx biome check ./src # lint
 bun run test           # tests/unit
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
@@ -63,13 +62,13 @@ bun run test:e2e       # Playwright (necesita el server corriendo)
 `functional-qa`) siempre, y los workers si el dueño lo autoriza para una tanda (cada uno en
 su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 
-**QA contra base local:** `bun run qa:local -- --port <p>` levanta Supabase en Docker
-(migraciones + seed), crea las cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`)
-y arranca el servidor apuntando a lo local. Nunca contra la base real. `supabase/`
-va en git (D199). Playwright se corre con `node`.
+**QA:** `bun run qa:local -- --port <p>` — Supabase en Docker (migraciones + seed) con las
+cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`); nunca la base real (`--offline`:
+solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
-**Docs de librerías:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria,
-Supabase o Tailwind (cambian rápido).
+**Docs:** **Context7** antes de cualquier API de librería (HeroUI, Astro, Supabase…).
+**Modelo por tarea:** `Modelo recomendado: <modelo · effort>` antes de cada una (kit
+`TOKEN-ECONOMY.md` §12; riesgo → `opus`), ambos pasados a `Agent(...)`.
 
 ---
 
@@ -92,31 +91,31 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 - Base siempre `main`. Una unidad = una rama = un PR.
 - **Versión (D057–D060, D135):** nadie toca `version`, `CHANGELOG.md` ni `APP_VERSION`
   de `public/sw.js`. Cambio que nota quien juega → `.changeset/<desc>.md` escrito a mano
-  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): es lo
-  que muestra "Novedades", nada inventado. Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
-  lo abre la Action y lo mergea el dueño; ningún agente lo edita ni lo mergea.
+  (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): lo
+  muestra "Novedades". Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
+  lo abre la Action y lo mergea el dueño; ningún agente lo edita.
 - En **tu rama** commit y push sin pedir permiso (la aprobación es la revisión del PR).
   `git add` solo de los archivos de la unidad. Cambios pedidos en el PR: commits nuevos, sin amend.
 - **Nunca** push a `main`, `gh pr merge` ni auto-merge: el merge lo hace el dueño.
-- Tras el merge: `git switch main && git pull` (si el PR dejó de trackear archivos, el pull
-  los borra: cópialos fuera antes).
+- **Sesión en la nube** (`CLAUDE_CODE_REMOTE=true`): skill `cloud-session` al empezar y al
+  cerrar; anula las dos reglas de arriba (cada unidad acaba mergeada: PR + CI verde).
+- Tras el merge: `git switch main && git pull` (lo que el PR dejó de trackear, el
+  pull lo borra: cópialo fuera antes).
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historia, ni borrar ramas ajenas.
 - **Skill `git-flow`:** aplica en modo `pr` (ramas, Conventional Commits, changesets §2.1.3,
   prohibiciones). No aplican su pausa antes del commit ni su merge local. Sin `GIT_STATE.md`.
 
 ### Puertas de calidad (skills)
 
-| Skill | Cuándo |
-|---|---|
-| `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
-| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
-| `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
-| `orchestrate` | Llega una lista, o una fase se hace en olas (una ola por sesión) |
-| `wave-qa` | Lo lanza `orchestrate` con la ola mergeada, antes de cerrarla |
-| `design-qa` / `functional-qa` | Al cerrar una pantalla / un flujo completo |
+`a11y` siempre que se toque UI, antes de pedir revisión (axe-core limpio + checklist manual) ·
+`seo` al cerrar contenido/página (`SITE_URL` = `https://world-flags-hazel.vercel.app`, en
+`astro.config.mjs` + `public/robots.txt`) · `git-flow` al abrir y cerrar cada unidad (con las
+excepciones de PR de arriba) · `orchestrate` para una lista o una fase en olas (una por sesión) ·
+`wave-qa` tras una ola con flujos de riesgo · `functional-qa` al cerrar un flujo de riesgo y en
+el QA de versión · `design-qa` solo en el QA de versión (fase 09 / PR de release).
 
 **Entorno:** en Windows Playwright falla a ratos; si QA no puede ejecutar, reporta revisión
-de código marcada como no verificada.
+de código como no verificada.
 
 ---
 
