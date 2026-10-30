@@ -1,13 +1,12 @@
 # World Flags
 
-App web (instalable como PWA) para aprender las banderas del mundo con repetición
-espaciada estilo Anki: progreso sincronizado en la nube, modo competitivo
-cronometrado ("rush") con ranking público, y alcance de práctica flexible
-(mundo / continentes / países sueltos, combinables).
+App web (PWA) para aprender las banderas del mundo con repetición espaciada estilo Anki:
+progreso en la nube, modo cronometrado ("rush") con ranking público y práctica por mundo,
+continentes o países sueltos (combinables).
 
 **Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
-**Kit:** web-agent-kit, versión en `.kit-version` (se actualiza con `/kit-update`) ·
+**Kit:** web-agent-kit, versión en `.kit-version` (`/kit-update`) ·
 **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
 
 ---
@@ -67,7 +66,9 @@ su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`); nunca la base real (`--offline`:
 solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
-**Docs:** **Context7** antes de usar APIs de HeroUI, Astro, React Aria, Supabase o Tailwind.
+**Docs:** **Context7** antes de cualquier API de librería (HeroUI, Astro, Supabase…).
+**Modelo por tarea:** `Modelo recomendado: <modelo · effort>` antes de cada una (kit
+`TOKEN-ECONOMY.md` §12; riesgo → `opus`), ambos pasados a `Agent(...)`.
 
 ---
 
@@ -106,17 +107,15 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 
 ### Puertas de calidad (skills)
 
-| Skill | Cuándo |
-|---|---|
-| `a11y` | Siempre que se toque UI, antes de pedir revisión. Objetivo axe-core limpio + checklist manual |
-| `seo` | Al cerrar contenido/página. Ojo: `SITE_URL` = `https://world-flags-hazel.vercel.app` (`astro.config.mjs` + `public/robots.txt`) |
-| `git-flow` | Al abrir y al cerrar cada unidad (con las excepciones de PR de arriba) |
-| `orchestrate` | Llega una lista, o una fase se hace en olas (una ola por sesión) |
-| `wave-qa` | Lo lanza `orchestrate` con la ola mergeada, antes de cerrarla |
-| `design-qa` / `functional-qa` | Al cerrar una pantalla / un flujo completo |
+`a11y` siempre que se toque UI, antes de pedir revisión (axe-core limpio + checklist manual) ·
+`seo` al cerrar contenido/página (`SITE_URL` = `https://world-flags-hazel.vercel.app`, en
+`astro.config.mjs` + `public/robots.txt`) · `git-flow` al abrir y cerrar cada unidad (con las
+excepciones de PR de arriba) · `orchestrate` para una lista o una fase en olas (una por sesión) ·
+`wave-qa` tras una ola con flujos de riesgo · `functional-qa` al cerrar un flujo de riesgo y en
+el QA de versión · `design-qa` solo en el QA de versión (fase 09 / PR de release).
 
 **Entorno:** en Windows Playwright falla a ratos; si QA no puede ejecutar, reporta revisión
-de código marcada como no verificada.
+de código como no verificada.
 
 ---
 
