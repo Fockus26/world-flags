@@ -2,6 +2,7 @@
 
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
@@ -12,6 +13,8 @@ const SITE_URL = "https://world-flags-hazel.vercel.app";
 // https://astro.build/config
 export default defineConfig({
 	site: SITE_URL,
+	// `/` sigue prerenderizada; solo `/api/*` corre en funciones (`prerender = false`).
+	adapter: vercel(),
 	integrations: [
 		react({
 			babel: {
