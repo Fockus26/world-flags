@@ -342,7 +342,6 @@ export function GameEffects() {
 
 			try {
 				const { data: syncedData, discardedLocal } = await syncLearningData(
-					user.id,
 					localData,
 					base,
 					controller.signal,
@@ -550,7 +549,6 @@ export function GameEffects() {
 
 			try {
 				const { data: syncedData } = await syncLearningData(
-					userId,
 					localAtStart,
 					base,
 					controller.signal,
@@ -731,7 +729,6 @@ export function GameEffects() {
 			canUpload: () => canUploadLeaderboardRef.current,
 			upload: (mark) =>
 				upsertLeaderboardEntry(
-					userId,
 					mark.scope,
 					leaderboardDataRef.current.profile,
 					mark.bestTimeMs,
@@ -792,7 +789,7 @@ export function GameEffects() {
 		const timeoutId = setTimeout(() => {
 			syncedLeaderboardProfileRef.current = profileKey;
 
-			void syncLeaderboardProfile(userId, {
+			void syncLeaderboardProfile({
 				name,
 				avatarStyle,
 				avatarSeed,

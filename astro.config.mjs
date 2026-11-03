@@ -22,6 +22,10 @@ for (const key of [
 	"SMTP_USER",
 	"SMTP_PASS",
 	"SMTP_FROM",
+	"CRON_SECRET",
+	"VAPID_SUBJECT",
+	"VAPID_PRIVATE_KEY",
+	"PUBLIC_VAPID_PUBLIC_KEY",
 ]) {
 	process.env[key] ??= fileEnv[key];
 }

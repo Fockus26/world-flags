@@ -725,6 +725,7 @@ if (
 		DATABASE_URL: databaseUrl,
 		DIRECT_URL: databaseUrl,
 		BETTER_AUTH_SECRET: "qa-local-secret-qa-local-secret-qa-local",
+		CRON_SECRET: "qa-local-cron",
 		SMTP_HOST: "127.0.0.1",
 		SMTP_PORT: String(smtpPort),
 		SMTP_USER: "",

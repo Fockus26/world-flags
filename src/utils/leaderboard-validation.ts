@@ -26,8 +26,8 @@ import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 export const LEADERBOARD_MIN_MS_PER_ANSWER = 300;
 
 /**
- * Código del rechazo del trigger. PostgREST convierte un SQLSTATE `PTxyz` en
- * el HTTP `xyz` y lo devuelve tal cual en `error.code` (D113).
+ * Código del rechazo del trigger: su SQLSTATE, que la API devuelve tal cual en
+ * `code` con un HTTP 422 (D113).
  */
 export const LEADERBOARD_TIME_REJECTED_CODE = "PT422";
 

@@ -1,4 +1,3 @@
-import { supabase } from "@/lib/supabase";
 import { getOrCreateDeviceId } from "@/utils/learning-storage";
 
 /** El `applicationServerKey` de `pushManager.subscribe` quiere `Uint8Array`, no el base64url que da la VAPID key. */
@@ -156,20 +155,27 @@ async function saveSubscription(userId: string | null): Promise<boolean> {
 		keys: { p256dh: string; auth: string };
 	};
 
-	const { error } = await supabase.functions.invoke("subscribe-push", {
-		body: {
-			deviceId: getOrCreateDeviceId(),
-			userId,
-			endpoint,
-			p256dh: keys.p256dh,
-			auth: keys.auth,
-			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-			reminderHour: new Date().getHours(),
-		},
-	});
+	try {
+		const response = await fetch("/api/push/subscribe", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				deviceId: getOrCreateDeviceId(),
+				userId,
+				endpoint,
+				p256dh: keys.p256dh,
+				auth: keys.auth,
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+				reminderHour: new Date().getHours(),
+			}),
+		});
 
-	if (error) {
-		console.error("Daily reminder: subscribe-push failed:", error);
+		if (!response.ok) {
+			console.error("Daily reminder: subscribe failed:", response.status);
+			return false;
+		}
+	} catch (error) {
+		console.error("Daily reminder: subscribe failed:", error);
 		return false;
 	}
 
@@ -183,7 +189,7 @@ async function saveSubscription(userId: string | null): Promise<boolean> {
  * - `dismissed`: se cerró el diálogo del navegador sin elegir.
  * - `denied`: el permiso está bloqueado (ahora o de antes).
  * - `failed`: con permiso, pero no se pudo suscribir (sin clave VAPID, SW que
- *   no responde, Edge Function caída...).
+ *   no responde, API caída...).
  * - el resto: el motivo de `getNotificationSupport` por el que ni se preguntó.
  */
 export type DailyReminderResult =
