@@ -21,8 +21,8 @@ cp .env.example .env
 bun run dev
 ```
 
-`.env` needs a Supabase project URL and anon key. The database schema is private: read
-[`supabase/README.md`](./supabase/README.md) to see what works without it, and open an
+Without a database the app works as a guest. For accounts and sync, `bun run qa:local` starts
+Postgres in Docker with the migrations in [`drizzle/`](./drizzle). Open an
 issue if your change needs the backend.
 
 ---

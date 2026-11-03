@@ -20,7 +20,7 @@ import { prepareCountries } from "@/utils/prepare-countries";
  * normal de partida persiste (historial SRS, candado de "practicado hoy", nota
  * del continente, mejor tiempo y ranking público, estadísticas, historial de
  * sesiones, día activo de la racha y evaluación de logros), y encima
- * `GameEffects` sube `learningData` a Supabase con cada cambio. Una condición
+ * `GameEffects` sube `learningData` a la nube con cada cambio. Una condición
  * colada en medio de ese flujo se olvida en el siguiente cambio y nadie se
  * entera: el progreso se mueve en silencio. Así que la partida guiada no pasa
  * por ahí en absoluto — corre sobre este estado, que no tiene forma de

@@ -53,9 +53,10 @@ ni un test académico severo.
   puenteados a los de HeroUI (ver D003–D005, D013)
 - Gestor: **bun**. Docs de librerías: **Context7**
 - Estado en memoria: **Redux Toolkit** (`src/store/`, slices `auth`/`game`/`theme`)
-- Base de datos / Auth: **Supabase** (`user_learning_data` privada + `leaderboard_entries` pública)
+- Base de datos: **Postgres en el VPS** con **Drizzle** (`user_learning_data` privada + `leaderboard_entries` pública), por rutas `src/pages/api/`; D227
+- Auth: **Better Auth** (correo + Google), cookie httpOnly
 - Persistencia local: `localStorage` vía `src/utils/learning-storage.ts`
-- Pagos: N/A · Correo: solo Supabase Auth (ver "Correos")
+- Pagos: N/A · Correo: solo el de confirmar cuenta (ver "Correos")
 - Despliegue: **Vercel** (ver "Repo y despliegue")
 
 ## Repo y despliegue
@@ -80,16 +81,15 @@ Detalle de tamaños y archivos: `reference/BRAND-ASSETS.md` del kit.
 
 ## Correos
 
-La app no manda correos propios: solo los de Supabase Auth. Google OAuth no manda ninguno;
+La app solo manda el correo de confirmar cuenta (Better Auth + `src/server/email.ts`, por SMTP). Google OAuth no manda ninguno;
 no hay recuperación de contraseña ni magic link. Los recordatorios diarios son push (VAPID), no correo.
 
 | Correo | Lo manda | Destinatario | Estado |
 |---|---|---|---|
-| Confirmar cuenta ("Confirm sign up", reenviable desde `EmailConfirmationPending`) | Supabase Auth | jugador que se registra con correo | diseñado (D095, `PHASE_LOG/email-confirmacion.md`); copia local en `supabase/templates/`, se pega a mano en el panel. Aplicado en el panel: por confirmar. Falta en `config.toml` para la base local (P43) |
+| Confirmar cuenta ("Confirm sign up", reenviable desde `EmailConfirmationPending`) | La app (Brevo) | jugador que se registra con correo | diseñado (D095, `PHASE_LOG/email-confirmacion.md`); plantilla en `emails/confirmar-registro.html` |
 
-Remitente: SMTP por defecto de Supabase (solo entrega a miembros del equipo; límite bajo) ·
-SMTP propio y dominio verificado (SPF/DKIM/DMARC): **PENDIENTE** — acción del dueño, necesita
-dominio propio (ver `supabase/templates/INSTRUCCIONES.md` § 3). Detalle:
+Remitente: Brevo por SMTP (`SMTP_*` en Vercel) · dominio verificado (SPF/DKIM/DMARC): **PENDIENTE**,
+acción del dueño, necesita dominio propio. Detalle:
 `reference/EMAIL-TEMPLATES.md` del kit.
 
 ## Alcance de "páginas"
@@ -102,11 +102,11 @@ No hay más rutas. Dentro de `/` hay 4 **vistas** que alternan por estado de Red
 
 ## Funcionalidad más allá de lo estático
 
-- [x] Autenticación de usuarios (Supabase, email/password + Google OAuth)
+- [x] Autenticación de usuarios (Better Auth, email/password + Google OAuth)
 - [x] Persistencia de progreso de usuario (local + nube, con merge)
 - [x] Ranking público (leaderboard competitivo "mundo")
 - [x] Formularios con envío real (auth)
-- [x] Correos que manda la app (solo los de Supabase Auth, ver § "Correos")
+- [x] Correos que manda la app (solo el de confirmar cuenta, ver § "Correos")
 - [ ] Pagos / carrito / CMS / multi-idioma — no aplica
 
 ## Track de fases

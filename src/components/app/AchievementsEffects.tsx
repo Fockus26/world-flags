@@ -30,7 +30,7 @@ import { playSound } from "@/utils/sound";
  * están sellados y un logro nunca se des-desbloquea; ver la invariante en
  * `utils/achievements.ts`), y entonces no se despacha nada.
  *
- * Esa misma regla es lo que mantiene vivo el push a Supabase: el efecto de
+ * Esa misma regla es lo que mantiene vivo el push a la nube: el efecto de
  * `GameEffects` cancela y reprograma su timeout con cada cambio de
  * `learningData`, así que un despacho incondicional aquí lo empujaría hacia
  * adelante para siempre y no subiría nunca. Ese, y no un push duplicado, es el
@@ -60,7 +60,7 @@ export function AchievementsEffects() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: learningData dispara el efecto intencionalmente, aunque el cuerpo lea el valor fresco del store (ver comentario abajo)
 	useEffect(() => {
 		// Sin esperar a la hidratación se sellarían logros contra datos a medio
-		// cargar (p. ej. el estado por defecto mientras Supabase responde).
+		// cargar (p. ej. el estado por defecto mientras la nube responde).
 		if (hydrationStatus !== "ready") {
 			// Cualquier salida de "ready" (arranque, login, logout) hace que la
 			// próxima vez que se llegue a "ready" vuelva a ser una

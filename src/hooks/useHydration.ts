@@ -5,7 +5,7 @@ import { useAppSelector } from "@/store/hooks";
  *
  * `isInitialLoad` es `true` desde que abre la página hasta que llega el
  * primer dato a la pantalla: la hidratación del invitado, la sincronización
- * de la cuenta o, si Supabase Auth no responde, el fallback de
+ * de la cuenta o, si la sesión no responde, el fallback de
  * `localStorage` a los 2.5 s (`hydrationStatus` `local`). Así nunca se queda
  * en `true` con la red caída.
  *

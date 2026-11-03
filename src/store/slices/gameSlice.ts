@@ -13,12 +13,12 @@ import { DEFAULT_DATA } from "@/utils/learning-storage";
 
 /**
  * - `idle`: arranque; aún no se hidrató nada (el store tiene `DEFAULT_DATA`).
- * - `loading`: sincronizando con Supabase la cuenta autenticada.
+ * - `loading`: sincronizando con la nube la cuenta autenticada.
  * - `local`: se muestran los datos de `localStorage` sin haberlos contrastado
- *   con la nube, por una de dos: Supabase Auth no resolvió en 2,5 s (sin
+ *   con la nube, por una de dos: la sesión no resolvió en 2,5 s (sin
  *   confirmar aún de quién son, D042), o la sincronización de la cuenta falló
  *   o no respondió en 10 s (`GameEffects` la reintenta, D044). Se puede jugar,
- *   pero el push a Supabase, el ranking y los logros siguen bloqueados como
+ *   pero el push a la nube, el ranking y los logros siguen bloqueados como
  *   en `idle`: subir esa copia pisaría el progreso de la cuenta.
  * - `ready`: los datos del usuario actual ya están en el store.
  */

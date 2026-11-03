@@ -45,7 +45,7 @@ leaderboard, streaks, achievements and daily reminders.
   consistency, meta), unlocked retroactively from existing progress
 - 🔥 **Streaks** with a monthly activity calendar
 - 🔔 **Daily reminders** via push notifications
-- ☁️ **Cloud sync** across devices with a Supabase account, or play as a guest
+- ☁️ **Cloud sync** across devices with an account, or play as a guest
   (progress stays in `localStorage`)
 
 ### App
@@ -67,7 +67,7 @@ leaderboard, streaks, achievements and daily reminders.
 | UI | React 19 + TypeScript (strict), with the React Compiler |
 | Components | [HeroUI v3](https://www.heroui.com/) on top of Tailwind CSS v4 (CSS-first, no config file) |
 | State | Redux Toolkit, accessed only through hooks in `src/hooks/` |
-| Backend | [Supabase](https://supabase.com) — auth, progress sync, leaderboard, edge functions for push |
+| Backend | Astro API routes on Vercel, [Drizzle](https://orm.drizzle.team) on Postgres, [Better Auth](https://better-auth.com) — accounts, progress sync, leaderboard, push |
 | Animations | `tw-animate-css` + CSS transitions |
 | Icons | [iconoir-react](https://iconoir.com/) |
 | PWA | Hand-rolled service worker (`public/sw.js`) + web manifest |
@@ -84,12 +84,12 @@ leaderboard, streaks, achievements and daily reminders.
 git clone https://github.com/Fockus26/World-Flags.git
 cd World-Flags
 bun install
-cp .env.example .env   # then fill in your Supabase URL and anon key
+cp .env.example .env   # then fill in what you need
 bun run dev            # http://localhost:4321
 ```
 
-The Supabase client needs `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` to start.
-The database schema is private — see [`supabase/README.md`](./supabase/README.md) for
+Without a database the app works as a guest. Accounts and sync need `DATABASE_URL` and
+`BETTER_AUTH_SECRET`; the schema is in [`drizzle/`](./drizzle) — see [`drizzle/README.md`](./drizzle/README.md) for
 what works without it and how to request access.
 
 ### Scripts

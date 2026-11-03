@@ -513,7 +513,7 @@ export async function syncLeaderboardProfile(
  * `leaderboard-upload.ts`, D140): reemplaza la fila del usuario en ese scope.
  * Que una marca peor no pise una mejor que ya está en el ranking (p. ej. si
  * el progreso local se perdió) lo resuelve el trigger del servidor con
- * `least(...)` (`supabase/leaderboard-continentes.sql`, D139): así vale
+ * `least(...)` (`drizzle/0001_*`, D139): así vale
  * también para los clientes viejos y no cuesta una lectura antes de cada
  * subida.
  * Es un "mejor esfuerzo": si falla no debe romper el juego, solo se registra

@@ -54,7 +54,7 @@ const STORAGE_KEY = "world-flags-learning-data";
 export const MAX_REGION_GAMES = 3;
 
 /**
- * Cuántas sesiones se conservan. Cada subida a Supabase lleva la fila entera
+ * Cuántas sesiones se conservan. Cada subida a la nube lleva la fila entera
  * (agrupadas desde D051, pero enteras), así que el historial no puede crecer
  * sin límite: 25 registros son ~6,5 KB sobre una fila que ya ronda los 33 KB.
  * Los logros que miran sesiones concretas solo necesitan las últimas; los
@@ -116,7 +116,7 @@ export type SubGameKey = {
  * de cada uno. Banderas, el juego original, sigue en el primer nivel de
  * `UserLearningData` (D028: renombrarlo rompería las filas ya guardadas y a
  * los clientes viejos que el SW mantiene en caché); cada juego posterior
- * tiene su sub-objeto y su columna en Supabase. Añadir un juego es añadir
+ * tiene su sub-objeto y su columna en la base. Añadir un juego es añadir
  * aquí su clave: `normalizeLearningData`, `mergeLearningData`,
  * `hasLearningProgress` y las vistas de juego lo recorren solos, y el
  * `Record` no deja olvidarlo.
@@ -257,7 +257,7 @@ function migrateStats(
 	regionGameScores: UserLearningData["regionGameScores"],
 	lastPracticeByCountry: LastPracticeByCountry,
 ): UserStats {
-	// Ojo con el objeto vacío: las columnas nuevas de Supabase se crean con
+	// Ojo con el objeto vacío: las columnas nuevas de la base se crean con
 	// `default '{}'::jsonb`, así que una fila anterior a la migración no llega
 	// como `undefined` sino como `{}`. Ambos casos son "todavía sin sembrar".
 	if (!stats || Object.keys(stats).length === 0) {
@@ -282,7 +282,7 @@ function migrateStats(
  * Normaliza el progreso de un juego con sub-objeto propio (Banderas vive en
  * el primer nivel de `UserLearningData`, ver `migrateCountryHistory`/etc.
  * arriba; esto es para los demás, ver `SUB_GAME_KEYS`). Igual que con
- * `stats`, una columna de Supabase creada con `default '{}'::jsonb` llega
+ * `stats`, una columna de la base creada con `default '{}'::jsonb` llega
  * como `{}` en vez de `undefined` para una fila anterior a esta versión —
  * ambos casos son "todavía sin progreso".
  */
@@ -325,7 +325,7 @@ function migrateFieldUpdatedAt(
 	};
 }
 
-/** Columna de Supabase creada con `default '{}'::jsonb`: una fila anterior a esta versión llega como `{}`, no `undefined`. Ambos casos son "todavía sin responder". */
+/** Columna de la base creada con `default '{}'::jsonb`: una fila anterior a esta versión llega como `{}`, no `undefined`. Ambos casos son "todavía sin responder". */
 function migrateDailyReminder(
 	reminder: Partial<DailyReminderPreference> | undefined,
 ): DailyReminderPreference {
@@ -361,7 +361,7 @@ function migrateProfile(profile: unknown): UserProfile {
 }
 
 /**
- * Normaliza datos crudos (de localStorage o de una fila de Supabase) a un
+ * Normaliza datos crudos (de localStorage o de una fila de la base) a un
  * `UserLearningData` completo, rellenando lo que falte y migrando esquemas
  * viejos.
  *
@@ -635,7 +635,7 @@ const TUTORIAL_SEEN_STORAGE_KEY = "world-flags-tutorial-seen";
  *
  * Por dispositivo, como la versión vista de arriba, y **no** en
  * `UserLearningData`: esa estructura se sincroniza entera por cuenta, así que
- * meterlo ahí costaría una columna nueva en Supabase (con su SQL corrido a
+ * meterlo ahí costaría una columna nueva en la base (con su migración aplicada a
  * mano antes de desplegar, que es lo que bloqueó los dos últimos despliegues),
  * sus reglas de fusión, y el invitado —que es justo quien más va a ver el
  * tutorial— no tiene cuenta que sincronizar.
@@ -679,7 +679,7 @@ const SOUND_ENABLED_STORAGE_KEY = "world-flags-sound-enabled";
  * Por dispositivo, como la marca del tutorial (D071), y no en
  * `UserLearningData`: es una preferencia del aparato (el móvil en el metro
  * callado, el portátil en casa con sonido), costaría una columna nueva en
- * Supabase con su SQL a mano, y el invitado también tiene que poder apagarlo.
+ * la base con su migración, y el invitado también tiene que poder apagarlo.
  *
  * Activado por defecto: `true` si nunca se guardó, si lo guardado no es
  * `"false"` o si no se puede leer. Solo `"false"` lo apaga.
@@ -1388,7 +1388,7 @@ function mergeDailyReminder(
 }
 
 /**
- * Fusiona los datos de Supabase (`remote`) con los de este dispositivo
+ * Fusiona los datos de la nube (`remote`) con los de este dispositivo
  * (`local`) sin que uno pise al otro. Devuelve el objeto ENTERO a propósito:
  * antes se fusionaban dos campos sueltos y la sincronización los comparaba uno a
  * uno, así que añadir un campo nuevo y olvidarse de él fallaba en silencio

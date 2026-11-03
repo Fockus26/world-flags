@@ -47,8 +47,7 @@ const MIGRATIONS_DIR = join(
 	dirname(fileURLToPath(import.meta.url)),
 	"..",
 	"..",
-	"supabase",
-	"migrations",
+	"drizzle",
 );
 
 /** La última migración que redefine la función del trigger (D211, D217). */

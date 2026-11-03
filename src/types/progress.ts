@@ -165,8 +165,8 @@ export interface FieldUpdatedAt {
  * Respuesta (una sola vez, cualquier dispositivo) al snackbar "¿te aviso
  * mañana...?". `answered` es lo que impide volver a preguntar; `optedIn` es
  * la respuesta en sí. No guarda hora/zona/endpoint de la suscripción — eso es
- * infraestructura por-dispositivo y vive en la tabla `push_subscriptions` de
- * Supabase, no en este blob que se sincroniza entero por cuenta.
+ * infraestructura por-dispositivo y vive en la tabla `push_subscriptions`
+ * de la base, no en este blob que se sincroniza entero por cuenta.
  */
 export interface DailyReminderPreference {
 	answered: boolean;

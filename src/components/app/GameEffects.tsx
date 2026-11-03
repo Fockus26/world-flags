@@ -54,7 +54,7 @@ import { wasSignOutRequestedElsewhere } from "@/utils/session-end";
 /**
  * Espera antes de cada reintento de una sincronización fallida (el último
  * valor se repite mientras siga fallando). Además se reintenta en cuanto
- * vuelve la red (`online`) y con cada evento de Supabase Auth (D044).
+ * vuelve la red (`online`) y con cada cambio de sesión (D044).
  */
 const SYNC_RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
 
@@ -140,7 +140,7 @@ export function GameEffects() {
 
 	/**
 	 * Sobrevive a las re-ejecuciones del efecto de hidratación (`user` cambia
-	 * de identidad con cada evento de Supabase Auth): distingue un reintento,
+	 * de identidad con cada cambio de sesión): distingue un reintento,
 	 * que no vuelve a `loading` ni reemplaza los datos con los que ya se está
 	 * jugando, de un primer intento.
 	 */
@@ -171,12 +171,12 @@ export function GameEffects() {
 	const syncedLeaderboardProfileRef = useRef<string | null>(null);
 
 	/**
-	 * Red de seguridad: si Supabase Auth no resuelve (red caída, mal
+	 * Red de seguridad: si la sesión no resuelve (red caída, mal
 	 * configurado), `status` se queda en "loading" para siempre y el invitado
 	 * ve su progreso vacío. Tras 2.5 s sin resolver, se hidrata desde
 	 * localStorage igualmente (si luego llega la sesión, el efecto de abajo
 	 * re-hidrata). Se marca `local`, no `ready`: `ready` habilitaría el push a
-	 * Supabase antes de tiempo, pero sin ninguna marca la pantalla de inicio
+	 * la nube antes de tiempo, pero sin ninguna marca la pantalla de inicio
 	 * se quedaría en skeleton para siempre (D042).
 	 */
 	useEffect(() => {
@@ -197,7 +197,7 @@ export function GameEffects() {
 	 *
 	 * Invitado: localStorage -> Redux.
 	 *
-	 * Cuenta: localStorage + base de sincronización + Supabase -> Redux.
+	 * Cuenta: localStorage + base de sincronización + la nube -> Redux.
 	 */
 	useEffect(() => {
 		if (status === "loading") {

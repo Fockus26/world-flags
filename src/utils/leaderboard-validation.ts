@@ -10,7 +10,7 @@ import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 /**
  * Validación del ranking en el servidor (D112–D114, D211, D217, D221, D225). La hace un
  * trigger en `leaderboard_entries` (hoy, la migración
- * `supabase/migrations/20261023120000_leaderboard_invisibles_suplementarios.sql`): este
+ * `drizzle/0001_ranking_validacion.sql`): este
  * módulo guarda los números de los que sale ese SQL, para que un test los
  * compare con el catálogo, y el código con el que el trigger rechaza. El
  * cliente usa los mismos mínimos para no guardar como mejor marca un tiempo
@@ -168,7 +168,7 @@ export function isLeaderboardTimeRejected(error: { code?: string }): boolean {
 /**
  * Si una marca que no llegó al ranking se vuelve a intentar (D113): solo
  * cuando falló la red o el servidor, nunca cuando el trigger la rechazó.
- * Va aquí, y no en `cloud-storage.ts`, para probarla sin cargar Supabase.
+ * Va aquí, y no en `cloud-storage.ts`, para probarla sin cargar la red.
  */
 export function shouldRetryLeaderboardUpload(
 	result: LeaderboardUploadResult,

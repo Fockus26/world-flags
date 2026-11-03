@@ -30,7 +30,7 @@ export interface SandboxRuntime {
  * guarda el resultado para el paso de cierre y `gradeCountryReview` solo
  * cuenta cuántas tarjetas se calificaron. Nada llama a `learning-storage.ts`,
  * nada despacha `setLearningData`, y por lo tanto `GameEffects` no ve un solo
- * cambio: ni sube nada a Supabase, ni mueve la racha, ni el candado diario, ni
+ * cambio: ni sube nada a la nube, ni mueve la racha, ni el candado diario, ni
  * los logros, ni el ranking. `tests/unit/tutorial-sandbox.test.ts` lo
  * comprueba contando las escrituras a `localStorage`.
  */

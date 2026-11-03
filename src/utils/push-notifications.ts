@@ -124,7 +124,7 @@ let missingVapidKeyWarned = false;
 /**
  * Suscribe este dispositivo (ya con permiso) y guarda la suscripción vía la
  * Edge Function `subscribe-push` (no se toca la tabla `push_subscriptions`
- * directo desde el cliente — ver `supabase/notifications.sql`).
+ * directo desde el cliente — ver `src/pages/api/push/subscribe.ts`).
  */
 async function saveSubscription(userId: string | null): Promise<boolean> {
 	const publicKey = import.meta.env.PUBLIC_VAPID_PUBLIC_KEY;

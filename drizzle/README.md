@@ -9,12 +9,13 @@ Una migración se aplica **antes** de desplegar el código que la usa.
 ## Recordatorio diario
 
 `POST /api/cron/send-daily-reminders` se llama cada hora en punto desde el VPS: sirve con
-cualquier plan de Vercel. El secreto va en un archivo solo legible por root, nunca en el comando.
+cualquier plan de Vercel. **Ya instalado y activo en el VPS.** El secreto (`CRON_SECRET`, el mismo que en
+Vercel) va en un archivo solo legible por root, para que no se vea en la lista de procesos.
 
-`/etc/world-flags/cron.env`:
+`/etc/world-flags/cron.header` (permisos 600):
 
-```ini
-CRON_SECRET=<el mismo valor que en Vercel>
+```
+Authorization: Bearer <CRON_SECRET>
 ```
 
 `/etc/systemd/system/world-flags-reminders.service`:
@@ -25,8 +26,7 @@ Description=World Flags: recordatorio diario
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/world-flags/cron.env
-ExecStart=/bin/sh -c 'curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://world-flags-hazel.vercel.app/api/cron/send-daily-reminders'
+ExecStart=/usr/bin/curl -fsS --max-time 60 -X POST -H @/etc/world-flags/cron.header https://world-flags-hazel.vercel.app/api/cron/send-daily-reminders
 ```
 
 `/etc/systemd/system/world-flags-reminders.timer`:

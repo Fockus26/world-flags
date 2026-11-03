@@ -5,7 +5,7 @@ import type { LeaderboardEntry } from "@/utils/cloud-storage";
  * entre continentes dentro de un minuto no vuelve a pedir la tabla. Solo en
  * memoria (nada persistente): al recargar la página se pide de nuevo.
  *
- * Va aparte de `LeaderboardModal` para probarla sin React ni Supabase: quien
+ * Va aparte de `LeaderboardModal` para probarla sin React ni red: quien
  * carga pasa la función que pide, y el reloj es inyectable.
  *
  * Se invalida donde el ranking cambia por obra del propio usuario, para que

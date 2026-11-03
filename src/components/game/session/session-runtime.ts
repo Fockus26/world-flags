@@ -10,7 +10,7 @@ import type { ReviewGrade, UserLearningData } from "@/types/progress";
  * verdad sin tocar el progreso del usuario. El flujo normal persiste en cada
  * paso —historial SRS, candado de "practicado hoy", nota del continente, mejor
  * tiempo y ranking público, estadísticas, historial, día activo de la racha,
- * logros— y `GameEffects` sube `learningData` a Supabase con cada cambio; una
+ * logros— y `GameEffects` sube `learningData` a la nube con cada cambio; una
  * condición "si es el tutorial, no guardes" colada dentro de `useGame` se
  * olvidaría en el siguiente cambio sin que nada lo avise.
  *

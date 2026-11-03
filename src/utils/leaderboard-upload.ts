@@ -13,7 +13,7 @@ import { getGameProgress, getRegionBestTime } from "@/utils/learning-storage";
 
 /**
  * Subida de las mejores marcas al ranking público (D140). Va aparte de
- * `GameEffects` para probarla sin React ni Supabase: la cola recibe la
+ * `GameEffects` para probarla sin React ni red: la cola recibe la
  * función que sube y los temporizadores.
  */
 
@@ -59,7 +59,7 @@ export function collectLeaderboardMarks(
 			if (bestTimeMs === undefined || !isPlausibleRushTime(region, bestTimeMs))
 				continue;
 
-			// `best_time_ms` es `integer` en Supabase y el rush mide con
+			// `best_time_ms` es `integer` en la base y el rush mide con
 			// `performance.now()` (D132), que da fracciones de ms: sin
 			// redondear, la subida falla con 22P02 (D180).
 			marks.push({
