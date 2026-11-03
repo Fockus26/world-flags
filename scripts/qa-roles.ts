@@ -64,6 +64,18 @@ export async function assignRole(
 	void headers;
 }
 
+/** The Postgres backend: `sql` runs a statement in the QA database and returns its output. */
+export async function assignRolePostgres(
+	id: string,
+	role: string,
+	{ sql }: { sql: (statement: string) => string },
+): Promise<void> {
+	// World Flags has no roles: one player. A column or a table would be set here.
+	void id;
+	void role;
+	void sql;
+}
+
 export async function assignRoleFirebase(
 	uid: string,
 	email: string,
