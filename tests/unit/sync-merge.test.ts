@@ -521,6 +521,67 @@ describe("invitado que entra en una cuenta (D056, planSync)", () => {
 	});
 });
 
+describe("cuenta sin progreso de juego en dos dispositivos (D226)", () => {
+	function renamed(name: string, day: Date): UserLearningData {
+		const data = createDefaultLearningData();
+
+		return saveUserProfile(data, { ...data.profile, name }, at(day));
+	}
+
+	test("un dispositivo sin cambios no pisa el nombre que otro subió después", () => {
+		const base = renamed("Primero", DAY_1);
+		const remote = renamed("Segundo", DAY_2);
+
+		const plan = planSync(remote, base, base);
+
+		assert.equal(plan.push, false);
+		assert.equal(plan.data.profile.name, "Segundo");
+	});
+
+	test("el cambio propio más reciente sí sube", () => {
+		const base = renamed("Primero", DAY_1);
+		const remote = base;
+		const local = renamed("Segundo", DAY_2);
+
+		const plan = planSync(remote, local, base);
+
+		assert.equal(plan.push, true);
+		assert.equal(plan.data.profile.name, "Segundo");
+	});
+
+	test("con cambios en los dos, gana la fecha más reciente", () => {
+		const base = renamed("Primero", DAY_1);
+
+		const plan = planSync(
+			renamed("Remoto", DAY_3),
+			renamed("Local", DAY_2),
+			base,
+		);
+
+		assert.equal(plan.data.profile.name, "Remoto");
+	});
+
+	test("lo primero jugado en este dispositivo sube aunque la nube siga sin progreso", () => {
+		const base = renamed("Primero", DAY_1);
+		const local = review(base, "fr", "good", DAY_2);
+
+		const plan = planSync(base, local, base);
+
+		assert.equal(plan.push, true);
+		assert.ok(plan.data.countryHistory.fr);
+	});
+
+	test("sin base, el invitado sigue pasando a una cuenta sin progreso (D056)", () => {
+		const guest = review(createDefaultLearningData(), "fr", "good", DAY_2);
+
+		const plan = planSync(renamed("Cuenta", DAY_1), guest, null);
+
+		assert.equal(plan.push, true);
+		assert.equal(plan.discardedLocal, false);
+		assertSameJson(plan.data, guest);
+	});
+});
+
 describe("idempotencia: merge(merge(r, l, b), l, b) === merge(r, l, b)", () => {
 	const cases: [
 		string,
