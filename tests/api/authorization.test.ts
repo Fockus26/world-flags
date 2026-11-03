@@ -10,6 +10,7 @@
  */
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, test } from "bun:test";
+import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 
 const SITE = process.env.QA_SITE ?? "http://localhost:4399";
@@ -277,6 +278,57 @@ describe("leaderboard_entries", () => {
 			["flags:europe@2", ana.id],
 		);
 		assert.equal(rows[0].best_time_ms, 20_000);
+	});
+});
+
+describe("cuenta importada de Supabase", () => {
+	test("entra con su contraseña en bcrypt", async () => {
+		const id = crypto.randomUUID();
+		const email = `importada-${Date.now()}@example.test`;
+		const password = "contraseña-de-supabase";
+
+		await pool.query(
+			`insert into "user" (id, name, email, email_verified) values ($1, '', $2, true)`,
+			[id, email],
+		);
+		await pool.query(
+			`insert into account (account_id, provider_id, user_id, password) values ($1, 'credential', $2, $3)`,
+			[id, id, await bcrypt.hash(password, 10)],
+		);
+
+		const wrong = await request("/api/auth/sign-in/email", null, {
+			email,
+			password: "otra-contraseña",
+		});
+		assert.equal(wrong.status, 401);
+
+		const right = await request("/api/auth/sign-in/email", null, {
+			email,
+			password,
+		});
+		assert.equal(right.status, 200);
+		assert.equal((await right.json()).user.id, id);
+	});
+
+	test("sin confirmar no entra, aunque la contraseña valga", async () => {
+		const id = crypto.randomUUID();
+		const email = `sin-confirmar-${Date.now()}@example.test`;
+		const password = "contraseña-de-supabase";
+
+		await pool.query(`insert into "user" (id, name, email) values ($1, '', $2)`, [
+			id,
+			email,
+		]);
+		await pool.query(
+			`insert into account (account_id, provider_id, user_id, password) values ($1, 'credential', $2, $3)`,
+			[id, id, await bcrypt.hash(password, 10)],
+		);
+
+		const response = await request("/api/auth/sign-in/email", null, {
+			email,
+			password,
+		});
+		assert.equal(response.status, 403);
 	});
 });
 
