@@ -104,6 +104,12 @@ self.addEventListener("fetch", (event) => {
 	const { request } = event;
 	if (request.method !== "GET") return;
 
+	// La API, directo a la red: una respuesta suya nunca se cachea y sin red tiene que
+	// fallar como fallo de red. Antes que la navegación: los enlaces de Auth
+	// (`/api/auth/*`, el del correo y la vuelta de Google) son navegaciones.
+	const { origin, pathname } = new URL(request.url);
+	if (origin === self.location.origin && pathname.startsWith("/api/")) return;
+
 	// Navegación (el HTML de la app): siempre se intenta la red primero, para
 	// que abrir la PWA instalada cargue la última versión (con las últimas
 	// referencias a los bundles con hash) en vez de quedarse pegada

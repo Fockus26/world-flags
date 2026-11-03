@@ -1,10 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { User } from "@supabase/supabase-js";
+import type { AuthUser } from "@/utils/auth-session-state";
 
 export type AuthStatus = "guest" | "loading" | "authenticated";
 
 interface AuthState {
-	user: User | null;
+	user: AuthUser | null;
 	status: AuthStatus;
 	/**
 	 * La sesión se cerró sin que el usuario lo pidiera aquí (otra pestaña,
@@ -27,7 +27,7 @@ const authSlice = createSlice({
 		setAuthState: (
 			state,
 			action: PayloadAction<{
-				user: User | null;
+				user: AuthUser | null;
 				status: AuthStatus;
 			}>,
 		) => {

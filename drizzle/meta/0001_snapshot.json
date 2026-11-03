@@ -1,6 +1,6 @@
 {
-  "id": "6830c8a4-53c1-44bf-8cb0-435b938bd1be",
-  "prevId": "24211130-b600-4b45-80e5-3ffcd19d4d30",
+  "id": "37063a7b-5d3c-46a9-966c-282ba74f4f6e",
+  "prevId": "22efa3e8-a0c9-4fa6-8c36-2170f8f4767a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -378,7 +378,7 @@
         },
         "last_request": {
           "name": "last_request",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true
         }

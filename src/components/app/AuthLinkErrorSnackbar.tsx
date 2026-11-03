@@ -30,8 +30,8 @@ function openerSameOrigin(): Window | null {
 /**
  * Aviso de que el enlace de Auth con el que se llegó no sirvió (D218): el
  * del primer correo de un registro repetido, uno caducado o ya usado.
- * Supabase vuelve con el error en la URL y auth-js no avisa; sin esto la
- * app cargaba como invitado sin decir nada. Al leerlo se limpia la URL,
+ * El servidor vuelve con el error en la URL y nadie más avisa; sin esto la
+ * app cargaría como invitado sin decir nada. Al leerlo se limpia la URL,
  * para que recargar no lo repita. Se queda hasta "Entendido".
  *
  * Copy provisional (D218, CONTENT_CHECKLIST). Vive en el contenedor apilable

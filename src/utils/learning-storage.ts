@@ -1682,14 +1682,93 @@ export function detachGuestFromPendingAccount(): void {
 	}
 }
 
+const AUTH_IDENTITY_STORAGE_KEY = "world-flags-auth-identity";
+
+/** Quién es el jugador, para seguir como cuenta sin conexión (`auth-session-state.ts`). */
+export interface StoredAuthIdentity {
+	user: { id: string; email: string };
+	sessionId: string | null;
+}
+
+export function saveAuthIdentity(identity: StoredAuthIdentity): void {
+	try {
+		window.localStorage.setItem(
+			AUTH_IDENTITY_STORAGE_KEY,
+			JSON.stringify(identity),
+		);
+	} catch {
+		// Sin acceso a localStorage, sin red se juega como invitado.
+	}
+}
+
+export function getAuthIdentity(): StoredAuthIdentity | null {
+	try {
+		const stored = window.localStorage.getItem(AUTH_IDENTITY_STORAGE_KEY);
+
+		if (!stored) return null;
+
+		const parsed = JSON.parse(stored) as Partial<StoredAuthIdentity> | null;
+
+		return typeof parsed?.user?.id === "string" &&
+			typeof parsed.user.email === "string"
+			? {
+					user: { id: parsed.user.id, email: parsed.user.email },
+					sessionId:
+						typeof parsed.sessionId === "string" ? parsed.sessionId : null,
+				}
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+export function clearAuthIdentity(): void {
+	try {
+		window.localStorage.removeItem(AUTH_IDENTITY_STORAGE_KEY);
+	} catch {
+		// Sin acceso a localStorage no hay identidad que borrar.
+	}
+}
+
+/**
+ * La cuenta de quien tenía sesión de Supabase antes de la migración al VPS. Esa
+ * sesión ya no vale, pero dice quién es: así se le avisa de que vuelva a entrar y su
+ * progreso sigue siendo de su cuenta. Se lee una vez y se borra.
+ */
+export function takeLegacySupabaseIdentity(): StoredAuthIdentity | null {
+	try {
+		const storage = window.localStorage;
+		let found: StoredAuthIdentity | null = null;
+
+		for (const key of Object.keys(storage)) {
+			if (!/^sb-.+-auth-token$/.test(key)) continue;
+
+			const parsed = JSON.parse(storage.getItem(key) ?? "null") as {
+				user?: { id?: unknown; email?: unknown };
+			} | null;
+			const { id, email } = parsed?.user ?? {};
+
+			if (typeof id === "string" && typeof email === "string") {
+				found = { user: { id, email }, sessionId: null };
+			}
+
+			storage.removeItem(key);
+		}
+
+		return found;
+	} catch {
+		return null;
+	}
+}
+
 const VOLUNTARY_SIGN_OUT_STORAGE_KEY = "world-flags-voluntary-sign-out";
 
 /** Cierre de sesión pedido por el usuario en alguna pestaña (D219). */
 export interface VoluntarySignOutMark {
 	userId: string;
 	/**
-	 * `session_id` de la sesión que se pidió cerrar (D224), o `null` si no se
-	 * pudo leer del token (o la marca es de antes de D224).
+	 * La sesión que se pidió cerrar (D224), o `null` si no se conocía (o la marca
+	 * es de antes de D224).
 	 */
 	sessionId: string | null;
 	/** `Date.now()` al pedirlo (`session-end.ts`). */
@@ -1698,7 +1777,7 @@ export interface VoluntarySignOutMark {
 
 /**
  * Se escribe antes de `signOut`: así la otra pestaña, que ve el `SIGNED_OUT`
- * por el `BroadcastChannel` de Supabase, ya la encuentra al apartar (D219).
+ * por el `BroadcastChannel` de `auth-session.ts`, ya la encuentra al apartar (D219).
  */
 export function saveVoluntarySignOutMark(mark: VoluntarySignOutMark): void {
 	try {

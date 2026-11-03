@@ -1,14 +1,17 @@
 import {
-	type AuthError,
-	isAuthRetryableFetchError,
-} from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+	announceSignIn,
+	authClient,
+	signOutOfAccount,
+} from "@/lib/auth-session";
 import { useAppSelector } from "@/store/hooks";
 import {
+	type AuthErrorLike,
 	authErrorField,
 	authErrorMessage,
 	authTransportFailure,
 	isExistingAccountError,
+	isRetryableAuthStatus,
+	toAuthErrorLike,
 } from "@/utils/auth-errors";
 import {
 	cancelVoluntarySignOut,
@@ -16,22 +19,44 @@ import {
 	markVoluntarySignOut,
 } from "@/utils/session-end";
 
+/** A dónde vuelven los enlaces de Auth, con éxito o con error en la URL (D218). */
+const RETURN_PATH = "/";
+
+/**
+ * La llamada al cliente de Better Auth, con el error ya en nuestros códigos. Sin red
+ * la llamada puede lanzar en vez de devolver el error: cuenta como `status` 0.
+ */
+async function callAuth<T>(
+	call: () => Promise<{
+		data: T | null;
+		error: { code?: string; status?: number } | null;
+	}>,
+): Promise<{ data: T | null; error: AuthErrorLike | null }> {
+	try {
+		const { data, error } = await call();
+
+		return { data, error: error ? toAuthErrorLike(error) : null };
+	} catch {
+		return { data: null, error: { status: 0 } };
+	}
+}
+
 /** Sin red o servicio caído (D214): solo `navigator.onLine` falso o `status` 0 es "sin conexión". */
-function toTransportFailure(error: AuthError) {
+function toTransportFailure(error: AuthErrorLike) {
 	return authTransportFailure(
 		error,
-		isAuthRetryableFetchError(error),
+		isRetryableAuthStatus(error.status),
 		typeof navigator === "undefined" || navigator.onLine,
 	);
 }
 
-/** En español y por `error.code` (D052, D212): nunca el texto crudo de Supabase. */
-function toAuthErrorMessage(error: AuthError): string {
+/** En español y por código (D052, D212): nunca el texto crudo del servidor. */
+function toAuthErrorMessage(error: AuthErrorLike): string {
 	return authErrorMessage(error, toTransportFailure(error));
 }
 
 /** El campo que señala el error en el formulario (`aria-invalid`, D212). */
-function toAuthErrorField(error: AuthError) {
+function toAuthErrorField(error: AuthErrorLike) {
 	return authErrorField(error, toTransportFailure(error));
 }
 
@@ -51,15 +76,16 @@ export function useAuth() {
 			`width=${width},height=${height},left=${left},top=${top}`,
 		);
 
-		const { data, error } = await supabase.auth.signInWithOAuth({
-			provider: "google",
-			options: {
-				redirectTo: window.location.origin,
-				skipBrowserRedirect: true,
-			},
-		});
+		const { data, error } = await callAuth(() =>
+			authClient.signIn.social({
+				provider: "google",
+				callbackURL: RETURN_PATH,
+				errorCallbackURL: RETURN_PATH,
+				disableRedirect: true,
+			}),
+		);
 
-		if (error || !data.url) {
+		if (error || !data?.url) {
 			popup?.close();
 			return;
 		}
@@ -70,25 +96,23 @@ export function useAuth() {
 	};
 
 	const signUpWithEmail = async (email: string, password: string) => {
-		const { data, error } = await supabase.auth.signUp({
-			email,
-			password,
-			options: { emailRedirectTo: window.location.origin },
-		});
+		const { error } = await callAuth(() =>
+			authClient.signUp.email({
+				email,
+				password,
+				// El nombre del jugador vive en su perfil, no en la cuenta.
+				name: "",
+				callbackURL: RETURN_PATH,
+			}),
+		);
 
 		/**
-		 * Correo que ya tiene cuenta: con "Confirm email" activo (producción)
-		 * Supabase responde como a un registro nuevo, sin identidades; sin él,
-		 * con `user_already_exists`. En los dos casos se sigue como un registro
-		 * nuevo ("revisa tu correo", con la pista de iniciar sesión si ya
-		 * tenías cuenta): decir "ya existe" revelaría qué correos tienen
-		 * cuenta (D212).
+		 * Correo que ya tiene cuenta: Better Auth responde como a un registro nuevo
+		 * al exigir confirmación. Si aun así llegara el error, se sigue igual ("revisa
+		 * tu correo", con la pista de iniciar sesión si ya tenías cuenta): decir "ya
+		 * existe" revelaría qué correos tienen cuenta (D212).
 		 */
-		if (error && isExistingAccountError(error)) {
-			return { error: null, errorField: null, needsEmailConfirmation: true };
-		}
-
-		if (error) {
+		if (error && !isExistingAccountError(error)) {
 			return {
 				error: toAuthErrorMessage(error),
 				errorField: toAuthErrorField(error),
@@ -96,25 +120,13 @@ export function useAuth() {
 			};
 		}
 
-		const isExistingAccount = data.user?.identities?.length === 0;
-
-		if (isExistingAccount) {
-			return { error: null, errorField: null, needsEmailConfirmation: true };
-		}
-
-		return {
-			error: null,
-			errorField: null,
-			needsEmailConfirmation: !data.session,
-		};
+		return { error: null, errorField: null, needsEmailConfirmation: true };
 	};
 
 	const resendConfirmationEmail = async (email: string) => {
-		const { error } = await supabase.auth.resend({
-			type: "signup",
-			email,
-			options: { emailRedirectTo: window.location.origin },
-		});
+		const { error } = await callAuth(() =>
+			authClient.sendVerificationEmail({ email, callbackURL: RETURN_PATH }),
+		);
 
 		return {
 			error: error ? toAuthErrorMessage(error) : null,
@@ -122,10 +134,11 @@ export function useAuth() {
 	};
 
 	const signInWithEmail = async (email: string, password: string) => {
-		const { error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
+		const { error } = await callAuth(() =>
+			authClient.signIn.email({ email, password }),
+		);
+
+		if (!error) await announceSignIn();
 
 		return {
 			error: error ? toAuthErrorMessage(error) : null,
@@ -144,9 +157,9 @@ export function useAuth() {
 		// pueden leerla mucho después (congeladas), y solo vale para la sesión
 		// que se cierra ahora (D224).
 		markVoluntarySignOut(user?.id ?? null);
-		const { error } = await supabase.auth.signOut();
+		const { failed } = await signOutOfAccount();
 
-		if (error) {
+		if (failed) {
 			cancelVoluntarySignOut();
 		} else {
 			consumeVoluntarySignOut();

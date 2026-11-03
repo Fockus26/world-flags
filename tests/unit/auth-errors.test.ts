@@ -24,8 +24,59 @@ import {
 	isExistingAccountError,
 	PASSWORD_BLANK_MESSAGE,
 	PASSWORD_TOO_LONG_MESSAGE,
+	toAuthErrorLike,
 	validateNewPassword,
 } from "@/utils/auth-errors";
+
+describe("toAuthErrorLike (Better Auth)", () => {
+	test("cada código llega al mensaje y al campo que tocan", () => {
+		const cases = [
+			["INVALID_EMAIL_OR_PASSWORD", "invalid_credentials", "credentials"],
+			["PASSWORD_TOO_SHORT", "weak_password", "password"],
+			["PASSWORD_TOO_LONG", "weak_password", "password"],
+			["INVALID_EMAIL", "email_address_invalid", "email"],
+			["VALIDATION_ERROR", "validation_failed", "credentials"],
+		] as const;
+
+		for (const [code, expected, field] of cases) {
+			const error = toAuthErrorLike({ code, status: 400 });
+
+			assert.equal(error.code, expected);
+			assert.notEqual(authErrorMessage(error, null), AUTH_GENERIC_MESSAGE, code);
+			assert.equal(authErrorField(error, null), field, code);
+		}
+	});
+
+	test("sin confirmar: el código que usa el sondeo de «Revisa tu correo»", () => {
+		assert.equal(
+			toAuthErrorLike({ code: "EMAIL_NOT_VERIFIED", status: 403 }).code,
+			"email_not_confirmed",
+		);
+	});
+
+	test("correo existente se sigue reconociendo (D212)", () => {
+		for (const code of [
+			"USER_ALREADY_EXISTS",
+			"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+		]) {
+			assert.equal(isExistingAccountError(toAuthErrorLike({ code })), true);
+		}
+	});
+
+	test("429 es el límite de intentos, aunque no traiga código", () => {
+		const error = toAuthErrorLike({ status: 429 });
+
+		assert.equal(error.code, "over_request_rate_limit");
+		assert.notEqual(authErrorMessage(error, null), AUTH_GENERIC_MESSAGE);
+	});
+
+	test("un código desconocido da el genérico, nunca su texto", () => {
+		assert.equal(
+			authErrorMessage(toAuthErrorLike({ code: "ALGO_NUEVO" }), null),
+			AUTH_GENERIC_MESSAGE,
+		);
+	});
+});
 
 describe("authErrorMessage", () => {
 	test("los códigos del login y el registro salen en español", () => {

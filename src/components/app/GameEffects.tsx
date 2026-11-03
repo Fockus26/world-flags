@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 
-import { supabase } from "@/lib/supabase";
+import { discardRejectedSession, recheckSession } from "@/lib/auth-session";
 
 import { store } from "@/store";
 
@@ -95,22 +95,18 @@ function toSyncBaseRef(userId: string, data: UserLearningData): SyncBaseRef {
 }
 
 /**
- * El servidor rechazó el token de la sesión (D210). Reintentar con el mismo
- * token fallaría siempre ("No se pudo sincronizar" en bucle con la sesión
- * aparentemente iniciada), así que la primera vez se refresca la sesión y se
- * reintenta; si vuelve a rechazarlo (o el refresco falla), se cierra la sesión
- * en este dispositivo. `AuthEffects` lo avisa y lo pendiente se aparta.
+ * El servidor rechazó la sesión (D210). Reintentar sin más fallaría siempre ("No
+ * se pudo sincronizar" en bucle con la sesión aparentemente iniciada), así que la
+ * primera vez se comprueba contra el servidor y se reintenta; si vuelve a
+ * rechazarla (o ya no existe), se cierra en este dispositivo. `AuthEffects` lo
+ * avisa y lo pendiente se aparta.
  *
- * Devuelve si hay que reintentar ya (el refresco fue bien).
+ * Devuelve si hay que reintentar ya (la sesión sigue).
  */
 async function recoverRejectedSession(alreadyRefreshed: boolean) {
-	if (!alreadyRefreshed) {
-		const { error } = await supabase.auth.refreshSession();
+	if (!alreadyRefreshed && (await recheckSession())) return true;
 
-		if (!error) return true;
-	}
-
-	await supabase.auth.signOut({ scope: "local" });
+	await discardRejectedSession();
 
 	return false;
 }

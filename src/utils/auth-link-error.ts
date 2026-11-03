@@ -1,10 +1,12 @@
 /**
- * Vuelta de un enlace de Auth que falló (D218). Supabase redirige a la app
- * con el error en el hash (`#error=access_denied&error_code=otp_expired&
- * error_description=…`; en el flujo PKCE, en la query) y auth-js no lo
- * limpia ni avisa: la app cargaba como invitado sin decir nada. Caso real:
- * el primer correo de un registro repetido, cuyo enlace ya no vale.
+ * Vuelta de un enlace de Auth que falló (D218). El servidor redirige a la app
+ * con el error en la URL (Better Auth, `?error=TOKEN_EXPIRED`; los enlaces viejos
+ * de Supabase, `#error=access_denied&error_code=otp_expired&…`) y nadie lo limpia
+ * ni avisa: la app cargaría como invitado sin decir nada.
  */
+
+/** Enlace de confirmación caducado o inválido, en Better Auth. */
+const EXPIRED_LINK_ERRORS = ["TOKEN_EXPIRED", "INVALID_TOKEN"];
 
 const ERROR_PARAMS = ["error", "error_code", "error_description"] as const;
 
@@ -27,8 +29,8 @@ export const AUTH_LINK_ERROR_COPY = {
 export type AuthLinkErrorKind = keyof typeof AUTH_LINK_ERROR_COPY;
 
 /**
- * El error de Auth que trae la URL, o `null`. `otp_expired` es el enlace
- * caducado o ya sustituido; cualquier otro código va al aviso genérico.
+ * El error de Auth que trae la URL, o `null`. Un enlace caducado o ya sustituido
+ * tiene su aviso; cualquier otro código va al genérico.
  */
 export function readAuthLinkError(url: URL): AuthLinkErrorKind | null {
 	const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
@@ -36,7 +38,10 @@ export function readAuthLinkError(url: URL): AuthLinkErrorKind | null {
 	for (const params of [hash, url.searchParams]) {
 		if (!ERROR_PARAMS.some((name) => params.has(name))) continue;
 
-		return params.get("error_code") === "otp_expired" ? "expired" : "other";
+		return params.get("error_code") === "otp_expired" ||
+			EXPIRED_LINK_ERRORS.includes(params.get("error") ?? "")
+			? "expired"
+			: "other";
 	}
 
 	return null;
