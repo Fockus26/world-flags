@@ -1,8 +1,10 @@
+import { OpenNewWindow } from "iconoir-react";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Button, WRAPPING_BUTTON } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { type AuthErrorField, validateNewPassword } from "@/utils/auth-errors";
@@ -439,9 +441,8 @@ export function AuthSection() {
 					required
 					{...fieldErrorProps("email")}
 				/>
-				<Input
+				<PasswordInput
 					id="auth-password"
-					type="password"
 					label="Contraseña"
 					value={password}
 					onChange={(e) => {
@@ -453,9 +454,8 @@ export function AuthSection() {
 					{...fieldErrorProps("password")}
 				/>
 				<AutoHeight show={mode === "signup"}>
-					<Input
+					<PasswordInput
 						id="auth-confirm-password"
-						type="password"
 						label="Repetir contraseña"
 						value={confirmPassword}
 						onChange={(e) => {
@@ -532,9 +532,11 @@ export function AuthSection() {
 				href="/privacidad"
 				target="_blank"
 				rel="noopener"
-				className="self-center text-caption text-text-placeholder underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover"
+				className="inline-flex items-center gap-1 self-center text-caption text-text-placeholder underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover"
 			>
-				Política de privacidad (se abre en otra pestaña)
+				Política de privacidad
+				<OpenNewWindow aria-hidden="true" className="size-3.5 shrink-0" />
+				<span className="sr-only">(se abre en otra pestaña)</span>
 			</a>
 		</div>
 	);

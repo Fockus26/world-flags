@@ -174,17 +174,21 @@ export function RegionOption({
 					min-[44rem]:px-3
 				"
 			>
-				{/* El nombre no se recorta (D220): si no cabe entero al lado de la
-				    nota y la casilla (320 px, o texto al 200 %), esas bajan a una
-				    segunda línea, a la derecha; un nombre que ni solo cabe parte. */}
+				{/* Móvil (D228): cada valor en su línea, para que todas las tarjetas
+				    tengan la misma forma se parta o no el nombre. Desde `44rem`, en
+				    fila; si el nombre no cabe, nota y casilla bajan a la derecha
+				    (D220). El nombre nunca se recorta: si ni solo cabe, parte. */}
 				<span
 					className="
 						flex
 						min-w-0
-						flex-wrap
-						items-center
-						justify-between
-						gap-2
+						flex-col
+						gap-1
+						min-[44rem]:flex-row
+						min-[44rem]:flex-wrap
+						min-[44rem]:items-center
+						min-[44rem]:justify-between
+						min-[44rem]:gap-2
 					"
 				>
 					<span
@@ -199,7 +203,7 @@ export function RegionOption({
 						{label}
 					</span>
 
-					<span className="ml-auto flex shrink-0 items-center gap-1.5">
+					<span className="flex shrink-0 items-center gap-1.5 min-[44rem]:ml-auto">
 						{isLoading && (
 							<Skeleton shape="line" className="text-xs font-black">
 								{SCORE_SIZING_SAMPLE}
@@ -230,6 +234,8 @@ export function RegionOption({
 							aria-hidden="true"
 							className="
 								region-check
+								ml-auto
+								min-[44rem]:ml-0
 								flex
 								size-4
 								shrink-0
@@ -250,11 +256,14 @@ export function RegionOption({
 					className="
 						flex
 						min-w-0
-						items-center
-						justify-between
-						gap-2
+						flex-col
+						gap-1
 						text-tiny
 						font-semibold
+						min-[44rem]:flex-row
+						min-[44rem]:items-center
+						min-[44rem]:justify-between
+						min-[44rem]:gap-2
 					"
 				>
 					<span>{countryCount} países</span>
