@@ -18,6 +18,7 @@ import {
 	SUB_GAME_KEYS,
 	SUB_GAME_TYPES,
 } from "./learning-storage";
+import { accountHeaders } from "./request-account";
 import {
 	nextVersion,
 	runVersionedSync,
@@ -122,10 +123,13 @@ async function apiRequest<T>(
 		const response = await fetch(path, {
 			signal,
 			...(body === undefined
-				? {}
+				? { headers: accountHeaders() }
 				: {
 						method: "POST",
-						headers: { "Content-Type": "application/json" },
+						headers: {
+							...accountHeaders(),
+							"Content-Type": "application/json",
+						},
 						body: JSON.stringify(body),
 					}),
 		});

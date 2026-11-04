@@ -332,6 +332,70 @@ describe("cuenta importada de Supabase", () => {
 	});
 });
 
+describe("pestaña que cree ser otra cuenta (D227)", () => {
+	const withAccount = (account: string) =>
+		fetch(`${SITE}/api/learning-data`, {
+			headers: { Cookie: ana.cookie, "x-world-flags-account": account },
+		});
+
+	test("con la cookie de una y la cabecera de otra: sesión rechazada", async () => {
+		assert.equal((await withAccount(beto.id)).status, 401);
+	});
+
+	test("con la suya, pasa", async () => {
+		assert.equal((await withAccount(ana.id)).status, 200);
+	});
+});
+
+describe("entrada que Postgres no acepta: 400, no 500", () => {
+	test("fechas que `Date.parse` sí entiende", async () => {
+		for (const updatedAt of ["1", "March 7", "+275760-09-13T00:00:00.000Z"]) {
+			const response = await request("/api/learning-data", ana, {
+				columns: { profile: PROFILE },
+				updatedAt,
+				previousVersion: null,
+			});
+
+			assert.equal(response.status, 400, updatedAt);
+		}
+	});
+
+	test("versión anterior que no es una fecha", async () => {
+		for (const previousVersion of ["", "infinity", "now"]) {
+			const response = await request("/api/learning-data", ana, {
+				columns: { profile: PROFILE },
+				updatedAt: NOW(),
+				previousVersion,
+			});
+
+			assert.equal(response.status, 400, previousVersion);
+		}
+	});
+
+	test("carácter NUL", async () => {
+		const inName = await request("/api/leaderboard", ana, {
+			...entry(),
+			displayName: "A\0B",
+		});
+
+		assert.equal(inName.status, 400);
+
+		const inScope = await request("/api/leaderboard?scope=%00", null);
+
+		assert.equal(inScope.status, 400);
+	});
+
+	test("marca que no cabe en la columna", async () => {
+		const response = await request(
+			"/api/leaderboard",
+			ana,
+			entry("flags:europe@2", 2 ** 31),
+		);
+
+		assert.equal(response.status, 400);
+	});
+});
+
 describe("app_config", () => {
 	test("lectura pública de la mínima, sin sesión", async () => {
 		const response = await request("/api/min-version", null);
@@ -345,9 +409,9 @@ describe("push_subscriptions", () => {
 	const subscription = (deviceId: string, userId: string | null) => ({
 		deviceId,
 		userId,
-		endpoint: `https://push.example.test/${deviceId}`,
-		p256dh: "clave",
-		auth: "auth",
+		endpoint: `https://fcm.googleapis.com/fcm/send/${deviceId}`,
+		p256dh: "B".repeat(87),
+		auth: "a".repeat(22),
 		timezone: "Europe/Madrid",
 		reminderHour: 9,
 	});
@@ -392,13 +456,56 @@ describe("push_subscriptions", () => {
 		assert.equal(response.status, 200);
 	});
 
-	test("solo un endpoint https", async () => {
-		const response = await request("/api/push/subscribe", null, {
-			...subscription(`http-${Date.now()}`, null),
-			endpoint: "http://169.254.169.254/latest",
+	test("solo un servicio push real, por https", async () => {
+		for (const endpoint of [
+			"http://169.254.169.254/latest",
+			"https://169.254.169.254/latest",
+			"https://localhost/push",
+			"https://fcm.googleapis.com.example.test/fcm",
+		]) {
+			const response = await request("/api/push/subscribe", null, {
+				...subscription(`http-${Date.now()}`, null),
+				endpoint,
+			});
+
+			assert.equal(response.status, 400, endpoint);
+		}
+	});
+
+	test("el mismo navegador con otro id de dispositivo se queda con una fila", async () => {
+		const first = subscription(`repetido-1-${Date.now()}`, null);
+		const second = { ...first, deviceId: `repetido-2-${Date.now()}` };
+
+		await request("/api/push/subscribe", null, first);
+
+		const response = await request("/api/push/subscribe", null, second);
+
+		assert.equal(response.status, 200);
+
+		const { rows } = await pool.query(
+			"select device_id from push_subscriptions where endpoint = $1",
+			[first.endpoint],
+		);
+		assert.deepEqual(rows, [{ device_id: second.deviceId }]);
+	});
+
+	test("sin el endpoint no se le quita un dispositivo a una cuenta", async () => {
+		const deviceId = `de-ana-${Date.now()}`;
+		const own = subscription(deviceId, ana.id);
+
+		await request("/api/push/subscribe", ana, own);
+
+		await request("/api/push/subscribe", null, {
+			...own,
+			userId: null,
+			endpoint: `https://fcm.googleapis.com/fcm/send/ajeno-${deviceId}`,
 		});
 
-		assert.equal(response.status, 400);
+		const { rows } = await pool.query(
+			"select endpoint, user_id from push_subscriptions where device_id = $1",
+			[deviceId],
+		);
+		assert.deepEqual(rows, [{ endpoint: own.endpoint, user_id: ana.id }]);
 	});
 
 	test("no hay lectura desde la API", async () => {

@@ -23,6 +23,8 @@ import {
 	getVoluntarySignOutMark,
 	registerRegionGame,
 	restorePendingAccountData,
+	saveSyncBase,
+	setAsideOtherAccountData,
 	saveLearningData,
 	savePendingAccountData,
 	saveReviewResult,
@@ -325,6 +327,41 @@ describe("lo pendiente de una sesión cerrada sola (D210)", () => {
 		assert.equal(restorePendingAccountData("user-b").restored, false);
 		assert.equal(getSyncBase("user-b"), null);
 		assert.equal(restorePendingAccountData("user-a").restored, true);
+	});
+});
+
+describe("entra otra cuenta con los datos de una en este navegador (D227)", () => {
+	test("lo local no pasa a la nueva: se aparta y vuelve con la suya", () => {
+		const base = sharedData();
+		const local = registerRegionGame(base, "asia", 8, T_B);
+
+		saveLearningData(local);
+		saveSyncBase("user-a", base);
+
+		setAsideOtherAccountData("user-b");
+
+		assert.deepEqual(getLearningData().regionGameScores, {});
+		assert.equal(getSyncBase("user-a"), null);
+
+		assert.equal(restorePendingAccountData("user-b").restored, false);
+		assert.equal(restorePendingAccountData("user-a").restored, true);
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+		assert.equal(JSON.stringify(getSyncBase("user-a")), JSON.stringify(base));
+	});
+
+	test("con la base de la misma cuenta, o sin base, no aparta nada", () => {
+		const local = registerRegionGame(sharedData(), "asia", 8, T_B);
+
+		saveLearningData(local);
+
+		setAsideOtherAccountData("user-a");
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+
+		saveSyncBase("user-a", local);
+
+		setAsideOtherAccountData("user-a");
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+		assert.equal(restorePendingAccountData("user-a").restored, false);
 	});
 });
 

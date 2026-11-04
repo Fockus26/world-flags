@@ -6,6 +6,7 @@ import {
 import {
 	badRequest,
 	getSessionUserId,
+	isTimestamp,
 	json,
 	readJsonObject,
 	unauthorized,
@@ -42,9 +43,8 @@ export const POST = withErrorHandling(async (request) => {
 		typeof columns !== "object" ||
 		columns === null ||
 		Array.isArray(columns) ||
-		typeof updatedAt !== "string" ||
-		Number.isNaN(Date.parse(updatedAt)) ||
-		(previousVersion !== null && typeof previousVersion !== "string")
+		!isTimestamp(updatedAt) ||
+		(previousVersion !== null && !isTimestamp(previousVersion))
 	) {
 		return badRequest("Cuerpo no válido");
 	}

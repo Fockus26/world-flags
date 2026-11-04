@@ -1,3 +1,5 @@
+import { ACCOUNT_HEADER } from "@/utils/request-account";
+
 import { auth } from "./auth";
 
 export function json(body: unknown, status = 200, headers?: HeadersInit) {
@@ -9,7 +11,22 @@ export function json(body: unknown, status = 200, headers?: HeadersInit) {
 
 export const badRequest = (message: string) => json({ message }, 400);
 
-/** El cuerpo como objeto, o `null` si no lo es. */
+/**
+ * Una fecha ISO completa, la única forma en que las manda la app. `Date.parse` acepta
+ * más que Postgres ("March 7", "1"), y lo que Postgres no acepta acabaría en un 500.
+ */
+const TIMESTAMP_PATTERN =
+	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:\d{2})?)$/;
+
+export const isTimestamp = (value: unknown): value is string =>
+	typeof value === "string" &&
+	TIMESTAMP_PATTERN.test(value) &&
+	!Number.isNaN(Date.parse(value));
+
+/**
+ * El cuerpo como objeto, o `null` si no lo es. El carácter NUL se rechaza aquí, en
+ * cualquier campo: Postgres no lo admite ni en texto ni en `jsonb`.
+ */
 export async function readJsonObject(
 	request: Request,
 ): Promise<Record<string, unknown> | null> {
@@ -18,7 +35,11 @@ export async function readJsonObject(
 	}
 
 	try {
-		const body: unknown = await request.json();
+		const text = await request.text();
+
+		if (text.includes("\\u0000")) return null;
+
+		const body: unknown = JSON.parse(text);
 
 		return typeof body === "object" && body !== null && !Array.isArray(body)
 			? (body as Record<string, unknown>)
@@ -37,8 +58,11 @@ export async function getSessionUserId(
 	request: Request,
 ): Promise<string | null> {
 	const session = await auth.api.getSession({ headers: request.headers });
+	const userId = session?.user.id ?? null;
+	const expected = request.headers.get(ACCOUNT_HEADER);
 
-	return session?.user.id ?? null;
+	// La pestaña cree ser otra cuenta (`request-account.ts`): lo suyo no va a esta.
+	return expected && expected !== userId ? null : userId;
 }
 
 /** Sin cuenta: `GameEffects` lo trata como sesión rechazada (D210). */

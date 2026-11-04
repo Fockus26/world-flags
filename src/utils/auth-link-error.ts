@@ -10,6 +10,20 @@ const EXPIRED_LINK_ERRORS = ["TOKEN_EXPIRED", "INVALID_TOKEN"];
 
 const ERROR_PARAMS = ["error", "error_code", "error_description"] as const;
 
+/**
+ * A dónde vuelve el enlace de confirmar la cuenta. Un enlace ya usado vuelve sin error y
+ * sin sesión (también si un antivirus del correo lo abrió antes): la marca es lo único
+ * que distingue esa vuelta de una carga normal de invitado (D227).
+ */
+const CONFIRM_PARAM = "confirmado";
+
+export const CONFIRM_RETURN_PATH = `/?${CONFIRM_PARAM}=1`;
+
+/** ¿Se llegó aquí por un enlace de confirmar la cuenta? */
+export function cameFromConfirmLink(url: URL): boolean {
+	return url.searchParams.has(CONFIRM_PARAM);
+}
+
 function isErrorParam(name: string): boolean {
 	return (ERROR_PARAMS as readonly string[]).includes(name);
 }
@@ -23,6 +37,10 @@ export const AUTH_LINK_ERROR_COPY = {
 	other: {
 		title: "No se pudo entrar con el enlace",
 		body: "Vuelve a intentarlo desde Perfil y configuración.",
+	},
+	alreadyConfirmed: {
+		title: "Tu cuenta ya está confirmada",
+		body: "Inicia sesión desde Perfil y configuración.",
 	},
 } as const;
 
@@ -132,7 +150,7 @@ export function withoutAuthLinkError(url: URL): string {
 	const clean = new URL(url.href);
 	const hash = new URLSearchParams(clean.hash.replace(/^#/, ""));
 
-	for (const name of ERROR_PARAMS) {
+	for (const name of [...ERROR_PARAMS, CONFIRM_PARAM]) {
 		clean.searchParams.delete(name);
 	}
 

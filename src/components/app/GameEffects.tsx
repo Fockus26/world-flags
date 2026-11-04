@@ -47,6 +47,7 @@ import {
 	saveLearningData,
 	savePendingAccountData,
 	saveSyncBase,
+	setAsideOtherAccountData,
 } from "@/utils/learning-storage";
 
 import { wasSignOutRequestedElsewhere } from "@/utils/session-end";
@@ -101,10 +102,20 @@ function toSyncBaseRef(userId: string, data: UserLearningData): SyncBaseRef {
  * rechazarla (o ya no existe), se cierra en este dispositivo. `AuthEffects` lo
  * avisa y lo pendiente se aparta.
  *
- * Devuelve si hay que reintentar ya (la sesión sigue).
+ * Devuelve si hay que reintentar ya (la sesión sigue). Si ahora es otra cuenta, no: el
+ * cambio de `user` ya relanza la sincronización, y la cookie de esa cuenta no se cierra.
  */
-async function recoverRejectedSession(alreadyRefreshed: boolean) {
-	if (!alreadyRefreshed && (await recheckSession())) return true;
+async function recoverRejectedSession(
+	userId: string,
+	alreadyRefreshed: boolean,
+) {
+	if (!alreadyRefreshed) {
+		const result = await recheckSession(userId);
+
+		if (result === "same") return true;
+
+		if (result === "other") return false;
+	}
 
 	await discardRejectedSession();
 
@@ -318,6 +329,8 @@ export function GameEffects() {
 			 * descarta con el aviso de D212.
 			 */
 			if (!failedSync) {
+				setAsideOtherAccountData(user.id);
+
 				const { discardedGuest } = restorePendingAccountData(user.id);
 
 				if (discardedGuest && hasLearningProgress(discardedGuest)) {
@@ -444,15 +457,17 @@ export function GameEffects() {
 
 					refreshedSessionRef.current = user.id;
 
-					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
-						if (!retry) {
-							console.error("Failed to hydrate authenticated user:", error);
-						}
+					void recoverRejectedSession(user.id, alreadyRefreshed).then(
+						(retry) => {
+							if (!retry) {
+								console.error("Failed to hydrate authenticated user:", error);
+							}
 
-						if (retry && !cancelled && !isSyncing) {
-							void hydrateAuthenticatedUser();
-						}
-					});
+							if (retry && !cancelled && !isSyncing) {
+								void hydrateAuthenticatedUser();
+							}
+						},
+					);
 
 					return;
 				}
@@ -607,11 +622,13 @@ export function GameEffects() {
 
 					refreshedSessionRef.current = userId;
 
-					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
-						if (!retry) console.error("Failed to sync learning data:", error);
+					void recoverRejectedSession(userId, alreadyRefreshed).then(
+						(retry) => {
+							if (!retry) console.error("Failed to sync learning data:", error);
 
-						if (retry && !controller.signal.aborted) void runSync();
-					});
+							if (retry && !controller.signal.aborted) void runSync();
+						},
+					);
 
 					return;
 				}

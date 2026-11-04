@@ -18,4 +18,10 @@ const pool = new Pool({
 	connectionTimeoutMillis: 5_000,
 });
 
+// Una conexión inactiva que muere (reinicio de Postgres o PgBouncer) emite aquí: sin
+// manejador, tumbaría el proceso con las peticiones en curso. El pool abre otra.
+pool.on("error", (error) => {
+	console.error("Idle database connection failed:", error.message);
+});
+
 export const db = drizzle(pool, { schema });

@@ -17,6 +17,9 @@ export const prerender = false;
 
 const MAX_SCOPE_LENGTH = 64;
 
+/** Lo que cabe en la columna, `integer`. */
+const MAX_BEST_TIME_MS = 2_147_483_647;
+
 const isOptionalText = (value: unknown): value is string | null =>
 	value === null || typeof value === "string";
 
@@ -24,7 +27,7 @@ const isOptionalText = (value: unknown): value is string | null =>
 export const GET = withErrorHandling(async (_request, url) => {
 	const scope = url.searchParams.get("scope");
 
-	if (!scope || scope.length > MAX_SCOPE_LENGTH) {
+	if (!scope || scope.length > MAX_SCOPE_LENGTH || scope.includes("\0")) {
 		return badRequest("Scope no válido");
 	}
 
@@ -48,7 +51,8 @@ export const POST = withErrorHandling(async (request) => {
 		typeof displayName !== "string" ||
 		!isOptionalText(avatarStyle) ||
 		!isOptionalText(avatarSeed) ||
-		!Number.isSafeInteger(bestTimeMs)
+		!Number.isSafeInteger(bestTimeMs) ||
+		(bestTimeMs as number) > MAX_BEST_TIME_MS
 	) {
 		return badRequest("Cuerpo no válido");
 	}

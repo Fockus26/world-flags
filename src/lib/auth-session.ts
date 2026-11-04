@@ -12,6 +12,7 @@ import {
 	saveAuthIdentity,
 	takeLegacySupabaseIdentity,
 } from "@/utils/learning-storage";
+import { setRequestAccount } from "@/utils/request-account";
 
 /**
  * Siempre la URL de la página (cada preview tiene la suya). Al prerenderizar no hay
@@ -81,12 +82,28 @@ function apply(check: SessionCheck): void {
 		known === undefined
 			? (getAuthIdentity() ?? takeLegacySupabaseIdentity())
 			: null;
+	const previous = known === undefined ? stored : known;
 	const next = nextSessionState(known, stored, check);
 
 	known = next.session;
 
+	setRequestAccount(next.session?.user.id ?? null);
+
 	if (next.session) saveAuthIdentity(next.session);
 	else if (check.kind === "none") clearAuthIdentity();
+
+	/**
+	 * La cookie es común a todas las pestañas y no avisa de sus cambios. Se dice aquí, y no
+	 * solo al pulsar "Entrar": el popup de Google y el enlace del correo se enteran al
+	 * cargar. Sin respuesta no se dice nada: es lo que ya se sabía.
+	 */
+	if (
+		check.kind !== "unreachable" &&
+		(previous?.user.id !== next.session?.user.id ||
+			previous?.sessionId !== next.session?.sessionId)
+	) {
+		channel?.postMessage("changed");
+	}
 
 	if (next.event) {
 		for (const listener of listeners) {
@@ -129,7 +146,7 @@ function start(): void {
 		}
 	});
 
-	// El popup de Google y las otras pestañas: la cookie no avisa de sus cambios.
+	// Las otras pestañas y el popup de Google, que avisan desde `apply`.
 	if (typeof BroadcastChannel !== "undefined") {
 		channel = new BroadcastChannel(CHANNEL_NAME);
 		channel.onmessage = () => void checkSession();
@@ -152,23 +169,28 @@ export function subscribeToAuth(listener: AuthListener): () => void {
 /** Tras entrar: esta pestaña se pone al día y las demás lo oyen. */
 export async function announceSignIn(): Promise<void> {
 	await checkSession();
-
-	channel?.postMessage("changed");
 }
 
 /**
- * ¿Sigue la sesión? Para `GameEffects` cuando el servidor rechaza una petición
+ * ¿Sigue siendo `userId`? Para `GameEffects` cuando el servidor rechaza una petición
  * (D210). Sin respuesta se da por buena: no es un rechazo, y el reintento decide.
+ * `other`: otra pestaña entró con otra cuenta, y esta ya se ha puesto al día.
  */
-export async function recheckSession(): Promise<boolean> {
-	return (await checkSession()).kind !== "none";
+export async function recheckSession(
+	userId: string,
+): Promise<"same" | "other" | "none"> {
+	const check = await checkSession();
+
+	if (check.kind === "none") return "none";
+
+	return check.kind === "session" && check.session.user.id !== userId
+		? "other"
+		: "same";
 }
 
 /** Marca la sesión como cerrada aquí y en las demás pestañas. */
 function endSession(): void {
 	apply({ kind: "none" });
-
-	channel?.postMessage("changed");
 }
 
 /** Cierre pedido por el usuario. Si el servidor no responde, la sesión sigue. */

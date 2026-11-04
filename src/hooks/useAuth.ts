@@ -14,6 +14,10 @@ import {
 	toAuthErrorLike,
 } from "@/utils/auth-errors";
 import {
+	authLinkErrorMessage,
+	CONFIRM_RETURN_PATH,
+} from "@/utils/auth-link-error";
+import {
 	cancelVoluntarySignOut,
 	consumeVoluntarySignOut,
 	markVoluntarySignOut,
@@ -87,6 +91,8 @@ export function useAuth() {
 
 		if (error || !data?.url) {
 			popup?.close();
+			// Por donde avisa el popup cuando vuelve con error (`AuthLinkErrorSnackbar`).
+			window.postMessage(authLinkErrorMessage("other"), window.location.origin);
 			return;
 		}
 
@@ -102,7 +108,7 @@ export function useAuth() {
 				password,
 				// El nombre del jugador vive en su perfil, no en la cuenta.
 				name: "",
-				callbackURL: RETURN_PATH,
+				callbackURL: CONFIRM_RETURN_PATH,
 			}),
 		);
 
@@ -125,7 +131,10 @@ export function useAuth() {
 
 	const resendConfirmationEmail = async (email: string) => {
 		const { error } = await callAuth(() =>
-			authClient.sendVerificationEmail({ email, callbackURL: RETURN_PATH }),
+			authClient.sendVerificationEmail({
+				email,
+				callbackURL: CONFIRM_RETURN_PATH,
+			}),
 		);
 
 		return {
@@ -164,6 +173,8 @@ export function useAuth() {
 		} else {
 			consumeVoluntarySignOut();
 		}
+
+		return { failed };
 	};
 
 	return {

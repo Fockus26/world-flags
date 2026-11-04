@@ -16,8 +16,26 @@ const APP_VERSION = "2.10.8";
 // golpe, y la app puede ofrecer el botón "Actualizar" (ver
 // `useServiceWorkerUpdate.ts`) en vez de recargar sin avisar. Solo salta a
 // activarse cuando ese botón manda el mensaje de abajo.
+//
+// La excepción, una sola vez por navegador (D227): los service workers anteriores
+// a la API propia cachean todo GET del mismo origen, también `/api/*`, y mientras
+// sigan al mando la sesión va una recarga por detrás. El primero que no lo hace
+// toma el control sin esperar al botón; la marca evita que lo repitan los siguientes.
+const API_BYPASS_MARKER = "/__sw-api-bypass";
+
+async function install() {
+	const cache = await caches.open(CACHE_NAME);
+
+	await cache.add(OFFLINE_URL);
+
+	if (await cache.match(API_BYPASS_MARKER)) return;
+
+	await cache.put(API_BYPASS_MARKER, new Response("1"));
+	self.skipWaiting();
+}
+
 self.addEventListener("install", (event) => {
-	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL)));
+	event.waitUntil(install());
 });
 
 // Solo banderas propias: el mensaje viene de la página, pero se valida igual.
@@ -55,7 +73,7 @@ self.addEventListener("message", (event) => {
 	}
 });
 
-// Recordatorio diario: la Edge Function `send-daily-reminders` manda un push
+// Recordatorio diario: `/api/cron/send-daily-reminders` manda un push
 // con `{ title, body }` en el payload JSON.
 self.addEventListener("push", (event) => {
 	let payload = { title: "Banderas del Mundo", body: "Tienes un recordatorio nuevo." };
@@ -89,13 +107,29 @@ self.addEventListener("notificationclick", (event) => {
 	);
 });
 
+// Lo que un service worker anterior guardó de la API: nadie vuelve a leerlo, y lleva
+// datos de la sesión.
+async function purgeApiResponses() {
+	const cache = await caches.open(CACHE_NAME);
+	const requests = await cache.keys();
+
+	await Promise.all(
+		requests
+			.filter((request) => new URL(request.url).pathname.startsWith("/api/"))
+			.map((request) => cache.delete(request)),
+	);
+}
+
 self.addEventListener("activate", (event) => {
 	event.waitUntil(
-		caches
-			.keys()
-			.then((keys) =>
-				Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
-			),
+		Promise.all([
+			caches
+				.keys()
+				.then((keys) =>
+					Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
+				),
+			purgeApiResponses(),
+		]),
 	);
 	self.clients.claim();
 });
@@ -130,9 +164,9 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 
-	// Otros orígenes (Supabase, avatares de dicebear, Google Fonts): directo a
+	// Otros orígenes (avatares de dicebear, Google Fonts): directo a
 	// la red, sin pasar por aquí. Nunca se cacheaban, y responderles con la
-	// página offline cuando no hay red hacía que un GET a Supabase recibiera
+	// página offline cuando no hay red hacía que un GET ajeno recibiera
 	// HTML con 200 en vez de un error de red: la app no podía saber que estaba
 	// sin conexión. La caché HTTP del navegador sigue aplicando (un avatar ya
 	// visto carga sin red).

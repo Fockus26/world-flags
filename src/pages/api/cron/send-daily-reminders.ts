@@ -7,6 +7,9 @@ import { json, withErrorHandling } from "@/server/http";
 
 export const prerender = false;
 
+/** Un servicio push que no contesta no retiene a los demás: el temporizador corta a 60 s. */
+const PUSH_TIMEOUT_MS = 10_000;
+
 /** Hora local (0-23) de `timezone` en este instante. `Intl` ya sabe manejar DST; una resta de offset fijo no. */
 function localHourInTimezone(timezone: string): number | null {
 	try {
@@ -39,16 +42,18 @@ export const POST = withErrorHandling(async (request) => {
 		return json({ message: "No autorizado" }, 401);
 	}
 
-	webpush.setVapidDetails(
-		process.env.VAPID_SUBJECT ?? "",
-		process.env.PUBLIC_VAPID_PUBLIC_KEY ?? "",
-		process.env.VAPID_PRIVATE_KEY ?? "",
-	);
-
 	const subscriptions = await db.select().from(pushSubscriptions);
 
 	const due = subscriptions.filter(
 		(row) => localHourInTimezone(row.timezone) === row.reminderHour,
+	);
+
+	if (due.length === 0) return json({ sent: 0, stale: 0, failed: 0 });
+
+	webpush.setVapidDetails(
+		process.env.VAPID_SUBJECT ?? "",
+		process.env.PUBLIC_VAPID_PUBLIC_KEY ?? "",
+		process.env.VAPID_PRIVATE_KEY ?? "",
 	);
 
 	const payload = JSON.stringify({
@@ -57,6 +62,9 @@ export const POST = withErrorHandling(async (request) => {
 	});
 
 	const staleDeviceIds: string[] = [];
+
+	let sent = 0;
+	let failed = 0;
 
 	await Promise.all(
 		due.map(async (row) => {
@@ -67,7 +75,10 @@ export const POST = withErrorHandling(async (request) => {
 						keys: { p256dh: row.p256dh, auth: row.authKey },
 					},
 					payload,
+					{ timeout: PUSH_TIMEOUT_MS },
 				);
+
+				sent += 1;
 			} catch (sendError) {
 				// 404/410 = la suscripción ya no existe en el navegador
 				// (desinstalada, permiso revocado, endpoint expirado): se borra
@@ -78,6 +89,8 @@ export const POST = withErrorHandling(async (request) => {
 				if (statusCode === 404 || statusCode === 410) {
 					staleDeviceIds.push(row.deviceId);
 				} else {
+					failed += 1;
+
 					console.error(
 						`Failed to send push to device ${row.deviceId}:`,
 						sendError,
@@ -93,8 +106,5 @@ export const POST = withErrorHandling(async (request) => {
 			.where(inArray(pushSubscriptions.deviceId, staleDeviceIds));
 	}
 
-	return json({
-		sent: due.length - staleDeviceIds.length,
-		stale: staleDeviceIds.length,
-	});
+	return json({ sent, stale: staleDeviceIds.length, failed });
 });

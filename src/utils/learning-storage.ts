@@ -1666,6 +1666,38 @@ function readPendingAccount(): StoredPendingAccount | null {
 }
 
 /**
+ * Entra `userId` y la base dice que lo local es de otra cuenta (el enlace del correo de
+ * otra cuenta abierto en este navegador, D227): no es progreso de un invitado, y no pasa
+ * a esta. Se aparta para cuando vuelva esa cuenta. El apartado es uno solo: si ya hay uno
+ * de `userId`, se repone ese.
+ */
+export function setAsideOtherAccountData(userId: string): void {
+	if (typeof window === "undefined") return;
+
+	try {
+		const stored = window.localStorage.getItem(SYNC_BASE_STORAGE_KEY);
+
+		if (!stored) return;
+
+		const base = JSON.parse(stored) as StoredSyncBase;
+
+		if (!base.data || base.userId === userId) return;
+
+		if (readPendingAccount()?.userId === userId) return;
+
+		savePendingAccountData(
+			base.userId,
+			getLearningData(),
+			normalizeLearningData(base.data),
+			false,
+		);
+		clearLearningData();
+	} catch {
+		// Sin acceso a localStorage no hay datos que apartar.
+	}
+}
+
+/**
  * Una sesión terminó en este dispositivo sin apartar nada (otra cuenta salió,
  * o se salió a propósito): lo que se juegue como invitado desde ahora ya no
  * es, sin más, de la cuenta con cambios apartados (D214).
