@@ -1,0 +1,189 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+// Borrador del agente, sacado de lo que hace el código, pendiente de revisar por el
+// dueño (CONTENT_CHECKLIST). Sin React: se lee también sin cargar el juego. Google exige
+// esta URL para publicar el acceso con Google.
+const CONTACT_EMAIL = "alejandrorey2654@gmail.com";
+const LAST_UPDATED = "4 de noviembre de 2026";
+
+const sectionClass = "flex flex-col gap-2";
+const headingClass = "m-0 text-heading-sm text-surface-soft";
+const textClass = "m-0 text-body-sm text-text-placeholder";
+const listClass =
+	"m-0 flex list-disc flex-col gap-1 pl-5 text-body-sm text-text-placeholder";
+const linkClass =
+	"text-surface-soft underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover";
+---
+
+<Layout title="Política de privacidad — Banderas del Mundo">
+	<main id="main-content" class="h-dvh w-full overflow-auto p-2 min-[20rem]:p-4">
+		<article
+			aria-labelledby="privacy-title"
+			class="mx-auto flex w-full max-w-prose flex-col gap-6 wrap-anywhere rounded-2xl border border-surface-border bg-surface p-4 min-[20rem]:p-6 shadow-xl"
+		>
+			<header class="flex flex-col gap-2">
+				<h1 id="privacy-title" class="m-0 text-heading text-surface-soft">
+					Política de privacidad
+				</h1>
+				<p class="m-0 text-caption text-text-placeholder">
+					Última actualización: {LAST_UPDATED}
+				</p>
+				<p class={textClass}>
+					Qué datos usa World Flags (Banderas del Mundo), para qué y qué puedes
+					hacer con ellos. Puedes jugar sin cuenta: entonces tu progreso se queda
+					en tu dispositivo.
+				</p>
+			</header>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Quién es el responsable</h2>
+				<p class={textClass}>
+					World Flags es un proyecto personal de su creador. Para cualquier duda
+					sobre tus datos, escribe a {CONTACT_EMAIL}.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Qué datos usamos</h2>
+				<ul class={listClass}>
+					<li>
+						<strong>Cuenta:</strong> tu correo y tu contraseña, que se guarda cifrada
+						y nadie puede leer.
+					</li>
+					<li>
+						<strong>Si entras con Google:</strong> tu identificador de Google, tu
+						correo, tu nombre y tu foto de perfil, según te lo pida Google al entrar.
+					</li>
+					<li>
+						<strong>Progreso:</strong> tus resultados, marcas, logros, estadísticas,
+						historial de partidas, nombre de jugador, avatar y configuración.
+					</li>
+					<li>
+						<strong>Ranking:</strong> tu nombre de jugador, tu avatar y tus mejores
+						tiempos.
+						<strong>Son públicos:</strong> cualquiera puede verlos, también sin
+						cuenta.
+					</li>
+					<li>
+						<strong>Recordatorios, solo si los activas:</strong> un identificador de
+						tu dispositivo, los datos de suscripción a notificaciones de tu navegador,
+						tu zona horaria y la hora que elijas.
+					</li>
+					<li>
+						<strong>Seguridad:</strong> tu dirección IP y los datos de tu navegador
+						en cada sesión, y tu dirección IP para limitar los intentos de acceso.
+					</li>
+				</ul>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Para qué los usamos</h2>
+				<ul class={listClass}>
+					<li>
+						Darte acceso a tu cuenta y guardar tu progreso entre dispositivos. Es
+						necesario para prestarte el servicio.
+					</li>
+					<li>
+						Mostrar el ranking público, que forma parte del juego con cuenta.
+					</li>
+					<li>
+						Enviarte recordatorios, con tu consentimiento. Puedes desactivarlos
+						cuando quieras.
+					</li>
+					<li>
+						Proteger las cuentas frente a abusos, por nuestro interés legítimo en
+						mantener el servicio seguro.
+					</li>
+				</ul>
+				<p class={textClass}>
+					No vendemos tus datos, no mostramos publicidad y no usamos herramientas de
+					analítica ni de seguimiento.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Datos de Google</h2>
+				<p class={textClass}>
+					Usamos los datos de tu cuenta de Google solo para identificarte y darte
+					acceso. No los usamos para otro fin, no los compartimos con nadie salvo
+					los proveedores de abajo que hacen falta para prestar el servicio, y no
+					los usamos para publicidad.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Cookies y almacenamiento en tu dispositivo</h2>
+				<p class={textClass}>
+					Con cuenta usamos una cookie para mantener tu sesión. La app también guarda
+					en tu navegador tu progreso y tus preferencias, para que funcione sin
+					conexión. Todo esto es necesario para que funcione, y no usamos cookies de
+					terceros.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Con quién se comparten</h2>
+				<p class={textClass}>
+					Solo con los proveedores que hacen funcionar el servicio, y solo lo que
+					cada uno necesita:
+				</p>
+				<ul class={listClass}>
+					<li><strong>Vercel:</strong> aloja la web.</li>
+					<li>
+						<strong>Un servidor privado contratado por World Flags:</strong> guarda
+						las cuentas y el progreso.
+					</li>
+					<li>
+						<strong>Backblaze:</strong> guarda las copias de seguridad de la base de
+						datos.
+					</li>
+					<li><strong>Brevo:</strong> envía el correo de confirmar la cuenta.</li>
+					<li><strong>Google:</strong> si eliges entrar con Google.</li>
+					<li>
+						<strong>DiceBear:</strong> genera los avatares; recibe el estilo y el
+						texto del avatar, y la dirección IP de quien lo ve.
+					</li>
+					<li>
+						<strong>El servicio de notificaciones de tu navegador:</strong> entrega
+						los recordatorios, si los activas.
+					</li>
+				</ul>
+				<p class={textClass}>
+					Algunos de estos proveedores pueden tratar datos fuera de la Unión Europea.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Cuánto tiempo se guardan</h2>
+				<p class={textClass}>
+					Mientras tengas la cuenta. Si pides borrarla, eliminamos tus datos; las
+					copias de seguridad se conservan un tiempo limitado hasta que caducan.
+					Los datos guardados en tu navegador se quedan ahí hasta que los borres.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Tus derechos</h2>
+				<p class={textClass}>
+					Puedes pedir una copia de tus datos, corregirlos, borrarlos o limitar u
+					oponerte a su uso, y retirar tu consentimiento. Para ello, escribe a
+					{CONTACT_EMAIL}: el borrado de la cuenta se hace por ahora de esa forma, no
+					desde la app. También puedes reclamar ante la autoridad de protección de
+					datos de tu país.
+				</p>
+			</section>
+
+			<section class={sectionClass}>
+				<h2 class={headingClass}>Cambios</h2>
+				<p class={textClass}>
+					Si esta política cambia, lo verás aquí con la nueva fecha.
+				</p>
+			</section>
+
+			<a href="/" class:list={[linkClass, "text-body-sm font-bold"]}>
+				Volver al juego
+			</a>
+		</article>
+	</main>
+</Layout>

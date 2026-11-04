@@ -526,6 +526,16 @@ export function AuthSection() {
 					<span id={GOOGLE_ERROR_ID}>{AUTH_POPUP_ERROR_INLINE_COPY}</span>
 				</FeedbackMessage>
 			)}
+
+			{/* En otra pestaña: no saca de la partida ni del formulario a medio rellenar. */}
+			<a
+				href="/privacidad"
+				target="_blank"
+				rel="noopener"
+				className="self-center text-caption text-text-placeholder underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary-hover"
+			>
+				Política de privacidad (se abre en otra pestaña)
+			</a>
 		</div>
 	);
 }
