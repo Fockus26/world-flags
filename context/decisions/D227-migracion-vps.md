@@ -1,4 +1,4 @@
-# D227 · Infraestructura · De Supabase a Postgres en el VPS, con Drizzle y Better Auth · Implementado (corte pendiente)
+# D227 · Infraestructura · De Supabase a Postgres en el VPS, con Drizzle y Better Auth · Implementado (corte hecho el 2026-11-04)
 
 **Resumen:** decidido por el dueño para no depender de un plan de pago (kit `reference/MIGRATE-TO-VPS.md`). La app deja de hablar con Supabase: rutas `src/pages/api/*` en funciones de Vercel (`fra1`, junto al VPS), Drizzle sobre Postgres 17 por PgBouncer, Better Auth con cookie httpOnly y correo propio por SMTP.
 
@@ -16,6 +16,6 @@
 
 **Alternativas descartadas:** Supabase autoalojado (unos 10 contenedores por instancia) y un contenedor de Postgres por proyecto (decisión del dueño, 2026-10-29, en el kit).
 
-**Rollback:** devolver la escritura en Supabase y revertir el merge. Lo escrito en el VPS desde el corte se perdería salvo copia inversa. `supabase/` sigue en el repo y el proyecto se conserva 30 días tras el corte; borrarlo es acción del dueño.
+**Rollback:** ya no hay. El dueño borró el proyecto de Supabase el 2026-11-04, tras comparar los datos con el VPS, y `supabase/` salió del repo (sigue en el historial de git). Para recuperar datos: las copias diarias (7 días, en el VPS y en Backblaze).
 
 **Rama:** `feat/migrate-vps`

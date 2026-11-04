@@ -35,10 +35,6 @@ pnpm-debug.log*
 /blob-report/
 /.playwright/
 
-# supabase: va en git (D199); solo lo local de la CLI
-/supabase/.temp/
-/supabase/.branches/
-/supabase/.env*
 
 # context volátil: vive solo en local (se suben solo los documentos fijos)
 /context/CURRENT_PHASE.md
