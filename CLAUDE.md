@@ -23,7 +23,7 @@ continentes o países sueltos (combinables).
 
 ### Qué está en el repo y qué vive solo en local
 
-En git: `.kit-version`, `supabase/` (D199, el rollback de D227) y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
+En git: `.kit-version` y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
 `DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los

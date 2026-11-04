@@ -61,8 +61,8 @@ Decidir la estrategia antes de escribir código.
 
 - **Modo Burst**: variante a contrarreloj aplicable a todos los juegos
 - **Ranking por continente**: el schema ya lo soporta vía `scope`, falta la UI para elegirlo
-- **Correr la app sin Supabase**: modo invitado puro cuando faltan las variables de
-  entorno, para que colaborar no exija un proyecto de Supabase
+- **Correr la app sin base**: modo invitado puro cuando faltan las variables de
+  entorno, para que colaborar no exija una base propia
 - **Biome en verde**: arreglar los errores previos de lint/formato, añadir
   `.gitattributes` (`eol=lf`) y volver bloqueante el paso de lint del CI
 - **Autohospedar la fuente** (`Plus Jakarta Sans`) para mejorar LCP

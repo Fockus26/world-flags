@@ -216,7 +216,7 @@ These are non-negotiable. A PR that breaks one will be asked to change.
 
 - Only `PUBLIC_*` variables go to the client. Never commit `.env`, service role keys,
   VAPID private keys or any other secret.
-- Don't add files from `supabase/` (other than its README) or local planning files
+- Don't add local planning files
   from `context/` — they are gitignored on purpose.
 
 ---

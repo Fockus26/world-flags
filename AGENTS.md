@@ -7,8 +7,8 @@ onboarding real; este archivo solo redirige.
 ## Recordatorio rápido
 
 - **Todo cambio va por Pull Request** desde una rama `tipo/descripcion`. Nunca push a `main`, nunca mergear PRs (lo hace el dueño). Detalle en `CLAUDE.md` → "Cómo se trabaja aquí".
-- `supabase/` (salvo su README) y el `context/` volátil son locales y gitignored: no los agregues.
-- Astro 7 + React 19 (una isla `client:load`) + **HeroUI v3** sobre **Tailwind v4** + Redux Toolkit + Supabase.
+- El `context/` volátil es local y gitignored: no lo agregues.
+- Astro 7 + React 19 (una isla `client:load`) + **HeroUI v3** sobre **Tailwind v4** + Redux Toolkit + Postgres (Drizzle y Better Auth).
 - **Bun** para todo. Nunca npm/yarn/pnpm.
 - Persistencia solo por `src/utils/learning-storage.ts`. Redux solo por los hooks de `src/hooks/`.
 - Nada de valores mágicos de color/espaciado/radio: tokens (`context/COLORS.md`, `context/DESIGN_TOKENS.md`).
