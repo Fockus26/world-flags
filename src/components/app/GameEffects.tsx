@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 
-import { supabase } from "@/lib/supabase";
+import { discardRejectedSession, recheckSession } from "@/lib/auth-session";
 
 import { store } from "@/store";
 
@@ -47,6 +47,7 @@ import {
 	saveLearningData,
 	savePendingAccountData,
 	saveSyncBase,
+	setAsideOtherAccountData,
 } from "@/utils/learning-storage";
 
 import { wasSignOutRequestedElsewhere } from "@/utils/session-end";
@@ -54,7 +55,7 @@ import { wasSignOutRequestedElsewhere } from "@/utils/session-end";
 /**
  * Espera antes de cada reintento de una sincronización fallida (el último
  * valor se repite mientras siga fallando). Además se reintenta en cuanto
- * vuelve la red (`online`) y con cada evento de Supabase Auth (D044).
+ * vuelve la red (`online`) y con cada cambio de sesión (D044).
  */
 const SYNC_RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
 
@@ -95,22 +96,28 @@ function toSyncBaseRef(userId: string, data: UserLearningData): SyncBaseRef {
 }
 
 /**
- * El servidor rechazó el token de la sesión (D210). Reintentar con el mismo
- * token fallaría siempre ("No se pudo sincronizar" en bucle con la sesión
- * aparentemente iniciada), así que la primera vez se refresca la sesión y se
- * reintenta; si vuelve a rechazarlo (o el refresco falla), se cierra la sesión
- * en este dispositivo. `AuthEffects` lo avisa y lo pendiente se aparta.
+ * El servidor rechazó la sesión (D210). Reintentar sin más fallaría siempre ("No
+ * se pudo sincronizar" en bucle con la sesión aparentemente iniciada), así que la
+ * primera vez se comprueba contra el servidor y se reintenta; si vuelve a
+ * rechazarla (o ya no existe), se cierra en este dispositivo. `AuthEffects` lo
+ * avisa y lo pendiente se aparta.
  *
- * Devuelve si hay que reintentar ya (el refresco fue bien).
+ * Devuelve si hay que reintentar ya (la sesión sigue). Si ahora es otra cuenta, no: el
+ * cambio de `user` ya relanza la sincronización, y la cookie de esa cuenta no se cierra.
  */
-async function recoverRejectedSession(alreadyRefreshed: boolean) {
+async function recoverRejectedSession(
+	userId: string,
+	alreadyRefreshed: boolean,
+) {
 	if (!alreadyRefreshed) {
-		const { error } = await supabase.auth.refreshSession();
+		const result = await recheckSession(userId);
 
-		if (!error) return true;
+		if (result === "same") return true;
+
+		if (result === "other") return false;
 	}
 
-	await supabase.auth.signOut({ scope: "local" });
+	await discardRejectedSession();
 
 	return false;
 }
@@ -144,7 +151,7 @@ export function GameEffects() {
 
 	/**
 	 * Sobrevive a las re-ejecuciones del efecto de hidratación (`user` cambia
-	 * de identidad con cada evento de Supabase Auth): distingue un reintento,
+	 * de identidad con cada cambio de sesión): distingue un reintento,
 	 * que no vuelve a `loading` ni reemplaza los datos con los que ya se está
 	 * jugando, de un primer intento.
 	 */
@@ -175,12 +182,12 @@ export function GameEffects() {
 	const syncedLeaderboardProfileRef = useRef<string | null>(null);
 
 	/**
-	 * Red de seguridad: si Supabase Auth no resuelve (red caída, mal
+	 * Red de seguridad: si la sesión no resuelve (red caída, mal
 	 * configurado), `status` se queda en "loading" para siempre y el invitado
 	 * ve su progreso vacío. Tras 2.5 s sin resolver, se hidrata desde
 	 * localStorage igualmente (si luego llega la sesión, el efecto de abajo
 	 * re-hidrata). Se marca `local`, no `ready`: `ready` habilitaría el push a
-	 * Supabase antes de tiempo, pero sin ninguna marca la pantalla de inicio
+	 * la nube antes de tiempo, pero sin ninguna marca la pantalla de inicio
 	 * se quedaría en skeleton para siempre (D042).
 	 */
 	useEffect(() => {
@@ -201,7 +208,7 @@ export function GameEffects() {
 	 *
 	 * Invitado: localStorage -> Redux.
 	 *
-	 * Cuenta: localStorage + base de sincronización + Supabase -> Redux.
+	 * Cuenta: localStorage + base de sincronización + la nube -> Redux.
 	 */
 	useEffect(() => {
 		if (status === "loading") {
@@ -322,6 +329,8 @@ export function GameEffects() {
 			 * descarta con el aviso de D212.
 			 */
 			if (!failedSync) {
+				setAsideOtherAccountData(user.id);
+
 				const { discardedGuest } = restorePendingAccountData(user.id);
 
 				if (discardedGuest && hasLearningProgress(discardedGuest)) {
@@ -346,7 +355,6 @@ export function GameEffects() {
 
 			try {
 				const { data: syncedData, discardedLocal } = await syncLearningData(
-					user.id,
 					localData,
 					base,
 					controller.signal,
@@ -449,15 +457,17 @@ export function GameEffects() {
 
 					refreshedSessionRef.current = user.id;
 
-					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
-						if (!retry) {
-							console.error("Failed to hydrate authenticated user:", error);
-						}
+					void recoverRejectedSession(user.id, alreadyRefreshed).then(
+						(retry) => {
+							if (!retry) {
+								console.error("Failed to hydrate authenticated user:", error);
+							}
 
-						if (retry && !cancelled && !isSyncing) {
-							void hydrateAuthenticatedUser();
-						}
-					});
+							if (retry && !cancelled && !isSyncing) {
+								void hydrateAuthenticatedUser();
+							}
+						},
+					);
 
 					return;
 				}
@@ -554,7 +564,6 @@ export function GameEffects() {
 
 			try {
 				const { data: syncedData } = await syncLearningData(
-					userId,
 					localAtStart,
 					base,
 					controller.signal,
@@ -613,11 +622,13 @@ export function GameEffects() {
 
 					refreshedSessionRef.current = userId;
 
-					void recoverRejectedSession(alreadyRefreshed).then((retry) => {
-						if (!retry) console.error("Failed to sync learning data:", error);
+					void recoverRejectedSession(userId, alreadyRefreshed).then(
+						(retry) => {
+							if (!retry) console.error("Failed to sync learning data:", error);
 
-						if (retry && !controller.signal.aborted) void runSync();
-					});
+							if (retry && !controller.signal.aborted) void runSync();
+						},
+					);
 
 					return;
 				}
@@ -735,7 +746,6 @@ export function GameEffects() {
 			canUpload: () => canUploadLeaderboardRef.current,
 			upload: (mark) =>
 				upsertLeaderboardEntry(
-					userId,
 					mark.scope,
 					leaderboardDataRef.current.profile,
 					mark.bestTimeMs,
@@ -796,7 +806,7 @@ export function GameEffects() {
 		const timeoutId = setTimeout(() => {
 			syncedLeaderboardProfileRef.current = profileKey;
 
-			void syncLeaderboardProfile(userId, {
+			void syncLeaderboardProfile({
 				name,
 				avatarStyle,
 				avatarSeed,

@@ -8,9 +8,9 @@ import {
 /**
  * ¿El próximo `SIGNED_OUT` lo pidió el usuario en esta pestaña? (D210)
  *
- * Supabase Auth avisa igual de todo cierre de sesión: el del botón, el de otra
- * pestaña (por `BroadcastChannel`), el de un refresco de token fallido o el
- * que fuerza `GameEffects` cuando el servidor rechaza el token. Solo el
+ * `auth-session.ts` avisa igual de todo cierre de sesión: el del botón, el de otra
+ * pestaña (por `BroadcastChannel`), el de una sesión caducada o el que fuerza
+ * `GameEffects` cuando el servidor la rechaza. Solo el
  * primero es voluntario; los demás se avisan en pantalla y apartan lo que
  * quedara sin subir. `useAuth().signOut` marca el suyo antes de llamar.
  */
@@ -19,7 +19,7 @@ let voluntarySignOut = false;
 /** La última sesión que esta pestaña vio abierta (D224). */
 export interface SeenSession {
 	userId: string;
-	/** `session_id` del token de acceso: el mismo mientras se refresca. */
+	/** La misma mientras dure la sesión; `null` si no se conoce. */
 	sessionId: string | null;
 	/** `Date.now()` cuando esta pestaña la vio empezar. */
 	since: number;
@@ -38,38 +38,13 @@ let lastSession: SeenSession | null = null;
 let lastEnded: SeenSession | null = null;
 
 /**
- * `session_id` del JWT de acceso de Supabase, o `null` si no se puede leer.
- * Sin verificar la firma: solo sirve para reconocer la sesión, no para
- * autorizar nada.
- */
-export function sessionIdFromAccessToken(
-	accessToken: string | null | undefined,
-): string | null {
-	const payload = accessToken?.split(".")[1];
-
-	if (!payload) return null;
-
-	try {
-		const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-		const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-		const claims = JSON.parse(atob(padded)) as { session_id?: unknown };
-
-		return typeof claims.session_id === "string" && claims.session_id
-			? claims.session_id
-			: null;
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Lo que `AuthEffects` ve en cada evento de Auth. Refrescar el token no
- * cambia de sesión; entrar después de un cierre, sí (aunque sea la misma
- * cuenta). Sin sesión, la última queda cerrada pero se recuerda.
+ * Lo que `AuthEffects` ve en cada evento de Auth. Volver a comprobar la sesión
+ * no la cambia; entrar después de un cierre, sí (aunque sea la misma cuenta).
+ * Sin sesión, la última queda cerrada pero se recuerda.
  */
 export function rememberSession(
 	userId: string | null,
-	accessToken: string | null,
+	sessionId: string | null,
 	now: number = Date.now(),
 ): void {
 	if (!userId) {
@@ -79,8 +54,6 @@ export function rememberSession(
 		}
 		return;
 	}
-
-	const sessionId = sessionIdFromAccessToken(accessToken);
 
 	if (
 		lastSession?.open &&
@@ -131,10 +104,10 @@ export function cancelVoluntarySignOut(): void {
  * D224). Sin caducidad por tiempo: una pestaña congelada en segundo plano
  * puede procesar el `SIGNED_OUT` mucho después y la marca sigue valiendo.
  *
- * - Con `session_id` en los dos lados, cuenta solo si es la misma sesión:
- *   un cierre involuntario de una sesión posterior (volver a entrar crea
- *   otra) no la hereda.
- * - Si falta (token ilegible), se compara el instante: la marca tiene que
+ * - Con la sesión en los dos lados, cuenta solo si es la misma: un cierre
+ *   involuntario de una sesión posterior (volver a entrar crea otra) no la
+ *   hereda.
+ * - Si falta, se compara el instante: la marca tiene que
  *   ser de después de que esta pestaña viera empezar esa sesión, y no del
  *   futuro (reloj cambiado).
  *

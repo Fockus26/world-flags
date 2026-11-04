@@ -1,4 +1,5 @@
 import type { UserLearningData } from "@/types/progress";
+import type { LearningDataColumn } from "./learning-data-columns";
 import {
 	SUB_GAME_KEYS,
 	SUB_GAME_TYPES,
@@ -7,17 +8,19 @@ import {
 
 /**
  * La columna de `user_learning_data` de cada juego con sub-objeto propio
- * (D028, D061). Una columna nueva aquí exige su SQL en `supabase/` corrido
- * ANTES de desplegar: si el `select` pide una columna que no existe, falla y
- * toda cuenta autenticada se queda en `local` sin sincronizar (D044/D050).
+ * (D028, D061). Una columna nueva exige estar en `LEARNING_DATA_COLUMNS` (no
+ * compila sin ella: la nube devolvería el juego siempre vacío y su progreso no
+ * llegaría a los demás dispositivos) y su migración aplicada ANTES de desplegar:
+ * si la API pide una columna que no existe, falla y toda cuenta autenticada se
+ * queda en `local` sin sincronizar (D044/D050).
  */
 export const SUB_GAME_COLUMNS = {
 	countries: "countries_game",
 	capitals: "capitals_game",
-} as const satisfies Record<SubGameType, string>;
+} as const satisfies Record<SubGameType, LearningDataColumn>;
 
 /** Las columnas de datos de la fila (sin `user_id` ni `updated_at`). */
-export type LearningDataRow = Record<string, unknown>;
+export type LearningDataRow = Partial<Record<LearningDataColumn, unknown>>;
 
 /**
  * `UserLearningData` → columnas de `user_learning_data`. Se enumeran
@@ -70,7 +73,8 @@ export function pickChangedColumns(
 	return Object.fromEntries(
 		Object.entries(row).filter(
 			([column, value]) =>
-				JSON.stringify(value) !== JSON.stringify(previousRow[column]),
+				JSON.stringify(value) !==
+				JSON.stringify(previousRow[column as LearningDataColumn]),
 		),
 	);
 }

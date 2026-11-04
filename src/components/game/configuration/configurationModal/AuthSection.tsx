@@ -67,11 +67,22 @@ export function AuthSection() {
 
 	const [signOutStep, setSignOutStep] = useState<SignOutStep>("idle");
 
+	/** La cookie solo la puede borrar el servidor: sin él, la sesión sigue. */
+	const [signOutFailed, setSignOutFailed] = useState(false);
+
+	async function trySignOut() {
+		setSignOutFailed(false);
+
+		const { failed } = await signOut();
+
+		setSignOutFailed(failed);
+	}
+
 	function handleSignOut() {
 		if (signOutStep === "saving") return;
 
 		if (!hasPendingChanges || signOutStep === "confirm") {
-			void signOut();
+			void trySignOut();
 			return;
 		}
 
@@ -89,7 +100,7 @@ export function AuthSection() {
 		// Subido: ya no hay nada que perder.
 		if (!hasPendingChanges) {
 			setSignOutStep("idle");
-			void signOut();
+			void signOut().then(({ failed }) => setSignOutFailed(failed));
 			return;
 		}
 
@@ -309,6 +320,14 @@ export function AuthSection() {
 							Tienes progreso que aún no está en tu cuenta. Si cierras sesión
 							ahora, se perderá. Con conexión se guarda solo en unos segundos.
 						</span>
+					</FeedbackMessage>
+				)}
+
+				{/* Copy provisional (CONTENT_CHECKLIST). */}
+				{signOutFailed && (
+					<FeedbackMessage variant="danger" size="sm" role="alert">
+						No se pudo cerrar la sesión: hace falta conexión. Sigues dentro de
+						tu cuenta.
 					</FeedbackMessage>
 				)}
 

@@ -151,8 +151,8 @@ export function EmailConfirmationPending({
 		setResendError(null);
 		const { error } = await resendConfirmationEmail(email);
 
-		// Solo se confirma el reenvío si Supabase lo aceptó: puede rechazarlo por
-		// límite de envíos, dirección no autorizada en el mailer integrado o red.
+		// Solo se confirma el reenvío si el servidor lo aceptó: puede rechazarlo
+		// por límite de envíos o fallar la red.
 		if (error) {
 			setResendError(error);
 			setResendState("error");

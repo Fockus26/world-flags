@@ -1,10 +1,12 @@
 import { type FocusEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useAppSelector } from "@/store/hooks";
 import {
 	AUTH_LINK_ERROR_COPY,
 	type AuthLinkErrorKind,
 	authLinkErrorFromMessage,
 	authLinkErrorMessage,
+	cameFromConfirmLink,
 	deliverInlineAuthLinkError,
 	readAuthLinkError,
 	withoutAuthLinkError,
@@ -30,8 +32,8 @@ function openerSameOrigin(): Window | null {
 /**
  * Aviso de que el enlace de Auth con el que se llegó no sirvió (D218): el
  * del primer correo de un registro repetido, uno caducado o ya usado.
- * Supabase vuelve con el error en la URL y auth-js no avisa; sin esto la
- * app cargaba como invitado sin decir nada. Al leerlo se limpia la URL,
+ * El servidor vuelve con el error en la URL y nadie más avisa; sin esto la
+ * app cargaría como invitado sin decir nada. Al leerlo se limpia la URL,
  * para que recargar no lo repita. Se queda hasta "Entendido".
  *
  * Copy provisional (D218, CONTENT_CHECKLIST). Vive en el contenedor apilable
@@ -40,6 +42,8 @@ function openerSameOrigin(): Window | null {
  */
 export function AuthLinkErrorSnackbar() {
 	const [kind, setKind] = useState<AuthLinkErrorKind | null>(null);
+	const [awaitingConfirmResult, setAwaitingConfirmResult] = useState(false);
+	const authStatus = useAppSelector((state) => state.auth.status);
 	// Dónde estaba el foco antes de entrar en el aviso: al cerrarlo, el botón
 	// desaparece y el foco vuelve allí en vez de caer en `<body>`.
 	const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -61,14 +65,19 @@ export function AuthLinkErrorSnackbar() {
 
 		const url = new URL(window.location.href);
 		const found = readAuthLinkError(url);
+		const fromConfirmLink = cameFromConfirmLink(url);
 
-		if (found) {
+		if (found || fromConfirmLink) {
 			window.history.replaceState(
 				window.history.state,
 				"",
 				withoutAuthLinkError(url),
 			);
+		}
 
+		if (fromConfirmLink && !found) setAwaitingConfirmResult(true);
+
+		if (found) {
 			// Popup de "Entrar con Google" que vuelve con error: el aviso va a
 			// la ventana que lo abrió y el popup se cierra (con éxito ya lo
 			// cierra `AuthEffects`). Sin `opener` (lo cortó la navegación),
@@ -85,6 +94,15 @@ export function AuthLinkErrorSnackbar() {
 
 		return () => window.removeEventListener("message", handleMessage);
 	}, []);
+
+	// Enlace de confirmar la cuenta sin sesión al volver: ya se había usado.
+	useEffect(() => {
+		if (!awaitingConfirmResult || authStatus === "loading") return;
+
+		setAwaitingConfirmResult(false);
+
+		if (authStatus === "guest") setKind("alreadyConfirmed");
+	}, [awaitingConfirmResult, authStatus]);
 
 	if (!kind) {
 		return null;

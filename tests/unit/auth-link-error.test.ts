@@ -87,6 +87,22 @@ describe("readAuthLinkError", () => {
 		);
 	});
 
+	test("enlace de Better Auth caducado o inválido", () => {
+		for (const code of ["TOKEN_EXPIRED", "INVALID_TOKEN"]) {
+			assert.equal(
+				readAuthLinkError(new URL(`${ORIGIN}/?error=${code}`)),
+				"expired",
+			);
+		}
+	});
+
+	test("otro error de Better Auth: aviso genérico", () => {
+		assert.equal(
+			readAuthLinkError(new URL(`${ORIGIN}/?error=account_not_linked`)),
+			"other",
+		);
+	});
+
 	test("otro error: aviso genérico", () => {
 		assert.equal(
 			readAuthLinkError(

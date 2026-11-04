@@ -2,7 +2,7 @@
  * Actualización obligatoria (D108, D109): ¿la versión que corre está por
  * debajo de la mínima que pide el servidor?
  *
- * Funciones puras (sin Supabase ni DOM) para que `tests/unit` las pruebe sin
+ * Funciones puras (sin red ni DOM) para que `tests/unit` las pruebe sin
  * red. La lectura de la mínima vive en `app-config.ts`.
  *
  * La regla de fondo es **no bloquear ante la duda**: un valor que no es

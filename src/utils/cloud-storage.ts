@@ -1,5 +1,3 @@
-import { supabase } from "@/lib/supabase";
-
 import {
 	AVATAR_STYLES,
 	type AvatarStyle,
@@ -12,67 +10,41 @@ import {
 	type LeaderboardUploadResult,
 	toLeaderboardDisplayName,
 } from "./leaderboard-validation";
+import type { LearningDataResponse } from "./learning-data-columns";
 import { pickChangedColumns, SUB_GAME_COLUMNS } from "./learning-data-row";
 import {
 	DEFAULT_PROFILE,
 	normalizeLearningData,
 	SUB_GAME_KEYS,
 	SUB_GAME_TYPES,
-	type SubGameType,
 } from "./learning-storage";
+import { accountHeaders } from "./request-account";
 import {
 	nextVersion,
 	runVersionedSync,
 	type VersionedLearningData,
 } from "./sync-attempts";
 
-type SubGameColumn = (typeof SUB_GAME_COLUMNS)[SubGameType];
-
-/** Las columnas de un `select` literal ("a, b, c" → "a" | "b" | "c"). */
-type SelectedColumns<Select extends string> =
-	Select extends `${infer Column}, ${infer Rest}`
-		? Column | SelectedColumns<Rest>
-		: Select;
-
-/**
- * El `select` se queda como texto literal: supabase-js deduce de él el tipo
- * de la fila. A cambio no puede salir del registro, así que esto no compila
- * si le falta la columna de algún juego de `SUB_GAME_COLUMNS` — olvidarla
- * no fallaría en ningún test: la nube devolvería el juego siempre vacío y
- * su progreso no llegaría a los demás dispositivos.
- */
-function learningDataSelect<Select extends string>(
-	select: Select &
-		(SubGameColumn extends SelectedColumns<Select> ? unknown : never),
-): Select {
-	return select;
-}
-
-const LEARNING_DATA_SELECT = learningDataSelect(
-	"profile, country_history, region_game_scores, region_best_times, last_configuration, last_practice_by_country, countries_game, capitals_game, achievements, stats, session_history, daily_reminder, field_updated_at, learning_paths, updated_at",
-);
-
 /**
  * Tope de `syncLearningData`. El GET normal tarda menos de un segundo; 10 s
- * dan margen a una red lenta y a los reintentos propios de postgrest-js ante
- * un error de red (1 s + 2 s + 4 s). Pasado el tope, `GameEffects` sigue con
- * los datos locales, sin subir nada, y reintenta más tarde (D045).
+ * dan margen a una red lenta y a una función de Vercel que arranca en frío.
+ * Pasado el tope, `GameEffects` sigue con los datos locales, sin subir nada, y
+ * reintenta más tarde (D045).
  */
 const SYNC_TIMEOUT_MS = 10_000;
 
 /**
  * Fallo de una petición a la nube, con su causa ya clasificada (D050):
  *
- * - `network`: no hubo respuesta del servidor — sin red, `fetch` rechazado
- *   (postgrest lo devuelve con `status` 0), o el tope de 10 s. Es "sin
- *   conexión" aunque `navigator.onLine` diga lo contrario, que miente a
- *   menudo (wifi sin salida a internet, portal cautivo).
+ * - `network`: no hubo respuesta del servidor — sin red, `fetch` rechazado, o
+ *   el tope de 10 s. Es "sin conexión" aunque `navigator.onLine` diga lo
+ *   contrario, que miente a menudo (wifi sin salida a internet, portal cautivo).
  * - `server`: el servidor respondió con un error (500, permisos, esquema).
  *   Hay red; lo que falla es la sincronización.
  *
- * `sessionRejected`: el servidor no aceptó el token de la sesión (401, o los
- * códigos de JWT de PostgREST). No se arregla reintentando con el mismo
- * token: `GameEffects` refresca la sesión y, si sigue igual, la cierra (D210).
+ * `sessionRejected`: el servidor no aceptó la sesión (401). No se arregla
+ * reintentando sin más: `GameEffects` la comprueba y, si sigue igual, la cierra
+ * (D210).
  */
 export class CloudRequestError extends Error {
 	readonly kind: "network" | "server";
@@ -91,10 +63,7 @@ export class CloudRequestError extends Error {
 	}
 }
 
-/** Códigos de PostgREST para un JWT inválido, ausente o caducado. */
-const SESSION_REJECTED_CODES = new Set(["PGRST301", "PGRST302", "PGRST303"]);
-
-/** ¿El servidor rechazó el token de la sesión (y no hay que reintentar con él)? */
+/** ¿El servidor rechazó la sesión (y no hay que reintentar sin más)? */
 export function isSessionRejected(error: unknown): boolean {
 	return error instanceof CloudRequestError && error.sessionRejected;
 }
@@ -102,11 +71,6 @@ export function isSessionRejected(error: unknown): boolean {
 /** ¿El fallo es falta de conexión (y no un error del servidor)? */
 export function isNetworkFailure(error: unknown): boolean {
 	if (error instanceof CloudRequestError) return error.kind === "network";
-
-	// Supabase Auth sin red devuelve `AuthRetryableFetchError`.
-	if (error instanceof Error && error.name === "AuthRetryableFetchError") {
-		return true;
-	}
 
 	return typeof navigator !== "undefined" && !navigator.onLine;
 }
@@ -126,42 +90,91 @@ function toCloudRequestError(
 	status: number,
 	action: string,
 ): CloudRequestError {
-	// Un `sw.js` anterior a D050 respondía a un GET cross-origin sin red con
-	// la página offline (HTML con 200): llega como error con `status` 200 y
-	// sin código de PostgREST. `navigator.onLine` falso lo desempata.
 	const isNetwork =
 		status === 0 || (typeof navigator !== "undefined" && !navigator.onLine);
-
-	const sessionRejected =
-		!isNetwork &&
-		(status === 401 || SESSION_REJECTED_CODES.has(error.code ?? ""));
 
 	return new CloudRequestError(
 		isNetwork ? "network" : "server",
 		`${action}: ${error.message}`,
 		error,
-		sessionRejected,
+		!isNetwork && status === 401,
 	);
 }
 
+/** Lo que devuelve una llamada a `/api/*`: nunca lanza, salvo que se aborte. */
+interface ApiResult<T> {
+	data: T | null;
+	error: { message: string; code?: string } | null;
+	/** `0`: no hubo respuesta. */
+	status: number;
+}
+
 /**
- * La fila de la cuenta, normalizada, con su versión (`updated_at`): la que
- * condiciona la subida siguiente (D210).
+ * Una llamada a la API de la app. La sesión va en su cookie. Sin respuesta,
+ * `status` 0: lo que `toCloudRequestError` clasifica como sin conexión.
+ */
+async function apiRequest<T>(
+	path: string,
+	options: { body?: unknown; signal?: AbortSignal } = {},
+): Promise<ApiResult<T>> {
+	const { body, signal } = options;
+
+	try {
+		const response = await fetch(path, {
+			signal,
+			...(body === undefined
+				? { headers: accountHeaders() }
+				: {
+						method: "POST",
+						headers: {
+							...accountHeaders(),
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify(body),
+					}),
+		});
+
+		const payload: unknown = await response.json().catch(() => null);
+
+		if (response.ok) {
+			return { data: payload as T, error: null, status: response.status };
+		}
+
+		const { message, code } = (payload ?? {}) as {
+			message?: string;
+			code?: string;
+		};
+
+		return {
+			data: null,
+			error: { message: message ?? `HTTP ${response.status}`, code },
+			status: response.status,
+		};
+	} catch (cause) {
+		return {
+			data: null,
+			error: {
+				message: cause instanceof Error ? cause.message : "Sin respuesta",
+			},
+			status: 0,
+		};
+	}
+}
+
+/**
+ * La fila de la cuenta de la sesión, normalizada, con su versión (`updated_at`):
+ * la que condiciona la subida siguiente (D210).
  */
 export async function fetchRemoteLearningData(
-	userId: string,
 	signal?: AbortSignal,
 ): Promise<VersionedLearningData | null> {
-	let query = supabase
-		.from("user_learning_data")
-		.select(LEARNING_DATA_SELECT)
-		.eq("user_id", userId);
-
-	if (signal) {
-		query = query.abortSignal(signal);
-	}
-
-	const { data, error, status } = await query.maybeSingle();
+	const {
+		data: response,
+		error,
+		status,
+	} = await apiRequest<{
+		row: LearningDataResponse | null;
+	}>("/api/learning-data", { signal });
 
 	if (error) {
 		const cloudError = toCloudRequestError(
@@ -180,9 +193,15 @@ export async function fetchRemoteLearningData(
 		throw cloudError;
 	}
 
-	if (!data) {
+	const row = response?.row;
+
+	if (!row) {
 		return null;
 	}
+
+	// `jsonb` libre: `normalizeLearningData` valida la forma de todo esto.
+	// biome-ignore lint/suspicious/noExplicitAny: jsonb libre, ver arriba
+	const data = row as Record<string, any>;
 
 	/**
 	 * Pasa por `normalizeLearningData` (el mismo normalizador que usa
@@ -220,63 +239,37 @@ export async function fetchRemoteLearningData(
 		learningPaths: data.learning_paths ?? {},
 	});
 
-	return { data: normalized, version: data.updated_at };
+	return { data: normalized, version: row.updated_at };
 }
-
-/** Ya existe una fila con esa clave: otro dispositivo la creó entre medias. */
-const UNIQUE_VIOLATION = "23505";
 
 /**
  * Sube `data` **condicionada a la versión leída** (D210). Con `previous` (la
  * fila ya existe) es un UPDATE solo de las columnas que cambiaron y solo si
  * `updated_at` sigue siendo el leído; sin él, un INSERT de la fila entera, que
- * falla si otro dispositivo la creó mientras tanto. Devuelve `false` cuando
+ * no escribe si otro dispositivo la creó mientras tanto. Devuelve `false` cuando
  * no se escribió nada por eso: quien llama vuelve a leer y fusionar.
  *
  * Sin la condición, una subida retrasada (red lenta) pisaba lo que otro
  * dispositivo subió después de leerla: la fusión por fecha de D055 nunca
  * llegaba a ver ese cambio más reciente.
- *
- * El delta no puede ir por upsert: Postgres comprueba los `not null` sobre la
- * fila que INSERTARÍA antes de resolver el conflicto, así que un upsert sin
- * `profile` falla (23502) aunque la fila exista (D173).
  */
 export async function pushLearningData(
-	userId: string,
 	data: UserLearningData,
 	previous: VersionedLearningData | null,
 	signal?: AbortSignal,
 ): Promise<boolean> {
-	const updatedAt = nextVersion(previous?.version ?? null);
-	const table = supabase.from("user_learning_data");
-
-	// `select` devuelve las filas escritas: ninguna = la versión ya no era la leída.
-	const query = previous
-		? table
-				.update({
-					...pickChangedColumns(data, previous.data),
-					updated_at: updatedAt,
-				})
-				.eq("user_id", userId)
-				.eq("updated_at", previous.version)
-				.select("user_id")
-		: table
-				.insert({
-					user_id: userId,
-					...pickChangedColumns(data, null),
-					updated_at: updatedAt,
-				})
-				.select("user_id");
-
 	const {
-		data: written,
+		data: response,
 		error,
 		status,
-	} = await (signal ? query.abortSignal(signal) : query);
-
-	if (error?.code === UNIQUE_VIOLATION && !previous) {
-		return false;
-	}
+	} = await apiRequest<{ written: boolean }>("/api/learning-data", {
+		signal,
+		body: {
+			columns: pickChangedColumns(data, previous?.data ?? null),
+			updatedAt: nextVersion(previous?.version ?? null),
+			previousVersion: previous?.version ?? null,
+		},
+	});
 
 	if (error) {
 		const cloudError = toCloudRequestError(
@@ -292,7 +285,7 @@ export async function pushLearningData(
 		throw cloudError;
 	}
 
-	return (written?.length ?? 0) > 0;
+	return response?.written ?? false;
 }
 
 /** Se rechaza en cuanto `signal` se aborta (con su `reason`); si no, nunca termina. */
@@ -331,7 +324,6 @@ function rejectOnAbort(signal: AbortSignal): Promise<never> {
  * así que una respuesta tardía ya no sube nada a la nube (D045).
  */
 export async function syncLearningData(
-	userId: string,
 	localData: UserLearningData,
 	base: UserLearningData | null,
 	signal?: AbortSignal,
@@ -365,14 +357,12 @@ export async function syncLearningData(
 
 	try {
 		/**
-		 * La carrera no sobra aunque las peticiones lleven la señal: el
-		 * cliente de Supabase espera al token de sesión ANTES del `fetch`, y
-		 * esa espera no la corta ninguna señal. Si se colgara ahí, esta
-		 * promesa no terminaría nunca; con la carrera se rechaza a tiempo, y
-		 * cuando ese `fetch` por fin salga lo hará ya abortado (no se envía).
+		 * La carrera no sobra aunque las peticiones lleven la señal: `apiRequest`
+		 * convierte el aborto en un error de red corriente, y aquí tiene que salir
+		 * la razón real (el tope de 10 s o la cancelación).
 		 */
 		return await Promise.race([
-			runSync(userId, localData, base, controller.signal),
+			runSync(localData, base, controller.signal),
 			rejectOnAbort(controller.signal),
 		]);
 	} finally {
@@ -391,16 +381,14 @@ export interface SyncResult {
 }
 
 async function runSync(
-	userId: string,
 	localData: UserLearningData,
 	base: UserLearningData | null,
 	signal: AbortSignal,
 ): Promise<SyncResult> {
 	return runVersionedSync(
 		{
-			read: () => fetchRemoteLearningData(userId, signal),
-			write: (data, previous) =>
-				pushLearningData(userId, data, previous, signal),
+			read: () => fetchRemoteLearningData(signal),
+			write: (data, previous) => pushLearningData(data, previous, signal),
 		},
 		localData,
 		base,
@@ -441,17 +429,19 @@ function isAvatarStyle(value: unknown): value is AvatarStyle {
  * `leaderboard_entries` es pública y liviana (nombre, avatar y tiempo), así
  * que esto no debería ser un problema salvo con muchísimos usuarios.
  *
- * Pide `avatar_style`/`avatar_seed`: las columnas tienen que existir antes de
- * desplegar (`supabase/leaderboard-avatares.sql`, ya aplicado).
  */
 export async function fetchLeaderboard(
 	scope: string,
 ): Promise<LeaderboardEntry[]> {
-	const { data, error, status } = await supabase
-		.from("leaderboard_entries")
-		.select("user_id, display_name, best_time_ms, avatar_style, avatar_seed")
-		.eq("scope", scope)
-		.order("best_time_ms", { ascending: true });
+	const { data, error, status } = await apiRequest<{
+		entries: {
+			user_id: string;
+			display_name: string;
+			best_time_ms: number;
+			avatar_style: string | null;
+			avatar_seed: string | null;
+		}[];
+	}>(`/api/leaderboard?scope=${encodeURIComponent(scope)}`);
 
 	if (error) {
 		const cloudError = toCloudRequestError(
@@ -467,7 +457,7 @@ export async function fetchLeaderboard(
 		throw cloudError;
 	}
 
-	return (data ?? []).map((row) => ({
+	return (data?.entries ?? []).map((row) => ({
 		userId: row.user_id,
 		displayName: row.display_name,
 		bestTimeMs: row.best_time_ms,
@@ -483,27 +473,30 @@ export async function fetchLeaderboard(
  * tiempos (D079). Sin esto la fila solo se reescribe al batir la marca, y un
  * cambio de nombre o de avatar no llegaría al ranking.
  *
- * Primero lee sus filas y solo escribe si alguna difiere: se llama en cada
+ * Solo escribe las filas que difieren, y el servidor lo decide: se llama en cada
  * carga (así también se ponen al día las filas subidas por un cliente viejo,
- * sin avatar) y una lectura cuesta menos que un `update` que no cambia nada.
- * Mejor esfuerzo, como el resto del ranking: devuelve si quedó al día, para
- * reintentar tras la siguiente sincronización buena si falló (D050).
+ * sin avatar). Mejor esfuerzo, como el resto del ranking: devuelve si quedó al
+ * día, para reintentar tras la siguiente sincronización buena si falló (D050).
  */
 export async function syncLeaderboardProfile(
-	userId: string,
 	profile: LeaderboardProfile,
 ): Promise<boolean> {
-	const displayName = getLeaderboardDisplayName(profile);
-	const { data, error, status } = await supabase
-		.from("leaderboard_entries")
-		.select("display_name, avatar_style, avatar_seed")
-		.eq("user_id", userId);
+	const { data, error, status } = await apiRequest<{ changed: number }>(
+		"/api/leaderboard/profile",
+		{
+			body: {
+				displayName: getLeaderboardDisplayName(profile),
+				avatarStyle: profile.avatarStyle,
+				avatarSeed: profile.avatarSeed,
+			},
+		},
+	);
 
 	if (error) {
 		const cloudError = toCloudRequestError(
 			error,
 			status,
-			"Failed to read own leaderboard entries",
+			"Failed to update own leaderboard profile",
 		);
 
 		if (shouldLogCloudError(cloudError)) {
@@ -513,40 +506,8 @@ export async function syncLeaderboardProfile(
 		return false;
 	}
 
-	const isUpToDate = (data ?? []).every(
-		(row) =>
-			row.display_name === displayName &&
-			row.avatar_style === profile.avatarStyle &&
-			row.avatar_seed === profile.avatarSeed,
-	);
-
-	if (isUpToDate) return true;
-
-	const { error: updateError, status: updateStatus } = await supabase
-		.from("leaderboard_entries")
-		.update({
-			display_name: displayName,
-			avatar_style: profile.avatarStyle,
-			avatar_seed: profile.avatarSeed,
-		})
-		.eq("user_id", userId);
-
-	if (updateError) {
-		const cloudError = toCloudRequestError(
-			updateError,
-			updateStatus,
-			"Failed to update own leaderboard profile",
-		);
-
-		if (shouldLogCloudError(cloudError)) {
-			console.error(cloudError.message, updateError);
-		}
-
-		return false;
-	}
-
 	// Tus filas cambiaron de nombre o avatar en todos los scopes (D188).
-	leaderboardCache.clear();
+	if (data?.changed) leaderboardCache.clear();
 
 	return true;
 }
@@ -556,31 +517,28 @@ export async function syncLeaderboardProfile(
  * `leaderboard-upload.ts`, D140): reemplaza la fila del usuario en ese scope.
  * Que una marca peor no pise una mejor que ya está en el ranking (p. ej. si
  * el progreso local se perdió) lo resuelve el trigger del servidor con
- * `least(...)` (`supabase/leaderboard-continentes.sql`, D139): así vale
+ * `least(...)` (`drizzle/0001_*`, D139): así vale
  * también para los clientes viejos y no cuesta una lectura antes de cada
  * subida.
- * Es un "mejor esfuerzo": si falla (p. ej. la tabla todavía no existe en
- * Supabase, ver supabase/leaderboard.sql) no debe romper el juego, solo se
- * registra el error. Devuelve cómo acabó: una marca que no subió (`failed`,
- * p. ej. sin conexión) se reintenta con espera creciente (D140); una que el
- * servidor rechazó por imposible (`rejected`, el trigger de
- * `supabase/leaderboard-validacion.sql`) no se reintenta: volvería a
- * rechazarse (D113).
+ * Es un "mejor esfuerzo": si falla no debe romper el juego, solo se registra
+ * el error. Devuelve cómo acabó: una marca que no subió (`failed`, p. ej. sin
+ * conexión) se reintenta con espera creciente (D140); una que el servidor
+ * rechazó por imposible (`rejected`, el trigger de `drizzle/0001_*`) no se
+ * reintenta: volvería a rechazarse (D113).
  */
 export async function upsertLeaderboardEntry(
-	userId: string,
 	scope: string,
 	profile: LeaderboardProfile,
 	bestTimeMs: number,
 ): Promise<LeaderboardUploadResult> {
-	const { error, status } = await supabase.from("leaderboard_entries").upsert({
-		user_id: userId,
-		scope,
-		display_name: getLeaderboardDisplayName(profile),
-		avatar_style: profile.avatarStyle,
-		avatar_seed: profile.avatarSeed,
-		best_time_ms: bestTimeMs,
-		updated_at: new Date().toISOString(),
+	const { error, status } = await apiRequest("/api/leaderboard", {
+		body: {
+			scope,
+			displayName: getLeaderboardDisplayName(profile),
+			avatarStyle: profile.avatarStyle,
+			avatarSeed: profile.avatarSeed,
+			bestTimeMs,
+		},
 	});
 
 	if (error) {

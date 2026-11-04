@@ -2,7 +2,7 @@
  * Sondeo de "Revisa tu correo" (D214): mientras la pantalla está abierta se
  * prueba a iniciar sesión con la contraseña del registro, para que se cierre
  * sola al confirmar. Cada 8 s sin límite eran 37 intentos cada 5 min, por
- * encima del límite de Supabase (30 por 5 min y por IP): justo al confirmar
+ * encima del límite de intentos (30 por 5 min y por IP): justo al confirmar
  * podía dejar al jugador con "Demasiados intentos seguidos".
  *
  * Espera creciente (8 s × 1,5 hasta 60 s), y se deja de sondear a los 10 min

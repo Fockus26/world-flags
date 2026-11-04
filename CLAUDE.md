@@ -23,7 +23,7 @@ continentes o países sueltos (combinables).
 
 ### Qué está en el repo y qué vive solo en local
 
-En git: `.kit-version`, `supabase/` (D199) y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
+En git: `.kit-version`, `supabase/` (D199, el rollback de D227) y los documentos **fijos** de `context/`: `PROJECT_CONTEXT`,
 `DESIGN_RULES`, `COLORS`, `DESIGN_TOKENS`, `TYPOGRAPHY` y `decisions/`.
 
 Son **locales** (gitignored): `CURRENT_PHASE.md`, `CONTENT_CHECKLIST.md`, `KIT_FEEDBACK.md`, los
@@ -45,7 +45,8 @@ puedes escribir ahí, devuelve los cambios en tu informe. Estado de las ramas: `
   lo que dependa de la fecha o de `localStorage` va tras `useIsClient` (D179)
 - **React 19** + **TypeScript** estricto · **React Compiler** (solo `src/`)
 - **HeroUI v3** (CSS por partes en `global.css`: componente nuevo ⇒ su hoja, D176) sobre
-  **Tailwind CSS v4** (CSS-first) · **Redux Toolkit** · **Supabase** (auth + sync)
+  **Tailwind CSS v4** (CSS-first) · **Redux Toolkit** · **Postgres en el VPS** con **Drizzle** y **Better Auth** (rutas `src/pages/api/`, código en
+  `src/server/`; D227, migraciones en `drizzle/README.md`)
 - **Bun** para todo — nunca npm/yarn/pnpm · **iconoir-react** · PWA con SW propio (`public/sw.js`)
 - Animaciones: `tw-animate-css` o transiciones CSS. Sin `framer-motion` (D006, D177).
 
@@ -55,6 +56,7 @@ bun run build
 bunx astro check       # typecheck
 bunx biome check ./src # lint
 bun run test           # tests/unit
+bun run test:api       # políticas de acceso (necesita qa:local corriendo)
 bun run test:e2e       # Playwright (necesita el server corriendo)
 ```
 
@@ -62,11 +64,11 @@ bun run test:e2e       # Playwright (necesita el server corriendo)
 `functional-qa`) siempre, y los workers si el dueño lo autoriza para una tanda (cada uno en
 su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 
-**QA:** `bun run qa:local -- --port <p>` — Supabase en Docker (migraciones + seed) con las
+**QA:** `bun run qa:local -- --port <p>` — Postgres y Mailpit en Docker (migraciones + seed) con las
 cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`); nunca la base real (`--offline`:
 solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
-**Docs:** **Context7** antes de cualquier API de librería (HeroUI, Astro, Supabase…).
+**Docs:** **Context7** antes de cualquier API de librería (HeroUI, Astro, Drizzle, Better Auth…).
 **Modelo por tarea:** `Modelo recomendado: <modelo · effort>` antes de cada una (kit
 `TOKEN-ECONOMY.md` §12; riesgo → `opus`), ambos pasados a `Agent(...)`.
 

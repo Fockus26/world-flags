@@ -17,10 +17,7 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
     env:
-      # Valores de relleno: el cliente de Supabase se crea al importar y falla sin
-      # URL/clave. El build no llama a la red, así que no hacen falta los reales.
-      PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-      PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      # Valor de relleno: el build no llama a la red.
       PUBLIC_VAPID_PUBLIC_KEY: placeholder-vapid-key
     steps:
       - uses: actions/checkout@v4

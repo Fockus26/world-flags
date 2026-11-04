@@ -23,6 +23,8 @@ import {
 	getVoluntarySignOutMark,
 	registerRegionGame,
 	restorePendingAccountData,
+	saveSyncBase,
+	setAsideOtherAccountData,
 	saveLearningData,
 	savePendingAccountData,
 	saveReviewResult,
@@ -35,7 +37,6 @@ import {
 	isVoluntarySignOutOf,
 	markVoluntarySignOut,
 	rememberSession,
-	sessionIdFromAccessToken,
 	wasSignOutRequestedElsewhere,
 } from "@/utils/session-end";
 import {
@@ -329,6 +330,41 @@ describe("lo pendiente de una sesión cerrada sola (D210)", () => {
 	});
 });
 
+describe("entra otra cuenta con los datos de una en este navegador (D227)", () => {
+	test("lo local no pasa a la nueva: se aparta y vuelve con la suya", () => {
+		const base = sharedData();
+		const local = registerRegionGame(base, "asia", 8, T_B);
+
+		saveLearningData(local);
+		saveSyncBase("user-a", base);
+
+		setAsideOtherAccountData("user-b");
+
+		assert.deepEqual(getLearningData().regionGameScores, {});
+		assert.equal(getSyncBase("user-a"), null);
+
+		assert.equal(restorePendingAccountData("user-b").restored, false);
+		assert.equal(restorePendingAccountData("user-a").restored, true);
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+		assert.equal(JSON.stringify(getSyncBase("user-a")), JSON.stringify(base));
+	});
+
+	test("con la base de la misma cuenta, o sin base, no aparta nada", () => {
+		const local = registerRegionGame(sharedData(), "asia", 8, T_B);
+
+		saveLearningData(local);
+
+		setAsideOtherAccountData("user-a");
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+
+		saveSyncBase("user-a", local);
+
+		setAsideOtherAccountData("user-a");
+		assert.deepEqual(getLearningData().regionGameScores.asia, [8]);
+		assert.equal(restorePendingAccountData("user-a").restored, false);
+	});
+});
+
 describe("lo jugado como invitado tras el cierre involuntario (D214)", () => {
 	test("se suma a lo apartado de la cuenta al volver a entrar", () => {
 		const base = saveReviewResult(sharedData(), "fr", "good");
@@ -407,21 +443,10 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 	const NOW = Date.parse("2026-10-22T10:00:00.000Z");
 	const HOUR = 60 * 60 * 1000;
 
-	/** Un token de acceso con su `session_id`, como los de Supabase (sin firma real). */
-	function accessToken(sessionId: string): string {
-		const encode = (value: object) =>
-			btoa(JSON.stringify(value))
-				.replace(/\+/g, "-")
-				.replace(/\//g, "_")
-				.replace(/=+$/, "");
-
-		return `${encode({ alg: "HS256" })}.${encode({ sub: "user-a", session_id: sessionId })}.firma`;
-	}
-
 	/** `AuthEffects` ve abrirse una sesión (cerrando antes la que hubiera). */
-	function openSession(userId: string, token: string | null, at: number) {
+	function openSession(userId: string, sessionId: string | null, at: number) {
 		rememberSession(null, null, at);
-		rememberSession(userId, token, at);
+		rememberSession(userId, sessionId, at);
 	}
 
 	/**
@@ -449,14 +474,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		return wasSignOutRequestedElsewhere("user-a", at);
 	}
 
-	beforeEach(() => openSession("user-a", accessToken("s1"), NOW - HOUR));
-
-	test("sessionIdFromAccessToken lee el session_id y tolera tokens raros", () => {
-		assert.equal(sessionIdFromAccessToken(accessToken("s1")), "s1");
-		assert.equal(sessionIdFromAccessToken(null), null);
-		assert.equal(sessionIdFromAccessToken("sin-puntos"), null);
-		assert.equal(sessionIdFromAccessToken("a.%%%.c"), null);
-	});
+	beforeEach(() => openSession("user-a", "s1", NOW - HOUR));
 
 	test("la marca compartida se escribe antes del cierre, nombra la sesión y sobrevive a la de la pestaña", () => {
 		markVoluntarySignOut("user-a", NOW);
@@ -540,7 +558,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		consumeVoluntarySignOut();
 
 		rememberSession(null, null, NOW + 2 * HOUR);
-		rememberSession("user-a", accessToken("s2"), NOW + 2 * HOUR);
+		rememberSession("user-a", "s2", NOW + 2 * HOUR);
 
 		assert.equal(
 			wasSignOutRequestedElsewhere("user-a", NOW + 2 * HOUR + 10),
@@ -556,7 +574,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 		rememberSession(null, null, NOW + 100);
 
 		// Se vuelve a entrar (otra sesión) y, días después, el token se rechaza.
-		openSession("user-a", accessToken("s2"), NOW + HOUR);
+		openSession("user-a", "s2", NOW + HOUR);
 		otherTabSeesSignOut("user-a", base, NOW + 72 * HOUR);
 
 		saveReviewResult(createDefaultLearningData(), "ca", "good");
@@ -568,7 +586,7 @@ describe("cierre pedido con otras pestañas abiertas (D219, D224)", () => {
 
 	test("refrescar el token no cambia de sesión", () => {
 		markVoluntarySignOut("user-a", NOW);
-		rememberSession("user-a", accessToken("s1"), NOW + 30_000);
+		rememberSession("user-a", "s1", NOW + 30_000);
 
 		assert.equal(endedElsewhere(NOW + 60_000), true);
 	});
