@@ -1,0 +1,5 @@
+# D228 · UI · Ojo en contraseñas, icono en el enlace de privacidad y tarjetas de continente en columna en móvil · Implementado
+
+**Decisión:** `PasswordInput` (`src/components/ui/`, sobre `InputGroup` de HeroUI) añade un botón de ojo a "Contraseña" y "Repetir contraseña", cada uno con su propio estado. El enlace a la política de privacidad cambia el texto "(se abre en otra pestaña)" por el icono `OpenNewWindow`, y ese texto queda `sr-only`. Por debajo de `44rem`, `RegionOption` apila nombre, nota con casilla, número de países y mejor tiempo, cada uno en su línea; desde `44rem` sigue la fila de D220.
+**Por qué:** pedido del dueño. Sin ver la contraseña no se pueden revisar errores de escritura. En móvil, la fila de D220 daba formas distintas según el largo del nombre: "Caribe" con la nota al lado y "Norteamérica" con la nota debajo. El texto `sr-only` mantiene el aviso de nueva pestaña para lectores de pantalla.
+**Alternativa descartada:** un botón propio colocado con `absolute` sobre `Input` (reimplementa lo que ya trae `InputGroup`) y ampliar `Input` con una prop (sus consumidores no la necesitan).
