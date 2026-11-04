@@ -9,6 +9,30 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.11.0] - 2026-11-04
+
+### Añadido
+
+- Los campos de contraseña tienen un botón de ojo para ver lo que escribes.
+- Nueva página con la política de privacidad, enlazada desde el formulario de
+  acceso.
+
+### Cambiado
+
+- El enlace a la política de privacidad usa un icono para indicar que se abre en
+  otra pestaña.
+- En el móvil, las tarjetas de continentes muestran cada dato en su propia
+  línea.
+- Las cuentas y el progreso pasan a un servidor propio. Tendrás que volver a
+  iniciar sesión una vez, con la misma contraseña o con Google: tu progreso
+  sigue ahí, también el que no se hubiera subido aún.
+
+### Corregido
+
+- Los recordatorios diarios de práctica ya se envían si los tienes activados.
+- Si tu cuenta aún no tiene partidas, un dispositivo con datos antiguos ya no
+  deshace el nombre, el avatar ni las mejores marcas que cambiaste en otro.
+
 ## [2.10.8] - 2026-10-22
 
 ### Corregido
