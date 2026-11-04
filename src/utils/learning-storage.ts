@@ -1502,13 +1502,14 @@ export interface SyncPlan {
  * - **Entra un invitado sin progreso y la cuenta tiene fila**: queda la nube
  *   tal cual, sin subir (D210). No hay nada que pasar, y los valores por
  *   defecto pisarían el perfil o las marcas de la cuenta.
- * - **La cuenta no tiene progreso en la nube** (recién creada o sin jugar): lo
- *   local — el invitado que acaba de entrar — pasa a ser la cuenta.
- * - **La cuenta ya tiene progreso y no hay base** (`base` `null`: lo local no
- *   es de esta cuenta, es del invitado que acaba de entrar): lo del invitado
- *   **se descarta entero** y queda la nube tal cual (D056, decisión del dueño).
- * - **La cuenta ya tiene progreso y hay base** (datos de esta misma cuenta en
- *   este dispositivo): `mergeLearningData`, y se sube si aporta algo.
+ * - **No hay base** (`base` `null`: lo local no es de esta cuenta, es del invitado
+ *   que acaba de entrar): si la cuenta no tiene fila o no tiene progreso (recién
+ *   creada o sin jugar), lo del invitado pasa a ser la cuenta; si lo tiene, **se
+ *   descarta entero** y queda la nube tal cual (D056, decisión del dueño).
+ * - **Hay base** (datos de esta misma cuenta en este dispositivo):
+ *   `mergeLearningData`, y se sube si aporta algo. También sin progreso de juego:
+ *   la fila puede traer el nombre o el avatar que otro dispositivo cambió después
+ *   (D226).
  */
 export function planSync(
 	remote: UserLearningData | null,
@@ -1525,12 +1526,14 @@ export function planSync(
 		return { data: remote, push: false, discardedLocal: false };
 	}
 
-	if (!remote || !hasLearningProgress(remote)) {
+	if (!remote) {
 		return { data: local, push: true, discardedLocal: false };
 	}
 
 	if (!base) {
-		return { data: remote, push: false, discardedLocal: true };
+		return hasLearningProgress(remote)
+			? { data: remote, push: false, discardedLocal: true }
+			: { data: local, push: true, discardedLocal: false };
 	}
 
 	const merged = mergeLearningData(remote, local, base);
