@@ -3,6 +3,10 @@ import { ConfirmationModal } from "@/components/game/session/ConfirmationModal";
 import type { SessionRuntime } from "@/components/game/session/session-runtime";
 import { usePracticeQueue } from "@/hooks/usePracticeQueue";
 import {
+	UPCOMING_FLAGS_AHEAD,
+	useUpcomingFlagPrecache,
+} from "@/hooks/useUpcomingFlagPrecache";
+import {
 	type AnswerStatus,
 	DEFAULT_TIMER_DURATION,
 	type Region,
@@ -179,6 +183,16 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		? countries.find((country) => country.code === practiceQueue.currentCode)
 		: countries[currentIndex];
 	const isLastCountry = currentIndex === countries.length - 1;
+
+	useUpcomingFlagPrecache(
+		gameType !== "flags"
+			? []
+			: isPracticeMode
+				? practiceQueue.upcomingCodes
+				: countries
+						.slice(currentIndex, currentIndex + UPCOMING_FLAGS_AHEAD)
+						.map((country) => country.code),
+	);
 
 	function recordFirstAttempt(code: string, isCorrect: boolean) {
 		if (code in firstAttemptResultsRef.current) return;
