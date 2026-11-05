@@ -60,6 +60,19 @@ export async function assignRole(id: string, role: string, { api, headers }: Sup
   void headers
 }
 
+/** The Postgres backend: `sql` runs a statement in the QA database and returns its output. */
+export async function assignRolePostgres(
+  id: string,
+  role: string,
+  { sql }: { sql: (statement: string) => string },
+): Promise<void> {
+  // If your project keeps the role in a column or a table, set it here, e.g.:
+  //   sql(`update public."user" set role = '${role}' where id = '${id}'`)
+  void id
+  void role
+  void sql
+}
+
 export async function assignRoleFirebase(
   uid: string,
   email: string,

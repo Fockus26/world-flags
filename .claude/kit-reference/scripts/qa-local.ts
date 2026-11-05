@@ -10,7 +10,24 @@
  * The local backend is picked by what the project has:
  *   - `supabase/config.toml` → Supabase stack in Docker (below).
  *   - `firebase.json` with `emulators` → Firebase emulators (needs Java; see "Firebase").
- *   - neither → the normal server: there is no external database to replace.
+ *   - `drizzle.config.*`, without Firebase and without Supabase in use → Postgres (below).
+ *     `--postgres` forces it while a project is migrating off Supabase and still has both.
+ *   - neither → the normal server: there is no external database to replace. It still aborts
+ *     if a `.env*` variable points at the VPS.
+ *
+ * Postgres (a project on the VPS Postgres, kit `reference/tech/vps-postgres.md`; built by
+ * world-flags in its migration):
+ *   1. A Postgres 17 container per project (`qa-<package name>-pg`) and Mailpit
+ *      (`qa-<package name>-mailpit`), reused if running, on free ports. They stay up afterwards.
+ *   2. One database per QA port (`qa_<port>`, so slots do not collide), owned by a role that is
+ *      not a superuser, like the real one. Dropped and recreated unless `--no-reset`. Then
+ *      `bun run db:migrate` and `drizzle/seed.sql`.
+ *   3. The server with `DATABASE_URL`/`DIRECT_URL` at the container and `SMTP_*` at Mailpit. Every
+ *      Supabase variable goes to a dead address: code not yet migrated cannot reach the real one.
+ *   4. Before printing `QA ready`, the `.env.test.local` accounts through Better Auth's sign-up
+ *      endpoint, then `email_verified = true` by SQL; the role in `assignRolePostgres`.
+ *   `--db-only` stops after step 2 and prints the URLs: for tests against the database, without
+ *   a server.
  *
  * Supabase:
  *   1. `supabase start` (Docker Desktop running): the project's local stack, with Auth's
@@ -88,7 +105,9 @@
  * Safety: before starting, if any `.env*` variable points to a remote Supabase
  * (`*.supabase.co`) and this script does not override it, it aborts. Better not to start
  * than to test against the real database because of a variable with a different name.
- * With Firebase, it aborts if `FIREBASE_QA_PROJECT` does not start with `demo-`.
+ * With Firebase, it aborts if `FIREBASE_QA_PROJECT` does not start with `demo-`. The same for
+ * a variable at the VPS (`:6432`, the tunnel's `:5433`, or `KIT_VPS_HOST`) left without override:
+ * a project developing against the VPS has the real URL in its `.env*`, like one on Supabase.
  *
  * Before anything it checks Playwright's Chromium (wave-qa needs it) and installs it if it is
  * missing, with node and the project's own Playwright: `bunx` was not on the PATH and the QA
@@ -101,8 +120,8 @@
  * ran out on the first start, and the default 2 emails per hour blocked repeating sign-up
  * tests (world-flags). The first start downloads the images and takes minutes.
  *
- * Emails the app sends (sign-up, recovery) do not go out: Mailpit (Supabase) or the Auth
- * emulator's UI (Firebase) collects them.
+ * Emails the app sends (sign-up, recovery) do not go out: Mailpit (Supabase, Postgres) or the
+ * Auth emulator's UI (Firebase) collects them.
  *
  * Test passwords are never printed. The stack's local keys are public (the same on every
  * install) and are not secrets.
@@ -130,6 +149,7 @@ interface QaRoles {
     role: string,
     ctx: { firestore: string; project: string; headers: Headers },
   ): Promise<void>
+  assignRolePostgres(id: string, role: string, ctx: { sql: (statement: string) => string }): Promise<void>
 }
 const roles: Partial<QaRoles> = existsSync('scripts/qa-roles.ts')
   ? await import(pathToFileURL('scripts/qa-roles.ts').href)
@@ -168,13 +188,14 @@ const args = process.argv.slice(2)
 const port = args[args.indexOf('--port') + 1]
 if (!args.includes('--port') || !/^\d+$/.test(port ?? '')) {
   console.error(
-    'Usage: node scripts/qa-local.ts --port <port> [--no-reset] [--offline] [--preview] [--warm /a,/b]',
+    'Usage: node scripts/qa-local.ts --port <port> [--no-reset] [--offline] [--preview] [--warm /a,/b] [--postgres] [--db-only]',
   )
   process.exit(2)
 }
 const reset = !args.includes('--no-reset')
 const offline = args.includes('--offline')
 const preview = args.includes('--preview')
+const dbOnly = args.includes('--db-only')
 // Git Bash turns `/login` into `C:/Program Files/Git/login` (melao ×4): undone here.
 const unMsys = (p: string) => p.replace(/^[A-Za-z]:[\\/]Program Files[\\/]Git(?=[\\/])/, '').replaceAll('\\', '/')
 const warm = args.includes('--warm')
@@ -367,10 +388,12 @@ function launch(cmd: string, a: string[], env: NodeJS.ProcessEnv): ChildProcess 
 
 // Waits for the server to answer, then requests `/` and the --warm routes once each (a cold
 // first compile took 178 s: melao), and prints the line to wait for.
-async function warmUp(): Promise<void> {
+async function warmUp(beforeReady?: () => Promise<void>): Promise<void> {
   const deadline = Date.now() + 10 * 60_000
   while (Date.now() < deadline) {
-    if (await answers('127.0.0.1', Number(port))) break
+    // IPv4 or IPv6, like `taken`: Astro 7 listens only on [::1] and this loop ran its whole 10
+    // minutes before warming (world-flags).
+    if ((await answers('127.0.0.1', Number(port))) || (await answers('::1', Number(port)))) break
     await new Promise((r) => setTimeout(r, 1000))
   }
   for (const route of ['/', ...warm]) {
@@ -385,11 +408,13 @@ async function warmUp(): Promise<void> {
       console.warn(`! warming ${route} failed: ${(e as Error).message}`)
     }
   }
+  // Caught: a throw here left the server orphaned with no message (world-flags).
+  await beforeReady?.().catch((e: Error) => abort(`Before QA ready: ${e.message}`))
   console.log(`QA ready: ${SITE}`)
 }
 
 // Never returns: the script lives as long as the server does.
-async function startServer(base: NodeJS.ProcessEnv): Promise<never> {
+async function startServer(base: NodeJS.ProcessEnv, beforeReady?: () => Promise<void>): Promise<never> {
   const env: NodeJS.ProcessEnv = { ...base, ASTRO_DEV_BACKGROUND: '0', ASTRO_PREVIEW_BACKGROUND: '0' }
   // The app's own URL (emailRedirectTo, absolute links) is this server, not production's.
   for (const prefix of ['', 'NEXT_PUBLIC_', 'PUBLIC_', 'VITE_']) env[`${prefix}SITE_URL`] = SITE
@@ -409,7 +434,7 @@ async function startServer(base: NodeJS.ProcessEnv): Promise<never> {
     stopAll()
     process.exit(code ?? 0)
   })
-  await warmUp()
+  await warmUp(beforeReady)
   return new Promise<never>(() => {})
 }
 
@@ -436,19 +461,171 @@ const remote = envFiles.flatMap((f) =>
     .map(([k]) => ({ file: f, key: k })),
 )
 
+// …or to the VPS? (`:5433` is the migrations tunnel.)
+const vpsHost = process.env.KIT_VPS_HOST
+const pointsAtVps = (v: string) => /:(6432|5433)\b/.test(v) || (vpsHost ? v.includes(vpsHost) : false)
+const atVps = envFiles.flatMap((f) =>
+  Object.entries(readEnv(f))
+    .filter(([, v]) => pointsAtVps(v))
+    .map(([k]) => ({ file: f, key: k })),
+)
+const listVars = (vars: { file: string; key: string }[]) => vars.map((r) => `  ${r.file}: ${r.key}`).join('\n')
+
+// Everything that could reach a database goes to an address where nobody listens.
+const dead = (k: string) =>
+  ENV_MAP[k] === 'DB_URL'
+    ? 'postgresql://offline@127.0.0.1:9/offline'
+    : /URL$/.test(k)
+      ? 'http://127.0.0.1:9'
+      : 'offline'
+
 if (offline) {
-  // Everything that could reach a database (ENV_MAP and any variable pointing to a remote
-  // Supabase) goes to an address where nobody listens.
-  const dead = (k: string) =>
-    ENV_MAP[k] === 'DB_URL'
-      ? 'postgresql://offline@127.0.0.1:9/offline'
-      : /URL$/.test(k)
-        ? 'http://127.0.0.1:9'
-        : 'offline'
+  // ENV_MAP and any variable pointing to a remote database.
   const env: NodeJS.ProcessEnv = { ...process.env, QA_LOCAL: '1', QA_OFFLINE: '1' }
-  for (const k of [...Object.keys(ENV_MAP), ...remote.map((r) => r.key)]) env[k] = dead(k)
+  for (const k of [...Object.keys(ENV_MAP), ...remote.map((r) => r.key), ...atVps.map((r) => r.key)]) env[k] = dead(k)
   console.log('--offline: no database. The database variables point to 127.0.0.1:9; guest testing only.')
   await startServer(env)
+}
+
+// ── Postgres ────────────────────────────────────────────────────────────────────────────
+const hasDrizzle = ['ts', 'js', 'mjs'].some((e) => existsSync(`drizzle.config.${e}`))
+const usesSupabase = existsSync('supabase/config.toml') && Boolean(pkg.dependencies?.['@supabase/supabase-js'])
+if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('firebase.json'))) {
+  // Same rule as *.supabase.co, and before anything starts: better not to start than to test
+  // against the real database.
+  const uncoveredVps = atVps.filter((r) => !(r.key in ENV_MAP))
+  if (uncoveredVps.length) {
+    abort(`These variables point at the VPS and the script does not override them (add them to ENV_MAP):\n${listVars(uncoveredVps)}`)
+  }
+
+  const slug = String(pkg.name ?? 'app').replace(/^@[^/]+\//, '').replace(/[^a-z0-9-]/gi, '-').toLowerCase()
+  const PG = `qa-${slug}-pg`
+  const MAILPIT = `qa-${slug}-mailpit`
+  const DB = `qa_${port}`
+  const ROLE = 'qa_app'
+
+  const docker = (a: string[], input?: string) => spawnSync('docker', a, { encoding: 'utf8', input })
+
+  const version = docker(['version', '--format', '{{.Server.Version}}'])
+  if (version.status !== 0) abort(`Docker does not answer. Is Docker Desktop running?\n${version.stderr}`)
+
+  async function freePort(from: number): Promise<number> {
+    for (let p = from; p < from + 200; p++) {
+      if (!(await answers('127.0.0.1', p)) && !(await answers('::1', p))) return p
+    }
+    abort(`No free port from ${from}.`)
+  }
+
+  function mappedPort(container: string, internal: number): number {
+    const found = docker(['port', container, String(internal)]).stdout?.match(/:(\d+)\s*$/m)?.[1]
+    if (!found) abort(`${container} does not publish port ${internal}.`)
+    return Number(found)
+  }
+
+  function ensureRunning(container: string, runArgs: string[]): void {
+    const state = docker(['inspect', '-f', '{{.State.Running}}', container])
+    if (state.status === 0 && state.stdout.trim() === 'true') {
+      console.log(`= ${container} already running`)
+      return
+    }
+    const r = state.status === 0 ? docker(['start', container]) : docker(['run', '-d', '--name', container, ...runArgs])
+    if (r.status !== 0) abort(`Could not start ${container}:\n${r.stderr}${dockerLogs(container)}`)
+    console.log(`+ ${container} started`)
+  }
+
+  console.log('… Postgres and Mailpit in Docker (the first time: image downloads)')
+  ensureRunning(PG, ['-e', 'POSTGRES_PASSWORD=postgres', '-p', `127.0.0.1:${await freePort(54329)}:5432`, 'postgres:17'])
+  const smtpFree = await freePort(54325)
+  ensureRunning(MAILPIT, [
+    '-p',
+    `127.0.0.1:${smtpFree}:1025`,
+    '-p',
+    `127.0.0.1:${await freePort(Math.max(54326, smtpFree + 1))}:8025`,
+    'axllent/mailpit',
+  ])
+  const pgPort = mappedPort(PG, 5432)
+  const smtpPort = mappedPort(MAILPIT, 1025)
+  const mailUi = mappedPort(MAILPIT, 8025)
+
+  // TCP, not the socket: during the image's init Postgres only listens on the socket.
+  let ready = false
+  for (let i = 0; i < 120 && !ready; i++) {
+    ready = docker(['exec', PG, 'psql', '-h', '127.0.0.1', '-U', 'postgres', '-c', 'select 1']).status === 0
+    if (!ready) await new Promise((r) => setTimeout(r, 1000))
+  }
+  if (!ready) abort(`Postgres did not answer in 2 minutes.${dockerLogs(PG)}`)
+
+  const sqlIn = (db: string, statement: string): string => {
+    const r = docker(['exec', '-i', PG, 'psql', '-U', 'postgres', '-d', db, '-v', 'ON_ERROR_STOP=1', '-qAt'], statement)
+    if (r.status !== 0) abort(`SQL failed on ${db}:\n${r.stderr}`)
+    return r.stdout.trim()
+  }
+
+  sqlIn(
+    'postgres',
+    `do $$ begin
+      if not exists (select from pg_roles where rolname = '${ROLE}') then
+        create role ${ROLE} login password '${ROLE}';
+      end if;
+    end $$;`,
+  )
+  const dbExists = sqlIn('postgres', `select 1 from pg_database where datname = '${DB}'`) === '1'
+  if (reset && dbExists) sqlIn('postgres', `drop database ${DB} with (force);`)
+  if (reset || !dbExists) sqlIn('postgres', `create database ${DB} owner ${ROLE};`)
+
+  const databaseUrl = `postgresql://${ROLE}:${ROLE}@127.0.0.1:${pgPort}/${DB}`
+
+  console.log('… bun run db:migrate')
+  const migrate = spawnSync('bun', ['run', 'db:migrate'], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    env: { ...process.env, DATABASE_URL: databaseUrl, DIRECT_URL: databaseUrl },
+  })
+  if (migrate.status !== 0) abort('bun run db:migrate failed.')
+  if (reset && existsSync('drizzle/seed.sql')) {
+    console.log('… drizzle/seed.sql')
+    sqlIn(DB, readFileSync('drizzle/seed.sql', 'utf8'))
+  }
+
+  console.log(`Local database: ${databaseUrl} · emails at http://127.0.0.1:${mailUi}`)
+  if (dbOnly) process.exit(0)
+
+  const env: NodeJS.ProcessEnv = { ...process.env, QA_LOCAL: '1' }
+  for (const k of [...Object.keys(ENV_MAP), ...remote.map((r) => r.key)]) env[k] = dead(k)
+  Object.assign(env, {
+    DATABASE_URL: databaseUrl,
+    DIRECT_URL: databaseUrl,
+    BETTER_AUTH_SECRET: 'qa-local-secret-qa-local-secret-qa-local',
+    CRON_SECRET: 'qa-local-cron',
+    SMTP_HOST: '127.0.0.1',
+    SMTP_PORT: String(smtpPort),
+    SMTP_USER: '',
+    SMTP_PASS: '',
+    SMTP_FROM: 'QA <qa@example.test>',
+  })
+
+  await startServer(env, async () => {
+    for (const a of accounts) {
+      if (!a.email || !a.password) {
+        console.warn(`! role ${a.role}: email or password missing in .env.test.local; skipped`)
+        continue
+      }
+      const r = await fetch(`${SITE}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: SITE },
+        body: JSON.stringify({ email: a.email, password: a.password, name: a.role }),
+      })
+      if (r.status === 404) {
+        console.warn('! The app has no Better Auth sign-up route yet: test accounts skipped.')
+        return
+      }
+      const email = a.email.replaceAll("'", "''")
+      const id = sqlIn(DB, `update public."user" set email_verified = true where email = '${email}' returning id;`)
+      if (!id) abort(`Could not create the account for role ${a.role}: ${r.status} ${await r.text()}`)
+      await roles.assignRolePostgres?.(id, a.role, { sql: (statement) => sqlIn(DB, statement) })
+      console.log(`  + test account: role ${a.role}`)
+    }
+  })
 }
 
 // ── Firebase ────────────────────────────────────────────────────────────────────────────
@@ -546,6 +723,11 @@ if (!existsSync('supabase/config.toml')) {
       'Some variables point to a remote Supabase but the project has no local supabase/:\n' +
         remote.map((r) => `  ${r.file}: ${r.key}`).join('\n') +
         '\nQA does not run against the real database. It needs `supabase init` and the migrations in the repo (backend-build).',
+    )
+  }
+  if (atVps.length) {
+    abort(
+      `Some variables point at the VPS but the project has no drizzle.config.*:\n${listVars(atVps)}\nQA does not run against the real database. It needs the migrations in the repo (kit reference/tech/vps-postgres.md).`,
     )
   }
   console.log('No supabase/config.toml nor Firebase emulators: no external database to replace. Normal server.')

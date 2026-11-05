@@ -47,6 +47,13 @@ export DEBIAN_FRONTEND=noninteractive
 STATE=/etc/kit-vps
 mkdir -p "$STATE/dbs" && chmod 700 "$STATE" "$STATE/dbs"
 
+# A re-run without --domain keeps the domain: it used to fall to the self-signed branch and
+# every URL printed afterwards dropped to sslmode=no-verify.
+if [ -z "$DOMAIN" ] && [ -f "$STATE/vps.env" ] && grep -q '^KIT_VPS_SSLMODE=verify-full$' "$STATE/vps.env"; then
+  DOMAIN=$(sed -n 's/^KIT_VPS_HOST=//p' "$STATE/vps.env")
+  echo "== Keeping the domain from the previous run: $DOMAIN"
+fi
+
 # Starts or reloads a service with systemd, or by hand inside the test container.
 svc() { # svc start|reload postgresql|pgbouncer
   if [ "$TEST" = 1 ]; then
@@ -117,6 +124,12 @@ RETURNS TABLE(usename name, passwd text) LANGUAGE sql SECURITY DEFINER SET searc
 REVOKE ALL ON FUNCTION pgbouncer.get_auth(text) FROM PUBLIC;
 GRANT USAGE ON SCHEMA pgbouncer TO pgbouncer_auth;
 GRANT EXECUTE ON FUNCTION pgbouncer.get_auth(text) TO pgbouncer_auth;
+-- PgBouncer's * entry lets any project role ask for any database, and these two grant CONNECT
+-- to PUBLIC by default. A session held on template1 made CREATE DATABASE fail (Docker test,
+-- 2026-11-04). Only the auth role needs to enter one of them.
+REVOKE CONNECT ON DATABASE template1 FROM PUBLIC;
+REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;
+GRANT CONNECT ON DATABASE postgres TO pgbouncer_auth;
 SQL
 
 echo "== TLS certificate"
@@ -210,9 +223,18 @@ if [ "$TEST" = 0 ]; then
   if [ "$HARDEN_SSH" = 1 ]; then
     # Refuses without a key: turning off passwords with no key locks César out (VNC remains).
     if [ -s /root/.ssh/authorized_keys ]; then
-      printf 'PasswordAuthentication no\nPermitRootLogin prohibit-password\n' > /etc/ssh/sshd_config.d/60-kit.conf
+      # 00-: sshd keeps the FIRST value it reads, and cloud images ship 50-cloud-init.conf with
+      # PasswordAuthentication yes, so a 60- file changed nothing while this script said "off"
+      # (César's VPS, 2026-11-04). What is reported is what sshd says, not what was written.
+      rm -f /etc/ssh/sshd_config.d/60-kit.conf
+      printf 'PasswordAuthentication no\nPermitRootLogin prohibit-password\n' > /etc/ssh/sshd_config.d/00-kit.conf
+      sshd -t
       systemctl reload ssh 2>/dev/null || systemctl reload sshd
-      echo "SSH: password login off (keys only)."
+      if sshd -T | grep -qi '^passwordauthentication no$'; then
+        echo "SSH: password login off (keys only)."
+      else
+        echo "SSH: password login is STILL ON: check 'sshd -T' and /etc/ssh/sshd_config." >&2
+      fi
     else
       echo "SSH: NOT hardened, /root/.ssh/authorized_keys is empty. Add your key first." >&2
     fi

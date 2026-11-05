@@ -1,13 +1,15 @@
 #!/usr/bin/env bun
 /**
  * Writes DATABASE_URL and DIRECT_URL for this project's database on César's VPS into
- * .env.local, without printing them.
+ * .env.development.local, without printing them.
  *
  *   bun run vps:env <database>          (package.json: "vps:env": "bun scripts/vps-env.ts")
  *
  * It asks the VPS through the `kit-vps` SSH alias (reference/VPS-POSTGRES.md): `kit-db url`
  * is the only place the password exists. Why a script and not "copy the output": the URL
- * carries the password, and anything printed ends up in the session transcript.
+ * carries the password, and anything printed ends up in the session transcript. Why not
+ * .env.local: `vercel env pull` overwrites it, and the kit forbids editing it by hand
+ * (world-flags). This file wins over it in dev and survives the pull.
  *
  * Existing DATABASE_URL / DIRECT_URL lines are replaced; every other line is kept.
  */
@@ -34,7 +36,7 @@ const values: Record<string, string> = {
   DIRECT_URL: kitDb('--direct'),
 }
 
-const file = '.env.local'
+const file = '.env.development.local'
 const lines = existsSync(file) ? readFileSync(file, 'utf8').split(/\r?\n/) : []
 const NOTE = '# Postgres on the VPS (bun run vps:env). DIRECT_URL needs: ssh -N -L 5433:127.0.0.1:5432 kit-vps'
 const kept = lines.filter((l) => !/^(DATABASE_URL|DIRECT_URL)=/.test(l) && l !== NOTE)

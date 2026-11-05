@@ -58,8 +58,9 @@ Nothing from another slot's `.qa/`: it belongs to a previous unit and may be sta
 
 ## Batch rules (on top of `CLAUDE.md`)
 
-1. **Read only** `CLAUDE.md` and what your prompt cites (paths, lines, decisions). Do not
-   read the whole `context/`; the rest, with `grep`.
+1. **Read only** `CLAUDE.md`, what your prompt cites (paths, lines, decisions) and, if your
+   unit touches a technology of its `Tech refs` line, that file. Do not read the whole
+   `context/`; the rest, with `grep`.
 2. **Slot and branch:** you work ONLY in your pool slot's path (`..\<repo>-wt\wtN`), which
    already has your branch created, `node_modules` installed and the `.env*` files copied.
    Do not create or delete worktrees, do not run `wt` and do not switch branches.

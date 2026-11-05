@@ -113,7 +113,7 @@ Supabase sends the ones in the table with its own HTML templates, with Go variab
   ```
 
   That way the local database (`bun run qa:local`) sends the emails with the real design to
-  Mailpit, and QA sees them as the user does. (`supabase/` goes in git: `backend-build` §2.)
+  Mailpit, and QA sees them as the user does. (`supabase/` goes in git: `tech/supabase.md`.)
 - **A single design source**: the HTML files in `supabase/templates/` are generated from
   React Email components that receive the Go variables as text
   (`url="{{ .ConfirmationURL }}"`), with a script (`bun run emails:export`). Check that the
@@ -157,7 +157,7 @@ designed email was left unusable for not checking first.
 
 ### Auth emails — Better Auth (projects moved to the VPS Postgres)
 
-After [`MIGRATE-TO-VPS.md`](./MIGRATE-TO-VPS.md) there is no provider sending auth emails:
+On the VPS Postgres (`tech/vps-postgres.md`) there is no provider sending auth emails:
 **every email is the app's**, and that is simpler. Better Auth calls a function of yours for
 each one (`emailVerification.sendVerificationEmail`, `emailAndPassword.sendResetPassword`,
 the magic-link and change-email plugins' equivalents) with the user and the URL; that

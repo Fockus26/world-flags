@@ -305,14 +305,15 @@ tabs and axe on every screen with no file of theirs changed (×3). With no previ
 whole wave.
 
 No need to repeat what the agent already knows: it starts its server with `bun run
-qa:local` against the local backend (Supabase in Docker, or the Firebase emulators with
-Java; never the real one); it logs in with `EMAIL_TEST`/`PASSWORD_TEST`,
+qa:local` against the local backend (Supabase or Postgres in Docker, or the Firebase emulators
+with Java; never the real one); it logs in with `EMAIL_TEST`/`PASSWORD_TEST`,
 `ADMIN_EMAIL_TEST`/`ADMIN_PASSWORD_TEST` and `<ROLE>_EMAIL_TEST`/`<ROLE>_PASSWORD_TEST` from
 `.env.test.local` without seeing the values. If Docker (or Java) is missing, it will report
 it as an action for César: do not start it yourself.
 
-**No local database possible** (Supabase without Docker on the machine, Firebase without
-Java, or the project has no `supabase/config.toml`/`firebase.json` emulators yet): the wave does not stay blocked. Launch it anyway,
+**No local database possible** (Supabase or Postgres without Docker on the machine, Firebase
+without Java, or the project has no `supabase/config.toml`, `drizzle.config.*` or `firebase.json`
+emulators yet): the wave does not stay blocked. Launch it anyway,
 with "no local database: `qa:local -- --offline`" in the prompt; it tests as a guest with the
 database variables pointing nowhere. In the closing (§9), "QA: guest only — <reason>", and
 that wave's logged-in QA goes to "Blocked" until there is a local database.

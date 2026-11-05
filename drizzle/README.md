@@ -4,6 +4,9 @@ Las migraciones salen de `src/server/db/schema.ts` (`bun run db:generate`) y van
 Postgres, no por PgBouncer. Con el túnel abierto (`ssh -N -L 5433:127.0.0.1:5432 kit-vps`) y
 `DIRECT_URL` puesto (`ssh kit-vps kit-db url world_flags --direct`): `bun run db:migrate`.
 
+Para desarrollar: `bun run vps:env world_flags_dev` escribe `.env.development.local` sin mostrar
+la URL; `world_flags` es la base real y nadie desarrolla contra ella.
+
 Una migración se aplica **antes** de desplegar el código que la usa.
 
 ## Recordatorio diario

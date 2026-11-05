@@ -52,10 +52,10 @@ its reproduction script in `.qa/repro/<n>-<slug>.mjs` (base URL as its argument,
 `bun run qa:local -- --port <port>` (if you are launched in a pool slot, the slot's port;
 otherwise, a free one that is not César's), and you shut it down when done by killing its
 process tree (Windows: `taskkill /PID <pid> /T /F`). `qa:local` starts the local backend —
-Supabase in Docker (migrations and seed), or the Firebase emulators with a `demo-*` project
-(they need Java, not Docker) — creates the test accounts and points the app at it; it aborts
+Supabase or Postgres in Docker (migrations and seed), or the Firebase emulators with a `demo-*`
+project (they need Java, not Docker) — creates the test accounts and points the app at it; it aborts
 if anything still points at the real database or if the port is taken. **You never test
-against production data:** if it aborts, or Docker (Supabase) / Java (Firebase) does not
+against production data:** if it aborts, or Docker (Supabase, Postgres) / Java (Firebase) does not
 respond, what touches data goes to "Not verified" and to the actions for César. Without
 them, `--offline` lets you test what does not need data, as a guest.
 

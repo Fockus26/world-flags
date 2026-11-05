@@ -27,7 +27,7 @@ fi
 if [ ! -e context/CURRENT_PHASE.md ] && [ -f scripts/context-backup.sh ]; then
   bash scripts/context-backup.sh --restore 2>&1 | tail -1 | sed 's/^/cloud-setup: /'
 fi
-# Environment variables from Vercel (the source, reference/DEPLOY.md §2c) without pasting them
+# Environment variables from Vercel (the source, reference/tech/vercel.md §2c) without pasting them
 # into the chat: César stores VERCEL_TOKEN (a secret), VERCEL_ORG_ID and VERCEL_PROJECT_ID
 # in the cloud environment's settings and allows api.vercel.com in its network access. The
 # pull writes the Development environment to VERCEL_ENV_FILE (default .env.local; a monorepo
