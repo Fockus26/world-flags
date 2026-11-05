@@ -21,6 +21,7 @@
 		"qa:local": "node scripts/qa-local.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
+		"vps:env": "bun scripts/vps-env.ts",
 		"context:backup": "bash scripts/context-backup.sh",
 		"context:restore": "bash scripts/context-backup.sh --restore"
 	},

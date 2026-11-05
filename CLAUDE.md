@@ -1,10 +1,9 @@
 # World Flags
 
-App web (PWA) para aprender las banderas del mundo con repetición espaciada estilo Anki:
-progreso en la nube, modo cronometrado ("rush") con ranking público y práctica por mundo,
-continentes o países sueltos (combinables).
+PWA para aprender las banderas del mundo con repetición espaciada: progreso en la nube,
+modo "rush" con ranking público y práctica por mundo, continentes o países (combinables).
 
-**Tipo:** juego / app · **Estado:** en producción, iterando diseño y features
+**Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
 **Kit:** web-agent-kit, versión en `.kit-version` (`/kit-update`) ·
 **Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
@@ -19,7 +18,10 @@ continentes o países sueltos (combinables).
 
 **Buscar, no leer:** `decisions/` (un archivo por decisión; no las re-litigues),
 `CONTENT_CHECKLIST.md`, inventarios, `PHASE_LOG/`. `grep` y abrir solo lo que sale:
-`grep -rhi "^# D.*modal" context/decisions/`. Más: `docs/`, `README.md`.
+`grep -rhi "^# D.*modal" context/decisions/`.
+
+**`reference/…` del kit** = `~/.claude/kit-reference/…` (o `.claude/kit-reference/…`).
+**Tech refs:** astro, vps-postgres → su `tech/<nombre>.md` cuando la tarea lo toque; solo esos.
 
 ### Qué está en el repo y qué vive solo en local
 
@@ -35,7 +37,7 @@ Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
 Los worktrees (slots del pool D136, `.claude/worktrees/`) traen los `.env*` pero **no** el
 `context/` local: se lee en la carpeta principal (1.ª línea de `git worktree list`); si no
-puedes escribir ahí, devuelve los cambios en tu informe. Estado de las ramas: `gh pr list`.
+puedes escribir ahí, devuelve los cambios en tu informe.
 
 ---
 
@@ -68,7 +70,7 @@ su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`); nunca la base real (`--offline`:
 solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
-**Docs:** **Context7** antes de cualquier API de librería (HeroUI, Astro, Drizzle, Better Auth…).
+**Docs:** **Context7** antes de cualquier API de librería.
 **Modelo por tarea:** `Modelo recomendado: <modelo · effort>` antes de cada una (kit
 `TOKEN-ECONOMY.md` §12; riesgo → `opus`), ambos pasados a `Agent(...)`.
 
@@ -76,9 +78,7 @@ solo invitado). Scripts de Playwright con `node` (Bun se cuelga en Windows), en 
 
 ## Cómo se trabaja aquí
 
-Una unidad a la vez.
-
-Todo cambio llega a `main` **por Pull Request**. `main` está protegida.
+Todo cambio llega a `main` **por Pull Request**.
 
 ```
 git switch main && git pull  →  git switch -c <tipo>/<descripcion>
@@ -96,7 +96,7 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
   (cuerpo en lenguaje de jugador, texto plano; formato en `.changeset/README.md`): lo
   muestra "Novedades". Docs, tests, CI o refactors: sin changeset. El PR `chore(release): versión`
   lo abre la Action y lo mergea el dueño; ningún agente lo edita.
-- En **tu rama** commit y push sin pedir permiso (la aprobación es la revisión del PR).
+- En **tu rama** commit y push sin pedir permiso.
   `git add` solo de los archivos de la unidad. Cambios pedidos en el PR: commits nuevos, sin amend.
 - **Nunca** push a `main`, `gh pr merge` ni auto-merge: el merge lo hace el dueño.
 - **Sesión en la nube** (`CLAUDE_CODE_REMOTE=true`): skill `cloud-session` al empezar y al
@@ -109,10 +109,9 @@ git switch main && git pull  →  git switch -c <tipo>/<descripcion>
 
 ### Puertas de calidad (skills)
 
-`a11y` siempre que se toque UI, antes de pedir revisión (axe-core limpio + checklist manual) ·
-`seo` al cerrar contenido/página (`SITE_URL` = `https://world-flags-hazel.vercel.app`, en
-`astro.config.mjs` + `public/robots.txt`) · `git-flow` al abrir y cerrar cada unidad (con las
-excepciones de PR de arriba) · `orchestrate` para una lista o una fase en olas (una por sesión) ·
+`a11y` siempre que se toque UI, antes de pedir revisión ·
+`seo` al cerrar contenido/página (`SITE_URL` en `astro.config.mjs` + `public/robots.txt`) ·
+`git-flow` al abrir y cerrar cada unidad · `orchestrate` para una lista o una fase en olas (una por sesión) ·
 `wave-qa` tras una ola con flujos de riesgo · `functional-qa` al cerrar un flujo de riesgo y en
 el QA de versión · `design-qa` solo en el QA de versión (fase 09 / PR de release).
 
@@ -127,7 +126,7 @@ de código como no verificada.
   (`context/COLORS.md`, `DESIGN_TOKENS.md`, `TYPOGRAPHY.md` — escala `text-caption`…, D178).
   `text-[#6d5ef0]`, `mt-[13px]` o `text-[Xrem]` = falta un token o una decisión.
 - **HeroUI antes que reimplementar** un primitivo. Los wrappers de `src/components/ui/`
-  **conservan su API previa** (~17 consumidores).
+  **conservan su API previa**.
 - **Persistencia solo por `src/utils/learning-storage.ts`**, nunca `localStorage` directo.
   El store de Redux solo desde `store/slices/`; fuera, los hooks de `src/hooks/`.
 - **WCAG 2.1 AA** mínimo. Contraste 4.5:1 texto normal, foco visible siempre,
