@@ -1,7 +1,7 @@
 # World Flags
 
 PWA para aprender las banderas del mundo con repetición espaciada: progreso en la nube,
-modo "rush" con ranking público y práctica por mundo, continentes o países (combinables).
+modo "rush" con ranking público y práctica por mundo, continentes o países.
 
 **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
@@ -21,7 +21,7 @@ modo "rush" con ranking público y práctica por mundo, continentes o países (c
 `grep -rhi "^# D.*modal" context/decisions/`.
 
 **`reference/…` del kit** = `~/.claude/kit-reference/…` (o `.claude/kit-reference/…`).
-**Tech refs:** astro, vps-postgres → su `tech/<nombre>.md` cuando la tarea lo toque; solo esos.
+**Tech refs:** astro, vps-postgres, vercel → su `tech/<nombre>.md` cuando la tarea lo toque; solo esos.
 
 ### Qué está en el repo y qué vive solo en local
 
@@ -33,7 +33,7 @@ inventarios (`*_INVENTORY.md`), `PHASE_LOG/`, `plans/` (incluidos los `*.dc.html
 Claude Design); respaldo: `bun run context:backup`. Nunca van a git (ni con
 `git add -f`). **`.env.local` se baja de Vercel, nunca se edita a mano** (`vercel env pull
 .env.local --yes`, entorno Development; lo propio de esta máquina va en
-`.env.development.local`; kit `reference/DEPLOY.md` §2c). Variable nueva:
+`.env.development.local`; kit `tech/vercel.md` §2c). Variable nueva:
 su nombre en `.env.example` y sus valores en Vercel (acción para el dueño).
 Los worktrees (slots del pool D136, `.claude/worktrees/`) traen los `.env*` pero **no** el
 `context/` local: se lee en la carpeta principal (1.ª línea de `git worktree list`); si no
