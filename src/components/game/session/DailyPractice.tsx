@@ -6,6 +6,7 @@ import { countries } from "@/data/countries";
 import type { DailyPracticeSummary } from "@/hooks/useGame";
 import { useGame } from "@/hooks/useGame";
 import { usePracticeQueue } from "@/hooks/usePracticeQueue";
+import { useUpcomingFlagPrecache } from "@/hooks/useUpcomingFlagPrecache";
 import type { GameType } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
@@ -58,34 +59,42 @@ export function DailyPractice({
 		countryCodes.filter(isCatalogCountryCode),
 	);
 
-	const { currentCode, totalCount, completedCount, completedCodes, grade } =
-		usePracticeQueue({
-			initialCodes: playableCodes,
-			countryHistory: toGameView(learningData, gameType).countryHistory,
-			onGrade: (code, gradeValue, isFirstAttempt, countsForReview) => {
-				// Solo la primera vez que aparece cada bandera, y "otra vez" es el
-				// único lapso real: `calculateNextReview` reinicia las repeticiones
-				// justamente ahí y no en "difícil".
-				if (isFirstAttempt && gradeValue !== "again") {
-					correctAnswersRef.current += 1;
-				}
+	const {
+		currentCode,
+		upcomingCodes,
+		totalCount,
+		completedCount,
+		completedCodes,
+		grade,
+	} = usePracticeQueue({
+		initialCodes: playableCodes,
+		countryHistory: toGameView(learningData, gameType).countryHistory,
+		onGrade: (code, gradeValue, isFirstAttempt, countsForReview) => {
+			// Solo la primera vez que aparece cada bandera, y "otra vez" es el
+			// único lapso real: `calculateNextReview` reinicia las repeticiones
+			// justamente ahí y no en "difícil".
+			if (isFirstAttempt && gradeValue !== "again") {
+				correctAnswersRef.current += 1;
+			}
 
-				// Sin `markPracticed`: la práctica diaria es un scope aparte del
-				// de continentes, y no debe contar como "practicado hoy" para el
-				// candado de continentes. Un reencolado puede ser solo un paso de
-				// aprendizaje (D186); la primera calificación siempre cuenta, así
-				// que el acierto a la primera llega igual a los lotes (D185).
-				if (countsForReview) {
-					gradeCountryReview(code, gradeValue, gameType, false, isFirstAttempt);
-				}
-			},
-			onFinish: () =>
-				onComplete({
-					totalCountries: playableCodes.length,
-					correctAnswers: correctAnswersRef.current,
-					elapsedMs: performance.now() - startTimeRef.current,
-				}),
-		});
+			// Sin `markPracticed`: la práctica diaria es un scope aparte del
+			// de continentes, y no debe contar como "practicado hoy" para el
+			// candado de continentes. Un reencolado puede ser solo un paso de
+			// aprendizaje (D186); la primera calificación siempre cuenta, así
+			// que el acierto a la primera llega igual a los lotes (D185).
+			if (countsForReview) {
+				gradeCountryReview(code, gradeValue, gameType, false, isFirstAttempt);
+			}
+		},
+		onFinish: () =>
+			onComplete({
+				totalCountries: playableCodes.length,
+				correctAnswers: correctAnswersRef.current,
+				elapsedMs: performance.now() - startTimeRef.current,
+			}),
+	});
+
+	useUpcomingFlagPrecache(gameType === "flags" ? upcomingCodes : []);
 
 	const currentCountry = countries.find(
 		(country) => country.code === currentCode,

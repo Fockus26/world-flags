@@ -118,6 +118,8 @@ export function usePracticeQueue({
 
 	return {
 		currentCode,
+		/** La cola tal cual: la tarjeta en pantalla primero (D229 precarga las siguientes). */
+		upcomingCodes: queueState.queue,
 		/**
 		 * Sube en cada calificación. El estado de la tarjeta en pantalla
 		 * (guardas, pistas, temporizador) se reinicia por turno: una bandera

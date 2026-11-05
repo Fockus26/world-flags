@@ -41,22 +41,121 @@ self.addEventListener("install", (event) => {
 // Solo banderas propias: el mensaje viene de la página, pero se valida igual.
 const FLAG_URL_PATTERN = /^\/flags\/[a-z0-9-]+\.svg$/;
 
-// Precarga de banderas (D054): la app manda la lista del catálogo y aquí se
-// descargan una a una las que falten en caché. Idempotente: en cada carga
-// solo se piden las que no están. Si una falla (sin red), se para y la
-// próxima carga sigue donde quedó.
-async function precacheFlags(urls) {
-	const cache = await caches.open(CACHE_NAME);
+// Precarga de banderas (D054, D229): la app manda la lista del catálogo y aquí
+// se descargan las que falten en caché. Idempotente: con todo guardado no pide
+// nada. Antes iba una a una, sin límite de espera y se paraba en el primer
+// fallo: con una red que se cuelga o un solo error se quedaba a medias hasta
+// la siguiente carga de la página.
+//
+// - Varias a la vez (`PRECACHE_CONCURRENCY`), cada una con su límite de espera.
+// - Un fallo no para el resto: la bandera vuelve a la cola y se reintenta en la
+//   siguiente pasada, tras una espera creciente.
+// - Muchos fallos seguidos = la red no responde: se corta la pasada y se espera,
+//   en vez de gastar un límite de espera por cada bandera que queda.
+// - `priority`: las banderas que la partida va a enseñar enseguida pasan
+//   delante, también si ya hay una precarga en marcha.
+// - Una sola precarga a la vez; cada mensaje nuevo se suma a la que corre. Dura
+//   como mucho `PRECACHE_RUN_MS` (el navegador corta antes las esperas largas
+//   de un service worker); lo que falte sigue con el siguiente mensaje.
+const PRECACHE_CONCURRENCY = 5;
+const PRECACHE_TIMEOUT_MS = 8_000;
+const PRECACHE_MAX_CONSECUTIVE_FAILURES = 10;
+const PRECACHE_BACKOFF_MS = [2_000, 4_000, 8_000, 15_000, 30_000];
+const PRECACHE_RUN_MS = 4 * 60_000;
 
-	for (const url of urls) {
-		if (await cache.match(url)) continue;
+const precacheState = { pending: [], run: null };
 
-		try {
-			await cache.add(url);
-		} catch {
-			return;
+function queueFlags(urls, priority) {
+	if (priority) {
+		const queued = new Set(urls);
+		precacheState.pending = [
+			...urls,
+			...precacheState.pending.filter((url) => !queued.has(url)),
+		];
+		return;
+	}
+
+	const queued = new Set(precacheState.pending);
+	precacheState.pending.push(...urls.filter((url) => !queued.has(url)));
+}
+
+async function fetchFlagIntoCache(cache, url) {
+	const controller = new AbortController();
+	// El límite cubre también el cuerpo: `cache.put` lo lee con la misma señal.
+	const timeoutId = setTimeout(() => controller.abort(), PRECACHE_TIMEOUT_MS);
+
+	try {
+		const response = await fetch(url, { signal: controller.signal });
+		if (!response.ok) return false;
+
+		await cache.put(url, response);
+		return true;
+	} catch {
+		return false;
+	} finally {
+		clearTimeout(timeoutId);
+	}
+}
+
+async function precachePass(cache) {
+	const failed = [];
+	let succeeded = 0;
+	let consecutiveFailures = 0;
+
+	async function worker() {
+		while (consecutiveFailures < PRECACHE_MAX_CONSECUTIVE_FAILURES) {
+			const url = precacheState.pending.shift();
+			if (url === undefined) return;
+			if (await cache.match(url)) continue;
+
+			if (await fetchFlagIntoCache(cache, url)) {
+				succeeded += 1;
+				consecutiveFailures = 0;
+			} else {
+				failed.push(url);
+				consecutiveFailures += 1;
+			}
 		}
 	}
+
+	await Promise.all(Array.from({ length: PRECACHE_CONCURRENCY }, worker));
+
+	return { failed, succeeded };
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function runPrecache() {
+	const cache = await caches.open(CACHE_NAME);
+	const deadline = Date.now() + PRECACHE_RUN_MS;
+	let round = 0;
+
+	while (precacheState.pending.length > 0 && Date.now() < deadline) {
+		const { failed, succeeded } = await precachePass(cache);
+
+		queueFlags(failed, false);
+		if (precacheState.pending.length === 0) return;
+
+		// Si la pasada avanzó, la red funciona: la siguiente espera vuelve a ser corta.
+		round = succeeded > 0 ? 0 : round + 1;
+		const delay = PRECACHE_BACKOFF_MS[Math.min(round, PRECACHE_BACKOFF_MS.length - 1)];
+		if (Date.now() + delay >= deadline) return;
+
+		await wait(delay);
+	}
+}
+
+function precacheFlags(urls, priorityUrls) {
+	queueFlags(urls, false);
+	queueFlags(priorityUrls, true);
+
+	if (!precacheState.run) {
+		precacheState.run = runPrecache().finally(() => {
+			precacheState.run = null;
+		});
+	}
+
+	return precacheState.run;
 }
 
 self.addEventListener("message", (event) => {
@@ -65,11 +164,13 @@ self.addEventListener("message", (event) => {
 	}
 
 	if (event.data?.type === "PRECACHE_FLAGS" && Array.isArray(event.data.urls)) {
-		const urls = event.data.urls.filter(
-			(url) => typeof url === "string" && FLAG_URL_PATTERN.test(url),
-		);
+		const isFlagUrl = (url) => typeof url === "string" && FLAG_URL_PATTERN.test(url);
+		const urls = event.data.urls.filter(isFlagUrl);
+		const priorityUrls = Array.isArray(event.data.priority)
+			? event.data.priority.filter(isFlagUrl)
+			: [];
 
-		event.waitUntil(precacheFlags(urls));
+		event.waitUntil(precacheFlags(urls, priorityUrls));
 	}
 });
 
