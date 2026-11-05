@@ -40,7 +40,8 @@ Stack: <framework · base/auth · gestor de paquetes · SO> (una línea; ayuda a
 general de lo propio de un stack)
 
 ## <pieza del kit> (skill / plantilla / script / prompt, con sección)
-- [<Tipo> ×<Veces>] <qué pasó> → propuesta: <qué cambiar en el kit>
+- [<Tipo> ×<Veces>] <qué pasó> → propuesta: <qué cambiar en el kit>. Si solo aplica con una
+  tecnología, lo dice: `[Tech: astro]` (va a `reference/tech/`, no a una pieza general)
   Evidencia: <owner/repo#PR, rama o archivo, si sirve>
 
 ## Lo que funcionó bien y no hay que tocar

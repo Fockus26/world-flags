@@ -45,19 +45,19 @@ In Git Bash a route argument (`/login`) is rewritten to `C:/Program Files/Git/lo
 `qa:local` (`scripts/qa-local.ts`) picks the local backend by what the project has:
 **Supabase** (`supabase/config.toml`) → its stack in Docker, with `main`'s migrations and
 seed; **Firebase** (`firebase.json` with `emulators`) → the emulators with a `demo-*`
-project, which need **Java, not Docker**. It creates the test accounts there and starts the
+project, which need **Java, not Docker**; **Postgres** (`drizzle.config.*`) → a Postgres and a
+Mailpit in Docker, even though the project develops against the VPS. It creates the test accounts there and starts the
 server pointing at that backend. A Firebase project on a machine without Docker is not "no
 local database": do not use `--offline` for that reason. **You never test against the
-real database:** that is why the script aborts if any variable still points at
-`*.supabase.co`. If it aborts, do not work around it: the reason goes to "Not verified" and
+real database:** that is why the script aborts if any variable it does not override
+still points at `*.supabase.co` or at the VPS. If it aborts, do not work around it: the reason goes to "Not verified" and
 to "Actions for César", and you test only what does not touch data. If Docker does not
-respond (Supabase) or Java is missing (Firebase), the same ("open Docker Desktop" /
+respond (Supabase, Postgres) or Java is missing (Firebase), the same ("open Docker Desktop" /
 "install a JDK"). If the port is taken, it aborts too: something
 from a previous run is still listening there.
 
-Without `supabase/` in the project, the script starts the normal server. Another external
-database with a local equivalent (Postgres in Docker): the same, with its local
-`DATABASE_URL`. An external service **without** a local equivalent: the only case in which
+With none of those, the script starts the normal server. Another external database with a
+local equivalent: the same, with its local `DATABASE_URL`. An external service **without** a local equivalent: the only case in which
 you touch remote data, with the rules of §3.
 
 If the prompt says "no local database" (no Docker on the machine, or the project still has

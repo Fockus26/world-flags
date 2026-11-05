@@ -1,9 +1,8 @@
 # VPS Postgres — César's central database server
 
-**Not the default.** Projects start on Supabase or Firebase. When one is finished, César may
-decide to move it to his own Postgres on his VPS, to stop depending on a paid tier. That
-move is [`MIGRATE-TO-VPS.md`](./MIGRATE-TO-VPS.md); this file is the server it lands on:
-how it is set up once, and how an agent works with it without ever handling a password.
+**This file is the server**, set up once: how it is installed, and how an agent works with it
+without ever handling a password. What a project does on it, from its first unit or migrated
+later, is [`tech/vps-postgres.md`](./tech/vps-postgres.md) and the `tech/migrate-*-vps.md` files.
 
 Why one central Postgres (decided by César, 2026-10-29) and not Supabase self-hosted or one
 container per project: one Postgres with one database and one role per project isolates
@@ -56,11 +55,13 @@ secret goes into the kit, a project, or a chat:
 
 ```bash
 ssh kit-vps kit-db url melao | vercel env add DATABASE_URL production
-ssh kit-vps kit-db url melao | vercel env add DATABASE_URL preview
+ssh kit-vps kit-db url melao_preview | vercel env add DATABASE_URL preview
 ```
 
-and for `.env.local`, `bun run vps:env melao` (`reference/scripts/vps-env.ts`, copied with the
-migration) writes `DATABASE_URL` and `DIRECT_URL` into the file without printing them.
+and for the machine, `bun run vps:env melao` (`reference/scripts/vps-env.ts`, copied to the
+project) writes `DATABASE_URL` and `DIRECT_URL` into `.env.development.local` without printing
+them. Previews have their own database: with the same URL, a PR's preview writes real data
+(world-flags).
 
 ## One-time setup (César, ~20 minutes)
 
@@ -96,7 +97,10 @@ migration) writes `DATABASE_URL` and `DIRECT_URL` into the file without printing
    same disk dies with the disk). On the VPS, `rclone config` with a free remote (Cloudflare
    R2 10 GB, Backblaze B2 10 GB, or Google Drive), then put its name in
    `/etc/kit-vps/backup.env` (`KIT_BACKUP_REMOTE=r2:kit-backups`). Test it:
-   `ssh kit-vps kit-db backup --all`.
+   `ssh kit-vps kit-db backup --all`, then `kit-db status`. In the bucket: private, encrypted,
+   and a lifecycle rule (the VPS only deletes its own copies). Its key lives only in rclone on
+   the VPS, limited to that bucket and, if you can, without `deleteFiles`: whoever gets into
+   the server should not be able to erase the copies too.
 
 ## Operations
 
@@ -110,6 +114,7 @@ All from the PC, through the alias:
 | What is there and how big | `ssh kit-vps kit-db list` |
 | Leaked password | `ssh kit-vps kit-db rotate <project>`, then the two `vercel env add` above and redeploy |
 | Backup now | `ssh kit-vps kit-db backup <project>` (daily one is automatic at 03:30) |
+| Are the backups working? | `ssh kit-vps kit-db status`: last dump per database and last failures. Nobody is alerted otherwise |
 | Restore | `ssh kit-vps kit-db restore <project> /var/backups/kit-pg/<file>.dump` |
 | Retire a project | `ssh kit-vps kit-db drop <project> --yes` (final backup first) |
 | PgBouncer pools | `ssh kit-vps "psql -h /var/run/postgresql -p 6432 -U postgres pgbouncer -c 'SHOW POOLS'"` |
@@ -125,20 +130,8 @@ a planned operation with `pg_upgradecluster`, never automatic.
 ## Local QA without the VPS
 
 `wave-qa` and the QA scripts never touch the VPS, the same as they never touch the real
-Supabase: a local Postgres in Docker (`docker run -d --name <project>-pg -e
-POSTGRES_PASSWORD=postgres -p 54329:5432 postgres:17`), `drizzle-kit migrate` and the seed
-against it. `qa-local.ts` does not support this stack yet (it starts Supabase or the
-Firebase emulators). **world-flags is the first project to migrate** (César, 2026-10-30): its
-migration adds a third backend to its `scripts/qa-local.ts` and sends it through
-`/kit-feedback` so it enters the kit. What it needs, so the migration does not improvise it:
-
-- Detection: `drizzle.config.*` and neither `supabase/config.toml` nor Firebase emulators.
-- A Postgres 17 container per project (`qa-<package name>-pg`, reused if running, a free
-  port), a database dropped and recreated on each run unless `--no-reset`, then the project's
-  migrate script (`db:migrate`) and seed with `DATABASE_URL`/`DIRECT_URL` pointing at it.
-- Safety: abort if any `.env*` URL points at the VPS host (`KIT_VPS_HOST`, or `:6432`) and is
-  not overridden — the same rule as `*.supabase.co`.
-- Accounts: after `QA ready`, Better Auth's sign-up endpoint for each `.env.test.local` pair,
-  then `email_verified = true` and the role by SQL in the container (`docker exec … psql`);
-  the role logic in `scripts/qa-roles.ts` like the other backends.
-- Emails to Mailpit (a second container), with the app's SMTP variables pointing at it.
+Supabase. `qa-local.ts` detects `drizzle.config.*` and starts a Postgres 17 and a Mailpit in
+Docker, a database per QA port, then the project's migrations and seed. It aborts if a `.env*`
+variable it does not override points at the VPS (`:6432`, the tunnel's `:5433`, or
+`KIT_VPS_HOST`). World-flags built it in its migration, and the header of the script has the
+detail.

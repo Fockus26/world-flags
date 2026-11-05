@@ -40,7 +40,7 @@ These are not discussed or postponed "for later". Later never comes.
   variable.
 - `.env.local` in `.gitignore` from the first commit. `.env.example` with every variable
   documented and **no real values**.
-- **The values live in Vercel; `.env.local` is pulled from there** (`reference/DEPLOY.md`
+- **The values live in Vercel; `.env.local` is pulled from there** (`reference/tech/vercel.md`
   §2c). A new variable: its name in `.env.example`, the values per environment as an
   **action for César** (`vercel env add`, Production/Preview secrets with `--sensitive`),
   then `vercel env pull .env.local --yes`. Never edit `.env.local` by hand (the next
@@ -63,42 +63,16 @@ These are not discussed or postponed "for later". Later never comes.
   database). A new role = its new pair.
 
 ### Local database for QA
-QA never runs against the real database: `bun run qa:local` (`scripts/qa-local.ts`) starts
-Supabase in Docker (or the Firebase emulators, below), applies migrations + seed, creates
-the accounts and points the app at the local stack. For it to work, from the first unit with
-a database:
-- `supabase init` and **every schema change as a migration** in `supabase/migrations/`
-  (`supabase migration new <name>`). A change made only in the dashboard does not exist in
-  the local database: QA would test another schema.
-- **`supabase/` goes in git** (except `.temp/`, `.branches/` and any `.env`, which the
-  `.gitignore` that `supabase init` creates already covers). It is the schema's history:
-  ignoring it leaves the pool slots and `wave-qa` without migrations, and losing the folder
-  loses them. If the reason was "the SQL is private", the answer is a private repo:
-  security comes from RLS and permissions, not from hiding the policies.
-- `supabase/seed.sql` with the minimum to walk through the flows (catalog, settings), no
-  personal data.
-- If the role does not live in `app_metadata.role`: a table (`profiles`) or access through a
-  subscription → `assignRole` in `scripts/qa-local.ts`; a list of emails in a variable
-  (`ADMIN_EMAILS`) → `ROLE_BY_ENV`. If the app uses a Supabase variable with another name,
-  add it to `ENV_MAP` there (the script aborts if any is left pointing at `*.supabase.co`).
-  (Projects from before 3.8.0 have these as `asignarRol`, `ROL_POR_ENV` and `MAPEO`.)
-- **Firebase** (Auth + Firestore): the local backend is the emulators, not Docker — they
-  need Java (a JDK) and the `firebase-tools` CLI. `firebase.json` with an `emulators` block
-  (auth, firestore, ui) in git, a `"emulators": "firebase emulators:start --project
-  demo-<project>"` script, and the client connecting to them when
-  `NEXT_PUBLIC_USE_EMULATORS` (`PUBLIC_`/`VITE_` in Astro/Vite) is `"true"`
-  (`connectAuthEmulator`, `connectFirestoreEmulator`); the Admin SDK reads
-  `FIREBASE_AUTH_EMULATOR_HOST`/`FIRESTORE_EMULATOR_HOST` by itself. `qa-local.ts` sets all of
-  that, gives the role as a custom claim (`role`) and runs `scripts/seed-emulator.ts` if it
-  exists; a role kept in a document (`admins/{uid}`) → `assignRoleFirebase`. The project is
-  always `demo-*`: with it the emulators cannot reach real resources.
-  **Rules tests** (`@firebase/rules-unit-testing`): `initializeTestEnvironment` in
-  `beforeAll(fn, 30_000)` — bun's default 5 s ran out on the first cold run and the suite
-  failed (inversiones-js) — and their folder out of `test:related` (`--dir`), since they need
-  the emulator.
-- Another external database (Neon Postgres, etc.): the local equivalent in Docker and its
-  `DATABASE_URL` in `ENV_MAP`. A service with no local equivalent: say so in "How to test";
-  QA tests it remotely with data cleanup.
+QA never runs against the real database: `bun run qa:local` (`scripts/qa-local.ts`) starts a
+local copy, applies migrations + seed, creates the accounts and points the app at it. For it to
+work, from the first unit with a database, follow the backend's file (`CLAUDE.md` › Tech refs),
+and only that one: `reference/tech/supabase.md`, `firebase.md` or `vps-postgres.md`.
+
+Every schema change is a migration in git: a change made only in a dashboard or by hand does not
+exist in the local database, and QA would test another schema. Another external database (Neon
+Postgres, etc.): the local equivalent in Docker and its `DATABASE_URL` in `EXTRA_ENV_MAP`. A
+service with no local equivalent: say so in "How to test"; QA tests it remotely with data
+cleanup.
 
 ### Validation
 - **Always validate on the server**, even if you validate on the client. Client validation
@@ -152,10 +126,7 @@ a database:
 - Templates in the provider's dashboard, custom SMTP and a verified domain (SPF/DKIM/DMARC)
   are actions for César with exact steps in the delivery. The sending provider (Brevo by
   default) goes in a decision, not only in the conversation.
-- With Supabase, without custom SMTP emails only reach the project team: it goes in before
-  the first real user. With Firebase Auth, check before designing that the console's
-  templates can be edited; if not, send them yourself with the Admin SDK
-  (`reference/EMAIL-TEMPLATES.md` § Firebase).
+- What each backend's emails need: its section in `reference/EMAIL-TEMPLATES.md`.
 
 ### General
 - Parameterized queries always (the ORM already does it; raw SQL does not).
