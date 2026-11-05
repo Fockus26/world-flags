@@ -56,3 +56,6 @@
 | 59 | **Aviso de enlace caducado** («Este enlace ya no vale» / «Usa el del correo más reciente o pide otro.») | `AuthLinkErrorSnackbar.tsx`, `auth-link-error.ts` | A (#124) | Aprobado por el dueño 2026-10-22 |
 | 60 | **Aviso de error de enlace genérico** («No se pudo entrar con el enlace» / «Vuelve a intentarlo desde Perfil y configuración.») | `AuthLinkErrorSnackbar.tsx` | A (#124) | Aprobado por el dueño 2026-10-22 |
 | 61 | **Error de Google dentro del diálogo** («No se pudo entrar con Google. Vuelve a intentarlo.») | `AuthSection.tsx`, `auth-link-error.ts` | G (#127) | Aprobado por el dueño 2026-10-22 |
+| 62 | **Enlace de confirmación ya usado** («Tu cuenta ya está confirmada» / «Inicia sesión desde Perfil y configuración.») | `auth-link-error.ts` | feat/migrate-vps | Provisional, pendiente del dueño |
+| 63 | **Cierre de sesión sin red** («No se pudo cerrar la sesión: hace falta conexión. Sigues dentro de tu cuenta.») | `AuthSection.tsx` | feat/migrate-vps | Provisional, pendiente del dueño |
+| 64 | **Política de privacidad** (texto completo y correo de contacto) | `src/pages/privacidad.astro` | feat/politica-privacidad | Borrador del agente, correo dado por el dueño; texto pendiente de su revisión. Sin revisión legal. Supabase no se menciona, por decisión del dueño |
