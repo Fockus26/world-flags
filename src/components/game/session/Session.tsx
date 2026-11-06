@@ -167,6 +167,14 @@ export function Session({
 			gameEndNotice.show(reason);
 			exitGame();
 		},
+		getClockMs: () =>
+			startTimeRef.current !== null
+				? getElapsedMs(
+						startTimeRef.current,
+						clockPausesRef.current,
+						performance.now(),
+					)
+				: 0,
 	});
 	// Clave (código + turno de la cola) de la bandera a la que pertenece el
 	// `timeLeft` actual: al avanzar de bandera, el efecto del cronómetro
@@ -296,7 +304,8 @@ export function Session({
 				startTimeRef.current !== null &&
 				!isClockPaused(clockPausesRef.current)
 			) {
-				setElapsedMs(performance.now() - startTimeRef.current);
+				// Nunca negativo, pase lo que pase con las pausas (QA de D231).
+				setElapsedMs(Math.max(0, performance.now() - startTimeRef.current));
 			}
 		}, 100);
 		return () => window.clearInterval(intervalId);
@@ -473,6 +482,9 @@ export function Session({
 				clockPausesRef.current,
 				"advance",
 				performance.now(),
+				// Como mucho la transición: si el temporizador llega tarde (página
+				// congelada), el resto no es una pausa gratis (QA de D231).
+				RUSH_ADVANCE_MS,
 			);
 			if (startTimeRef.current !== null) {
 				startTimeRef.current += pausedMs;

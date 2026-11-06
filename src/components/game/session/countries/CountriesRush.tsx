@@ -85,6 +85,14 @@ export function CountriesRush() {
 			gameEndNotice.show(reason);
 			exitGame();
 		},
+		getClockMs: () =>
+			startTimeRef.current !== null
+				? getElapsedMs(
+						startTimeRef.current,
+						clockPausesRef.current,
+						performance.now(),
+					)
+				: 0,
 	});
 	const ambiguousTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 	// Evita aceptar dos veces el mismo país (doble disparo del `onChange`,
@@ -111,7 +119,8 @@ export function CountriesRush() {
 				startTimeRef.current !== null &&
 				!isClockPaused(clockPausesRef.current)
 			) {
-				setElapsedMs(performance.now() - startTimeRef.current);
+				// Nunca negativo, pase lo que pase con las pausas (QA de D231).
+				setElapsedMs(Math.max(0, performance.now() - startTimeRef.current));
 			}
 		}, 100);
 		return () => window.clearInterval(intervalId);

@@ -15,7 +15,8 @@ export type ClockPauseReason =
 	| "limit";
 
 export interface ClockPauses {
-	reasons: Set<ClockPauseReason>;
+	/** Cada razón activa y desde cuándo pidió parar el reloj. */
+	reasons: Map<ClockPauseReason, number>;
 	/** Cuándo empezó la pausa en curso; `null` si el reloj corre. */
 	pausedAt: number | null;
 	/** Cuándo terminó la última pausa: una pausa con efecto atrás no empieza antes (D231). */
@@ -23,7 +24,7 @@ export interface ClockPauses {
 }
 
 export function createClockPauses(): ClockPauses {
-	return { reasons: new Set(), pausedAt: null, resumedAt: null };
+	return { reasons: new Map(), pausedAt: null, resumedAt: null };
 }
 
 /**
@@ -39,24 +40,48 @@ export function pauseClock(
 	if (pauses.reasons.size === 0) {
 		pauses.pausedAt = Math.max(now, pauses.resumedAt ?? now);
 	}
-	pauses.reasons.add(reason);
+	if (!pauses.reasons.has(reason)) pauses.reasons.set(reason, now);
 }
 
 /**
- * Suelta una pausa. Devuelve los ms que el reloj estuvo parado si con esta ya
- * no queda ninguna (hay que sumarlos al inicio de la partida); si no, 0.
+ * Suelta una pausa. Devuelve los ms que el reloj estuvo parado y que hay que
+ * sumar al inicio de la partida (0 si sigue parado por otra razón).
+ *
+ * `maxMs`: lo más que puede durar esta pausa. La transición entre banderas
+ * del rush son 900 ms; si la página se congela y su temporizador llega tarde,
+ * lo que pase de ahí es tiempo de juego, no una pausa gratis (QA de D231).
+ * Si otra pausa empezó más tarde (el "¿Sigues ahí?" de los 90 s), el reloj
+ * corre entre las dos.
  */
 export function resumeClock(
 	pauses: ClockPauses,
 	reason: ClockPauseReason,
 	now: number,
+	maxMs?: number,
 ): number {
 	if (!pauses.reasons.delete(reason)) return 0;
-	if (pauses.reasons.size > 0 || pauses.pausedAt === null) return 0;
+	if (pauses.pausedAt === null) return 0;
 
-	const pausedMs = now - pauses.pausedAt;
-	pauses.pausedAt = null;
-	pauses.resumedAt = now;
+	const end =
+		maxMs === undefined ? now : Math.min(now, pauses.pausedAt + maxMs);
+
+	if (pauses.reasons.size === 0) {
+		const pausedMs = end - pauses.pausedAt;
+		pauses.pausedAt = null;
+		pauses.resumedAt = end;
+
+		return Math.max(0, pausedMs);
+	}
+
+	// Quedan otras: solo si esta pausa se cortó antes de ahora y las que
+	// quedan empezaron después del corte, el reloj corrió entre medias.
+	if (end >= now) return 0;
+
+	const nextStart = Math.max(end, Math.min(...pauses.reasons.values()));
+	if (nextStart <= end) return 0;
+
+	const pausedMs = end - pauses.pausedAt;
+	pauses.pausedAt = nextStart;
 
 	return Math.max(0, pausedMs);
 }

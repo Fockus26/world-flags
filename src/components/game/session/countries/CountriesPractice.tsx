@@ -119,6 +119,14 @@ export function CountriesPractice({
 			gameEndNotice.show(reason);
 			exitGame();
 		},
+		getClockMs: () =>
+			startTimeRef.current !== null
+				? getElapsedMs(
+						startTimeRef.current,
+						clockPausesRef.current,
+						performance.now(),
+					)
+				: 0,
 	});
 	// Evita que un tecleo 1-4 repetido rápido dispare dos calificaciones para
 	// la misma tarjeta (hallazgo pre-existente en el rush de banderas; acá se

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { getPlayedMs } from "@/utils/learning-storage";
 import {
-	getAskOverdueMs,
+	getAskPauseAt,
 	getIdleInClock,
 	getIdlePhase,
 	hasReachedSessionLimit,
@@ -43,12 +43,22 @@ describe("inactividad que corre en el reloj", () => {
 	test("dormida: cuenta entera, hasta los 90 s del aviso", () => {
 		assert.equal(getIdleInClock(60_000), 60_000);
 		assert.equal(getIdleInClock(90_000), 90_000);
-		assert.equal(getIdleInClock(200_000), 90_000);
+		assert.equal(getIdleInClock(150_000), 90_000);
 	});
 
-	test("el aviso que se detecta tarde pausa desde los 90 s", () => {
-		assert.equal(getAskOverdueMs(80_000), 0);
-		assert.equal(getAskOverdueMs(150_000), 60_000);
+	test("con el reloj parado por otra cosa no hay inactividad que descontar", () => {
+		// 60 s con el modal de abandonar abierto: el reloj avanzó unos ms.
+		assert.equal(getIdleInClock(9), 0);
+		// Tras rendirse, el reloj está parado.
+		assert.equal(getIdleInClock(0), 0);
+	});
+
+	test("la pausa del aviso se fecha en el reloj monótono, nunca después de ahora", () => {
+		assert.equal(getAskPauseAt(200_000, 50_000), 140_000);
+		assert.equal(getAskPauseAt(100_000, 50_000), 100_000);
+		// Equipo en reposo sin que avance performance.now: la hora de pared
+		// saltó, pero la pausa no puede quitar tiempo ya jugado.
+		assert.equal(getAskPauseAt(63_000, 60_000), 63_000);
 	});
 });
 

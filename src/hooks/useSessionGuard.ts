@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { GameEndNotice } from "@/store/slices/gameSlice";
 import {
-	getAskOverdueMs,
+	getAskPauseAt,
 	getIdleInClock,
 	getIdlePhase,
 	hasReachedSessionLimit,
@@ -22,17 +22,33 @@ const ACTIVITY_EVENTS = [
 	"wheel",
 ] as const;
 
-/**
- * Cierra una racha sin actividad: suma lo que corrió en el reloj y la
- * actividad vuelve a contar desde `now`.
- */
+/** Cuándo fue la última actividad, en los dos relojes. */
+interface ActivityMark {
+	/** `Date.now()`: decide las fases (cuenta el reposo del equipo). */
+	wall: number;
+	/** `performance.now()`: fecha la pausa del "¿Sigues ahí?". */
+	perf: number;
+	/** Reloj de la partida (sin sus pausas): mide la inactividad que corrió. */
+	clock: number;
+}
+
+/** Inactividad de la racha en curso que corrió en el reloj de la partida. */
+function getStreakIdleMs(mark: ActivityMark, getClockMs: () => number) {
+	return getIdleInClock(getClockMs() - mark.clock);
+}
+
+/** Cierra la racha sin actividad: suma su inactividad y vuelve a contar desde ahora. */
 function closeIdleStreak(
-	lastActivity: { current: number },
+	lastActivity: { current: ActivityMark },
 	idleInClock: { current: number },
-	now: number,
+	getClockMs: () => number,
 ) {
-	idleInClock.current += getIdleInClock(now - lastActivity.current);
-	lastActivity.current = now;
+	idleInClock.current += getStreakIdleMs(lastActivity.current, getClockMs);
+	lastActivity.current = {
+		wall: Date.now(),
+		perf: performance.now(),
+		clock: getClockMs(),
+	};
 }
 
 export interface SessionGuardOptions {
@@ -48,6 +64,13 @@ export interface SessionGuardOptions {
 	onResume: (reason: "idle" | "limit") => void;
 	/** Cierra la partida sin marca; lo aprendido ya está guardado. */
 	onExit: (reason: GameEndNotice) => void;
+	/**
+	 * Tiempo de la partida hasta ahora, sin sus pausas (`getElapsedMs`). La
+	 * inactividad que va a `idleMs` es lo que avanzó este reloj durante la
+	 * racha: con el reloj parado por otra cosa (modal de abandonar, rendirse,
+	 * bandera que no carga) no hay inactividad que descontar.
+	 */
+	getClockMs: () => number;
 }
 
 /**
@@ -58,7 +81,7 @@ export interface SessionGuardOptions {
  *
  * - 45 s: `sleepy` (la bandera se duerme; no bloquea).
  * - 90 s: `asking` ("¿Sigues ahí?", partida tapada, reloj en pausa desde los
- *   90 s). Solo se sale con el botón.
+ *   90 s, fechados en `performance.now()`). Se sale con el botón o Escape.
  * - 5 min: cierra la partida (`onExit("idle")`).
  * - 1 h de tiempo real: el rush termina (`onExit("time-limit")`); la práctica
  *   abre un aviso una vez.
@@ -69,11 +92,16 @@ export function useSessionGuard({
 	onPause,
 	onResume,
 	onExit,
+	getClockMs,
 }: SessionGuardOptions) {
 	const [idlePhase, setIdlePhase] = useState<IdlePhase>("active");
 	const [isLimitWarningOpen, setIsLimitWarningOpen] = useState(false);
 	const startedAtRef = useRef(Date.now());
-	const lastActivityRef = useRef(Date.now());
+	const lastActivityRef = useRef<ActivityMark>({
+		wall: Date.now(),
+		perf: performance.now(),
+		clock: 0,
+	});
 	const lastPointerMoveRef = useRef(0);
 	/** Inactividad que ya corrió en el reloj, de rachas terminadas. */
 	const idleInClockRef = useRef(0);
@@ -82,9 +110,9 @@ export function useSessionGuard({
 	const hasExitedRef = useRef(false);
 	const isLimitWarningOpenRef = useRef(false);
 	// Los callbacks cambian en cada render; el temporizador lee los últimos.
-	const callbacksRef = useRef({ onPause, onResume, onExit });
+	const callbacksRef = useRef({ onPause, onResume, onExit, getClockMs });
 	useEffect(() => {
-		callbacksRef.current = { onPause, onResume, onExit };
+		callbacksRef.current = { onPause, onResume, onExit, getClockMs };
 	});
 
 	useEffect(() => {
@@ -106,7 +134,9 @@ export function useSessionGuard({
 					exit("time-limit");
 					return;
 				}
-				if (!hasWarnedLimitRef.current) {
+				// Con el "¿Sigues ahí?" abierto, el de la hora espera a que se
+				// cierre: dos avisos apilados (QA de D231).
+				if (!hasWarnedLimitRef.current && !isAskingRef.current) {
 					hasWarnedLimitRef.current = true;
 					isLimitWarningOpenRef.current = true;
 					callbacksRef.current.onPause("limit", performance.now());
@@ -114,7 +144,7 @@ export function useSessionGuard({
 				}
 			}
 
-			const idleMs = now - lastActivityRef.current;
+			const idleMs = now - lastActivityRef.current.wall;
 			const phase = getIdlePhase(idleMs);
 
 			if (phase === "expired") {
@@ -129,7 +159,7 @@ export function useSessionGuard({
 				isAskingRef.current = true;
 				callbacksRef.current.onPause(
 					"idle",
-					performance.now() - getAskOverdueMs(idleMs),
+					getAskPauseAt(performance.now(), lastActivityRef.current.perf),
 				);
 			}
 
@@ -148,7 +178,9 @@ export function useSessionGuard({
 				lastPointerMoveRef.current = now;
 			}
 
-			closeIdleStreak(lastActivityRef, idleInClockRef, now);
+			closeIdleStreak(lastActivityRef, idleInClockRef, () =>
+				callbacksRef.current.getClockMs(),
+			);
 			setIdlePhase("active");
 		}
 
@@ -176,7 +208,9 @@ export function useSessionGuard({
 		if (!isAskingRef.current) return;
 
 		isAskingRef.current = false;
-		closeIdleStreak(lastActivityRef, idleInClockRef, Date.now());
+		closeIdleStreak(lastActivityRef, idleInClockRef, () =>
+			callbacksRef.current.getClockMs(),
+		);
 		setIdlePhase("active");
 		onResume("idle");
 	}
@@ -185,7 +219,9 @@ export function useSessionGuard({
 	function continueAfterLimit() {
 		isLimitWarningOpenRef.current = false;
 		setIsLimitWarningOpen(false);
-		lastActivityRef.current = Date.now();
+		closeIdleStreak(lastActivityRef, idleInClockRef, () =>
+			callbacksRef.current.getClockMs(),
+		);
 		onResume("limit");
 	}
 
@@ -199,6 +235,8 @@ export function useSessionGuard({
 		/** Inactividad que corrió en el reloj hasta ahora, para `idleMs` del resultado. */
 		getIdleMs: () =>
 			idleInClockRef.current +
-			getIdleInClock(Date.now() - lastActivityRef.current),
+			getStreakIdleMs(lastActivityRef.current, () =>
+				callbacksRef.current.getClockMs(),
+			),
 	};
 }

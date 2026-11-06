@@ -27,25 +27,33 @@ export function getIdlePhase(idleMs: number): IdlePhase {
 }
 
 /**
- * Cuánto de una racha sin actividad corrió en el reloj de la partida y es
- * inactividad: nada si no llegó a dormirse (es pensar), y como mucho hasta el
- * "¿Sigues ahí?", porque desde ahí el reloj está en pausa. Se descuenta de las
- * estadísticas de tiempo jugado; en el rush, la marca lo incluye (los primeros
- * 90 s cuentan: no es una pausa gratis).
+ * Cuánto de una racha sin actividad es inactividad que corrió en el reloj de
+ * la partida. `clockMs` es lo que avanzó ese reloj durante la racha, sin sus
+ * pausas (modal de abandonar, bandera que no carga, rendirse, el propio
+ * "¿Sigues ahí?"). Si no llegó a 45 s, no es inactividad (es pensar, o el
+ * reloj estaba parado por otra cosa); si llegó, cuenta entera, hasta 90 s.
+ * Se descuenta de las estadísticas de tiempo jugado; en el rush, la marca lo
+ * incluye (los primeros 90 s cuentan: no es una pausa gratis).
  */
-export function getIdleInClock(idleMs: number): number {
-	if (idleMs < IDLE_SLEEP_MS) return 0;
+export function getIdleInClock(clockMs: number): number {
+	if (clockMs < IDLE_SLEEP_MS) return 0;
 
-	return Math.min(idleMs, IDLE_ASK_MS);
+	return Math.min(clockMs, IDLE_ASK_MS);
 }
 
 /**
- * Para pausar el reloj de la partida con efecto desde que empezó el "¿Sigues
- * ahí?", aunque se detecte tarde (pestaña oculta, equipo suspendido):
- * cuántos ms hacia atrás desde ahora.
+ * Desde cuándo (en `performance.now()`, el reloj de la partida) cuenta la
+ * pausa del "¿Sigues ahí?": los 90 s tras la última actividad, aunque se
+ * detecte tarde. Nunca después de ahora. Todo en el reloj monótono: una
+ * duración de `Date.now()` restada a `performance.now()` restaba a la marca
+ * el salto de la hora del sistema o el reposo de un equipo en el que
+ * `performance.now()` no avanza (QA de D231).
  */
-export function getAskOverdueMs(idleMs: number): number {
-	return Math.max(0, idleMs - IDLE_ASK_MS);
+export function getAskPauseAt(
+	nowPerf: number,
+	lastActivityPerf: number,
+): number {
+	return Math.min(nowPerf, lastActivityPerf + IDLE_ASK_MS);
 }
 
 export function hasReachedSessionLimit(

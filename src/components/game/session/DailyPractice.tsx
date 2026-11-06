@@ -85,6 +85,12 @@ export function DailyPractice({
 			gameEndNotice.show(reason);
 			onAbandon();
 		},
+		getClockMs: () =>
+			getElapsedMs(
+				startTimeRef.current,
+				clockPausesRef.current,
+				performance.now(),
+			),
 	});
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 	// La cola ya llega sin códigos fuera del catálogo (`getDueCountries`),

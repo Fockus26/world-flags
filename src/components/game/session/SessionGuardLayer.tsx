@@ -1,4 +1,5 @@
 import { TriangleFlag } from "iconoir-react";
+import { useEffect, useRef } from "react";
 import { Button, WRAPPING_BUTTON_TEXT } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import type { useSessionGuard } from "@/hooks/useSessionGuard";
@@ -23,6 +24,20 @@ export function SessionGuardLayer({
 	kind,
 	onFinishAfterLimit,
 }: SessionGuardLayerProps) {
+	const isAsking = guard.idlePhase === "asking";
+	const stayButtonRef = useRef<HTMLButtonElement>(null);
+	const continueButtonRef = useRef<HTMLButtonElement>(null);
+
+	// El foco va a la acción segura al abrirse, como en `ConfirmationModal`:
+	// sin esto quedaba en el diálogo y Enter no hacía nada (QA de D231).
+	useEffect(() => {
+		if (isAsking) stayButtonRef.current?.focus();
+	}, [isAsking]);
+
+	useEffect(() => {
+		if (guard.isLimitWarningOpen) continueButtonRef.current?.focus();
+	}, [guard.isLimitWarningOpen]);
+
 	return (
 		<>
 			{guard.idlePhase === "sleepy" && (
@@ -41,8 +56,11 @@ export function SessionGuardLayer({
 			)}
 
 			<Modal
-				isOpen={guard.idlePhase === "asking"}
+				isOpen={isAsking}
 				onClose={guard.continueAfterIdle}
+				// Un clic fuera no cierra: un toque sin querer no es "Sigo aquí".
+				// Escape sí.
+				isDismissable={false}
 				role="alertdialog"
 				ariaLabelledby="idle-modal-title"
 				ariaDescribedby="idle-modal-description"
@@ -55,6 +73,7 @@ export function SessionGuardLayer({
 						: "El tiempo está en pausa. Si no vuelves en unos minutos, la práctica se cerrará; lo que has aprendido ya está guardado."}
 				</p>
 				<Button
+					ref={stayButtonRef}
 					type="button"
 					className={WRAPPING_BUTTON_TEXT}
 					onClick={guard.continueAfterIdle}
@@ -66,6 +85,7 @@ export function SessionGuardLayer({
 			<Modal
 				isOpen={guard.isLimitWarningOpen}
 				onClose={guard.continueAfterLimit}
+				isDismissable={false}
 				role="alertdialog"
 				ariaLabelledby="limit-modal-title"
 				ariaDescribedby="limit-modal-description"
@@ -78,6 +98,7 @@ export function SessionGuardLayer({
 				</p>
 				<div className="mt-3 grid grid-cols-1 gap-3.5 min-[44rem]:grid-cols-2">
 					<Button
+						ref={continueButtonRef}
 						type="button"
 						color="neutral"
 						className={WRAPPING_BUTTON_TEXT}

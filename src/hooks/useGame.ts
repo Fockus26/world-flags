@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
 	setActiveGame,
 	setDailyPracticeQueue,
+	setGameEndNotice,
 	setLastResult,
 	setLearningData,
 } from "@/store/slices/gameSlice";
@@ -227,6 +228,10 @@ export function useGame() {
 				...(sessionLabel && { sessionLabel }),
 			}),
 		);
+
+		// El aviso de la partida que se cerró sola (D231) es de esa partida: no
+		// sigue encima de la nueva (tapaba "Abandonar" y el cronómetro).
+		dispatch(setGameEndNotice(null));
 
 		// Aquí y no en cada botón: "Comenzar" y "Jugar de nuevo" pasan por
 		// aquí, y solo suena si la partida arranca de verdad (D144).
@@ -471,6 +476,7 @@ export function useGame() {
 
 		if (dueCodes.length === 0) return;
 
+		dispatch(setGameEndNotice(null));
 		dispatch(setDailyPracticeQueue({ gameType, codes: dueCodes }));
 		playSound("start");
 	};
