@@ -4,10 +4,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
-import {
-	deferCurrentCard,
-	moveCardToEnd,
-} from "@/utils/practice-queue";
+import { deferCurrentCard, moveCardToEnd } from "@/utils/practice-queue";
 import {
 	createClockPauses,
 	getElapsedMs,
@@ -62,6 +59,16 @@ describe("pausas del reloj", () => {
 		assert.equal(getElapsedMs(0, pauses, 9_000), 5_000);
 	});
 
+	test("una pausa con efecto atrás no empieza antes de la anterior", () => {
+		const pauses = createClockPauses();
+		pauseClock(pauses, "advance", 1_000);
+		assert.equal(resumeClock(pauses, "advance", 2_000), 1_000);
+		// El "¿Sigues ahí?" detectado tarde pide pausar desde 500: ya estaba
+		// descontado hasta 2 000.
+		pauseClock(pauses, "idle", 500);
+		assert.equal(resumeClock(pauses, "idle", 5_000), 3_000);
+	});
+
 	test("la espera de la primera bandera no cuenta", () => {
 		// La sesión arranca el reloj y la pausa a la vez; al verse la bandera,
 		// el inicio se corre lo que duró la espera.
@@ -101,5 +108,35 @@ describe("Probar otra", () => {
 		const state = { queue: ["fr"], turn: 2 };
 
 		assert.equal(deferCurrentCard(state), state);
+	});
+});
+
+describe("pausa con duración máxima (D231)", () => {
+	test("la transición que llega tarde solo descuenta su máximo", () => {
+		const pauses = createClockPauses();
+		pauseClock(pauses, "advance", 1_000);
+		// El temporizador de 900 ms llega a los 60 s (página congelada).
+		assert.equal(resumeClock(pauses, "advance", 61_000, 900), 900);
+		assert.equal(isClockPaused(pauses), false);
+		assert.equal(pauses.resumedAt, 1_900);
+	});
+
+	test("con el aviso de 90 s ya puesto, el reloj corre entre la transición y el aviso", () => {
+		const pauses = createClockPauses();
+		pauseClock(pauses, "advance", 1_000);
+		// El "¿Sigues ahí?" se detecta tarde y fecha su pausa a los 91 s.
+		pauseClock(pauses, "idle", 91_000);
+		assert.equal(resumeClock(pauses, "advance", 121_000, 900), 900);
+		assert.equal(pauses.pausedAt, 91_000);
+		// "Sigo aquí" a los 130 s: se descuenta desde los 91 s.
+		assert.equal(resumeClock(pauses, "idle", 130_000), 39_000);
+	});
+
+	test("si la otra pausa empezó antes, no corre nada entre medias", () => {
+		const pauses = createClockPauses();
+		pauseClock(pauses, "exit", 500);
+		pauseClock(pauses, "advance", 1_000);
+		assert.equal(resumeClock(pauses, "advance", 61_000, 900), 0);
+		assert.equal(resumeClock(pauses, "exit", 70_000), 69_500);
 	});
 });

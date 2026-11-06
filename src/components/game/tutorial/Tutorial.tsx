@@ -364,11 +364,13 @@ function TutorialPlayStep({
 					<CountriesPractice
 						runtime={runtime}
 						exitDescription={TUTORIAL_TEXTS.demoExitDescription}
+						isGuarded={false}
 					/>
 				) : (
 					<Session
 						runtime={runtime}
 						exitDescription={TUTORIAL_TEXTS.demoExitDescription}
+						isGuarded={false}
 					/>
 				)}
 			</div>

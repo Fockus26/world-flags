@@ -1058,7 +1058,7 @@ function aggregateSessionCounters(history: SessionRecord[]) {
 				record.correctAnswers === record.totalCountries
 					? 1
 					: 0),
-			totalTimePlayedMs: totals.totalTimePlayedMs + (record.elapsedMs ?? 0),
+			totalTimePlayedMs: totals.totalTimePlayedMs + getPlayedMs(record),
 		}),
 		{
 			totalSessions: 0,
@@ -1965,6 +1965,16 @@ function createSessionId(): string {
 	return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+/**
+ * Tiempo jugado de una sesión para las estadísticas: su duración sin la
+ * inactividad (D231). Los registros anteriores no traen `idleMs`.
+ */
+export function getPlayedMs(
+	record: Pick<SessionRecord, "elapsedMs" | "idleMs">,
+): number {
+	return Math.max(0, (record.elapsedMs ?? 0) - (record.idleMs ?? 0));
+}
+
 export function createSessionRecord(
 	record: Omit<SessionRecord, "id">,
 ): SessionRecord {
@@ -1999,7 +2009,7 @@ export function registerSessionOutcome(
 			totalCorrect: stats.totalCorrect + record.correctAnswers,
 			totalSkips: stats.totalSkips + record.skippedAnswers,
 			perfectSessions: stats.perfectSessions + (isPerfect ? 1 : 0),
-			totalTimePlayedMs: stats.totalTimePlayedMs + (record.elapsedMs ?? 0),
+			totalTimePlayedMs: stats.totalTimePlayedMs + getPlayedMs(record),
 			activeDays,
 			firstActiveDay: stats.firstActiveDay ?? activeDays[0] ?? null,
 		},

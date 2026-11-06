@@ -115,6 +115,8 @@ export interface SessionRecord {
 	/** Solo en modo práctica (1-10). */
 	score: number | null;
 	elapsedMs: number | null;
+	/** Parte de `elapsedMs` que fue inactividad (D231): no suma a `totalTimePlayedMs`. Ausente en los registros anteriores. */
+	idleMs?: number;
 }
 
 export interface UserStats {

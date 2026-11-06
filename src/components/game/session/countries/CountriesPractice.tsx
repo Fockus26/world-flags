@@ -2,11 +2,14 @@ import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { AnswerForm } from "@/components/game/session/AnswerForm";
 import { ConfirmationModal } from "@/components/game/session/ConfirmationModal";
 import { Header } from "@/components/game/session/Header";
+import { SessionGuardLayer } from "@/components/game/session/SessionGuardLayer";
 import type { SessionRuntime } from "@/components/game/session/session-runtime";
 import { Button } from "@/components/ui/Button";
 import { useCardCountdown } from "@/hooks/useCardCountdown";
 import { useFlyToSlot } from "@/hooks/useFlyToSlot";
+import { useGameEndNotice } from "@/hooks/useGameEndNotice";
 import { usePracticeQueue } from "@/hooks/usePracticeQueue";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import {
 	type AnswerStatus,
 	DEFAULT_TIMER_DURATION,
@@ -18,6 +21,12 @@ import { toGameView } from "@/utils/learning-storage";
 import { isCorrectAnswer } from "@/utils/normalize-answer";
 import { getScopeLabel } from "@/utils/practice-scope";
 import { calculateScore } from "@/utils/score";
+import {
+	createClockPauses,
+	getElapsedMs,
+	pauseClock,
+	resumeClock,
+} from "@/utils/session-clock";
 // Solo reproduce y lee la preferencia; no escribe nada (D072, D080).
 import { playSound } from "@/utils/sound";
 import type { BoardSlotState } from "./BoardSlot";
@@ -51,6 +60,8 @@ interface CountriesPracticeProps {
 	 * juego real no cambia.
 	 */
 	exitDescription?: string;
+	/** Vigilar la inactividad y el límite de 1 h (D231); la partida guiada no. */
+	isGuarded?: boolean;
 }
 
 /**
@@ -62,6 +73,7 @@ interface CountriesPracticeProps {
 export function CountriesPractice({
 	runtime,
 	exitDescription,
+	isGuarded = true,
 }: CountriesPracticeProps) {
 	const { activeGame, learningData, exitGame, finishGame, gradeCountryReview } =
 		runtime;
@@ -86,7 +98,36 @@ export function CountriesPractice({
 	// del sistema cambia a mitad de la práctica, `Date.now()` saltaría y el
 	// tiempo final saldría negativo o de horas.
 	const startTimeRef = useRef<number | null>(null);
-	const exitModalOpenedAtRef = useRef<number | null>(null);
+	// Pausas del reloj (modal de abandonar, inactividad, límite): el tiempo
+	// parado no cuenta para las estadísticas (`utils/session-clock.ts`).
+	const clockPausesRef = useRef(createClockPauses());
+	const gameEndNotice = useGameEndNotice();
+	// Inactividad y límite de 1 h (D231), como en `Session`.
+	const guard = useSessionGuard({
+		enabled: isGuarded && activeGame !== null,
+		kind: "practice",
+		onPause: (reason, at) => pauseClock(clockPausesRef.current, reason, at),
+		onResume: (reason) => {
+			const pausedMs = resumeClock(
+				clockPausesRef.current,
+				reason,
+				performance.now(),
+			);
+			if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
+		},
+		onExit: (reason) => {
+			gameEndNotice.show(reason);
+			exitGame();
+		},
+		getClockMs: () =>
+			startTimeRef.current !== null
+				? getElapsedMs(
+						startTimeRef.current,
+						clockPausesRef.current,
+						performance.now(),
+					)
+				: 0,
+	});
 	// Evita que un tecleo 1-4 repetido rápido dispare dos calificaciones para
 	// la misma tarjeta (hallazgo pre-existente en el rush de banderas; acá se
 	// evita desde el principio). Se libera en cada turno de la cola, no al
@@ -132,8 +173,13 @@ export function CountriesPractice({
 				finishedAt: new Date().toISOString(),
 				elapsedMs:
 					startTimeRef.current !== null
-						? performance.now() - startTimeRef.current
+						? getElapsedMs(
+								startTimeRef.current,
+								clockPausesRef.current,
+								performance.now(),
+							)
 						: 0,
+				idleMs: guard.getIdleMs(),
 				totalCountries: countries.length,
 				scope: activeGame?.configuration.scope ?? { type: "world" },
 				regionBreakdown,
@@ -189,7 +235,7 @@ export function CountriesPractice({
 		enabled: isTimedPractice,
 		duration: timerDuration,
 		cardKey: `${practiceQueue.currentCode}:${practiceQueue.turn}`,
-		isPaused: answerStatus !== "idle" || isExitModalOpen,
+		isPaused: answerStatus !== "idle" || isExitModalOpen || guard.isCovered,
 		onExpire: handleSkip,
 	});
 
@@ -197,6 +243,7 @@ export function CountriesPractice({
 	useEffect(() => {
 		if (answerStatus === "idle") return;
 		if (isExitModalOpen) return;
+		if (guard.isCovered) return;
 		if (isSkipPending) return;
 
 		function handleKeyDown(event: KeyboardEvent) {
@@ -209,7 +256,7 @@ export function CountriesPractice({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [answerStatus, isExitModalOpen, isSkipPending]);
+	}, [answerStatus, isExitModalOpen, isSkipPending, guard.isCovered]);
 
 	if (!activeGame || !currentCountry) {
 		return null;
@@ -232,18 +279,17 @@ export function CountriesPractice({
 
 	/** El tiempo que el modal de abandonar estuvo abierto no cuenta para `stats.totalTimePlayedMs` (mismo criterio que `Session.tsx`, aunque acá no se muestre un cronómetro en pantalla). */
 	function handleOpenExitModal() {
-		exitModalOpenedAtRef.current = performance.now();
+		pauseClock(clockPausesRef.current, "exit", performance.now());
 		setIsExitModalOpen(true);
 	}
 
 	function handleCancelExit() {
-		if (exitModalOpenedAtRef.current !== null) {
-			const pausedMs = performance.now() - exitModalOpenedAtRef.current;
-			if (startTimeRef.current !== null) {
-				startTimeRef.current += pausedMs;
-			}
-			exitModalOpenedAtRef.current = null;
-		}
+		const pausedMs = resumeClock(
+			clockPausesRef.current,
+			"exit",
+			performance.now(),
+		);
+		if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
 		setIsExitModalOpen(false);
 	}
 
@@ -322,7 +368,15 @@ export function CountriesPractice({
 
 	return (
 		<>
-			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
+			<section
+				className={`flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)] relative ${guard.isCovered ? "invisible" : ""}`}
+				aria-hidden={guard.isCovered || undefined}
+			>
+				<SessionGuardLayer
+					guard={guard}
+					kind="practice"
+					onFinishAfterLimit={exitGame}
+				/>
 				<Header
 					regionLabel={scopeLabel}
 					currentIndex={practiceQueue.completedCount}
