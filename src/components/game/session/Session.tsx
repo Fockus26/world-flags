@@ -1,7 +1,9 @@
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { ConfirmationModal } from "@/components/game/session/ConfirmationModal";
 import type { SessionRuntime } from "@/components/game/session/session-runtime";
+import { useGameEndNotice } from "@/hooks/useGameEndNotice";
 import { usePracticeQueue } from "@/hooks/usePracticeQueue";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import {
 	UPCOMING_FLAGS_AHEAD,
 	useUpcomingFlagPrecache,
@@ -29,6 +31,7 @@ import { playSound } from "@/utils/sound";
 import { AnswerForm } from "./AnswerForm";
 import { Header } from "./Header";
 import type { PenaltyEvent } from "./PenaltyBadge";
+import { SessionGuardLayer } from "./SessionGuardLayer";
 import {
 	type CardGameType,
 	isCardGameType,
@@ -70,9 +73,18 @@ interface SessionProps {
 	 * real no cambia.
 	 */
 	exitDescription?: string;
+	/**
+	 * Vigilar la inactividad y el límite de 1 h (D231). La partida guiada del
+	 * tutorial no lo hace: no se puede cerrar sola a mitad de explicación.
+	 */
+	isGuarded?: boolean;
 }
 
-export function Session({ runtime, exitDescription }: SessionProps) {
+export function Session({
+	runtime,
+	exitDescription,
+	isGuarded = true,
+}: SessionProps) {
 	const {
 		activeGame,
 		learningData,
@@ -135,6 +147,27 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	const [readyCode, setReadyCode] = useState<string | null>(null);
 	// Orden del rush: "Probar otra" manda la bandera que no carga al final (D230).
 	const [rushOrder, setRushOrder] = useState(() => countries);
+	const gameEndNotice = useGameEndNotice();
+	// Inactividad y límite de 1 h (D231). Pausa y reanuda el mismo reloj que
+	// el resto de esperas; al cerrar la partida, lo aprendido ya está guardado
+	// (cada respuesta se guarda al momento) y no hay resultado ni marca.
+	const guard = useSessionGuard({
+		enabled: isGuarded && activeGame !== null,
+		kind: isCompetitiveMode ? "rush" : "practice",
+		onPause: (reason, at) => pauseClock(clockPausesRef.current, reason, at),
+		onResume: (reason) => {
+			const pausedMs = resumeClock(
+				clockPausesRef.current,
+				reason,
+				performance.now(),
+			);
+			if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
+		},
+		onExit: (reason) => {
+			gameEndNotice.show(reason);
+			exitGame();
+		},
+	});
 	// Clave (código + turno de la cola) de la bandera a la que pertenece el
 	// `timeLeft` actual: al avanzar de bandera, el efecto del cronómetro
 	// necesita reiniciar el conteo en el mismo pase en el que detecta el
@@ -191,6 +224,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 								performance.now(),
 							)
 						: 0,
+				idleMs: guard.getIdleMs(),
 				totalCountries: countries.length,
 				scope: activeGame?.configuration.scope ?? { type: "world" },
 				regionBreakdown,
@@ -273,6 +307,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		if (!isTimedPractice) return;
 		if (answerStatus !== "idle") return;
 		if (isExitModalOpen) return;
+		if (guard.isCovered) return;
 
 		// Bandera nueva: reinicia el conteo. Se calcula `effectiveTimeLeft` en
 		// vez de depender de que el `setTimeLeft` dispare un re-render — si
@@ -312,6 +347,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		answerStatus,
 		isExitModalOpen,
 		isStimulusReady,
+		guard.isCovered,
 	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: handleGrade estabilizado por React Compiler (ver docs/components.md)
@@ -319,6 +355,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		if (!isPracticeMode) return;
 		if (answerStatus === "idle") return;
 		if (isExitModalOpen) return;
+		if (guard.isCovered) return;
 		if (isSkipPending) return;
 
 		function handleKeyDown(event: KeyboardEvent) {
@@ -331,7 +368,13 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isPracticeMode, answerStatus, isExitModalOpen, isSkipPending]);
+	}, [
+		isPracticeMode,
+		answerStatus,
+		isExitModalOpen,
+		isSkipPending,
+		guard.isCovered,
+	]);
 
 	// Partida sin ningún país que mostrar: `startGame` ya no arranca un scope
 	// que no resuelve a ninguno, pero si llegara a pasar, de vuelta a la
@@ -382,6 +425,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 				skippedAnswers: skippedAnswersRef.current,
 				finishedAt: new Date().toISOString(),
 				elapsedMs: finalElapsedMs,
+				idleMs: guard.getIdleMs(),
 			});
 			return;
 		}
@@ -560,7 +604,15 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 
 	return (
 		<>
-			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
+			<section
+				className={`flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)] relative ${guard.isCovered ? "invisible" : ""}`}
+				aria-hidden={guard.isCovered || undefined}
+			>
+				<SessionGuardLayer
+					guard={guard}
+					kind={isCompetitiveMode ? "rush" : "practice"}
+					onFinishAfterLimit={exitGame}
+				/>
 				<Header
 					regionLabel={scopeLabel}
 					currentIndex={

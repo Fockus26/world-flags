@@ -357,6 +357,20 @@
 @theme {
 	--animate-stimulus-ring: stimulus-ring 600ms ease-out;
 	--animate-stimulus-shake: stimulus-shake 200ms ease-in-out;
+	/* Partida dormida (D231): "Zzz" que sube y se apaga, lento (sin parpadeo). */
+	--animate-zzz-float: zzz-float 2400ms ease-in-out infinite;
+
+	@keyframes zzz-float {
+		0%,
+		100% {
+			transform: translateY(0);
+			opacity: 0.35;
+		}
+		50% {
+			transform: translateY(calc(var(--spacing) * -1.5));
+			opacity: 1;
+		}
+	}
 
 	@keyframes stimulus-ring {
 		from {

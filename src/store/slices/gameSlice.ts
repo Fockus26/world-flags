@@ -49,11 +49,18 @@ export interface DailyPracticeQueue {
 	codes: string[];
 }
 
+/**
+ * Por qué se cerró sola la última partida (D231): por inactividad o por el
+ * límite de 1 h del rush. Lo muestra un aviso en la pantalla de inicio.
+ */
+export type GameEndNotice = "idle" | "time-limit";
+
 interface GameState {
 	learningData: UserLearningData;
 	activeGame: ActiveGame | null;
 	lastResult: GameResult | null;
 	dailyPracticeQueue: DailyPracticeQueue | null;
+	gameEndNotice: GameEndNotice | null;
 	hydrationStatus: HydrationStatus;
 	/** Pegajoso: pasa a `true` la primera vez que llegan datos a la pantalla
 	 *  (`local` o `ready`) y ya no vuelve atrás. Distingue la carga inicial
@@ -68,6 +75,7 @@ const initialState: GameState = {
 	activeGame: null,
 	lastResult: null,
 	dailyPracticeQueue: null,
+	gameEndNotice: null,
 	hydrationStatus: "idle",
 	hasHydratedOnce: false,
 };
@@ -105,6 +113,10 @@ const gameSlice = createSlice({
 			state.dailyPracticeQueue = action.payload;
 		},
 
+		setGameEndNotice: (state, action: PayloadAction<GameEndNotice | null>) => {
+			state.gameEndNotice = action.payload;
+		},
+
 		resetGameState: (state) => {
 			state.activeGame = null;
 			state.lastResult = null;
@@ -119,6 +131,7 @@ export const {
 	setActiveGame,
 	setLastResult,
 	setDailyPracticeQueue,
+	setGameEndNotice,
 	resetGameState,
 } = gameSlice.actions;
 

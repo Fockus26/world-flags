@@ -5,7 +5,9 @@ import { GradeButtons } from "@/components/ui/GradeButtons";
 import { countries } from "@/data/countries";
 import type { DailyPracticeSummary } from "@/hooks/useGame";
 import { useGame } from "@/hooks/useGame";
+import { useGameEndNotice } from "@/hooks/useGameEndNotice";
 import { usePracticeQueue } from "@/hooks/usePracticeQueue";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import { useUpcomingFlagPrecache } from "@/hooks/useUpcomingFlagPrecache";
 import type { GameType } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
@@ -19,6 +21,7 @@ import {
 } from "@/utils/session-clock";
 import { playSound } from "@/utils/sound";
 import { CountryClozeCard } from "./countries/CountryClozeCard";
+import { SessionGuardLayer } from "./SessionGuardLayer";
 import {
 	isCardGameType,
 	SESSION_CARDS,
@@ -64,6 +67,25 @@ export function DailyPractice({
 	// y no se puede revelar (D230), igual que en `Session`.
 	const clockPausesRef = useRef(createClockPauses());
 	const [readyCode, setReadyCode] = useState<string | null>(null);
+	const gameEndNotice = useGameEndNotice();
+	// Inactividad y límite de 1 h (D231), como en `Session`. Salir así no
+	// cuenta como sesión (`onAbandon`): lo calificado ya está guardado.
+	const guard = useSessionGuard({
+		enabled: true,
+		kind: "practice",
+		onPause: (reason, at) => pauseClock(clockPausesRef.current, reason, at),
+		onResume: (reason) => {
+			startTimeRef.current += resumeClock(
+				clockPausesRef.current,
+				reason,
+				performance.now(),
+			);
+		},
+		onExit: (reason) => {
+			gameEndNotice.show(reason);
+			onAbandon();
+		},
+	});
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 	// La cola ya llega sin códigos fuera del catálogo (`getDueCountries`),
 	// pero se filtra otra vez aquí: un código sin bandera ni nombre en la
@@ -111,6 +133,7 @@ export function DailyPractice({
 					clockPausesRef.current,
 					performance.now(),
 				),
+				idleMs: guard.getIdleMs(),
 			}),
 	});
 
@@ -165,6 +188,7 @@ export function DailyPractice({
 
 	useEffect(() => {
 		if (isExitModalOpen) return;
+		if (guard.isCovered) return;
 
 		function handleKeyDown(event: KeyboardEvent) {
 			if (!isRevealed) {
@@ -184,7 +208,7 @@ export function DailyPractice({
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: handleGrade estabilizado por React Compiler (ver docs/components.md)
-	}, [isRevealed, isExitModalOpen, handleGrade, reveal]);
+	}, [isRevealed, isExitModalOpen, handleGrade, reveal, guard.isCovered]);
 
 	// Nada que practicar (la cola quedó vacía tras filtrar): de vuelta a la
 	// configuración en vez de una pantalla en blanco. Sale por `onAbandon`,
@@ -201,7 +225,15 @@ export function DailyPractice({
 
 	return (
 		<>
-			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] animate-in fade-in-0 slide-in-from-bottom-2 duration-300 min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
+			<section
+				className={`flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] animate-in fade-in-0 slide-in-from-bottom-2 duration-300 min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)] relative ${guard.isCovered ? "invisible" : ""}`}
+				aria-hidden={guard.isCovered || undefined}
+			>
+				<SessionGuardLayer
+					guard={guard}
+					kind="practice"
+					onFinishAfterLimit={onAbandon}
+				/>
 				<Header
 					regionLabel="Práctica diaria"
 					currentIndex={completedCount}

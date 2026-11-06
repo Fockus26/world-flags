@@ -62,6 +62,16 @@ describe("pausas del reloj", () => {
 		assert.equal(getElapsedMs(0, pauses, 9_000), 5_000);
 	});
 
+	test("una pausa con efecto atrás no empieza antes de la anterior", () => {
+		const pauses = createClockPauses();
+		pauseClock(pauses, "advance", 1_000);
+		assert.equal(resumeClock(pauses, "advance", 2_000), 1_000);
+		// El "¿Sigues ahí?" detectado tarde pide pausar desde 500: ya estaba
+		// descontado hasta 2 000.
+		pauseClock(pauses, "idle", 500);
+		assert.equal(resumeClock(pauses, "idle", 5_000), 3_000);
+	});
+
 	test("la espera de la primera bandera no cuenta", () => {
 		// La sesión arranca el reloj y la pausa a la vez; al verse la bandera,
 		// el inicio se corre lo que duró la espera.

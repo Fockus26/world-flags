@@ -250,6 +250,12 @@ interface GameResultBase {
 	 * solo alimenta el total acumulado — no se muestra ni se compara.
 	 */
 	elapsedMs: number;
+	/**
+	 * Parte de `elapsedMs` que fue inactividad (D231): rachas sin actividad de
+	 * 45 s o más, hasta el "¿Sigues ahí?". No suma al tiempo jugado de las
+	 * estadísticas; la marca del rush sí la incluye.
+	 */
+	idleMs?: number;
 	/** Lo pone `finishGame` si la partida era del recorrido por lotes (D185). */
 	isLearningPath?: boolean;
 }

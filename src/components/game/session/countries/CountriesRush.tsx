@@ -1,14 +1,25 @@
 import { type SubmitEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmationModal } from "@/components/game/session/ConfirmationModal";
 import { Header } from "@/components/game/session/Header";
+import { SessionGuardLayer } from "@/components/game/session/SessionGuardLayer";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { Input } from "@/components/ui/Input";
 import { useFlyToSlot } from "@/hooks/useFlyToSlot";
 import { useGame } from "@/hooks/useGame";
+import { useGameEndNotice } from "@/hooks/useGameEndNotice";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import { buildBoard, findMatch } from "@/utils/country-board";
 import { focusWhenVisible } from "@/utils/focus";
 import { getScopeLabel } from "@/utils/practice-scope";
+import {
+	type ClockPauseReason,
+	createClockPauses,
+	getElapsedMs,
+	isClockPaused,
+	pauseClock,
+	resumeClock,
+} from "@/utils/session-clock";
 import { playSound } from "@/utils/sound";
 import { ANSWER_INPUT_PROPS, RUSH_ANSWER_INPUT_ID } from "../answer-input";
 import type { BoardSlotState } from "./BoardSlot";
@@ -52,9 +63,29 @@ export function CountriesRush() {
 	const seeResultsButtonRef = useRef<HTMLButtonElement>(null);
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 	const startTimeRef = useRef<number | null>(null);
-	const isClockPausedRef = useRef(false);
-	// Un solo ref: los dos modales (salir/rendirse) nunca están abiertos a la vez.
-	const modalOpenedAtRef = useRef<number | null>(null);
+	// Pausas del reloj: modales de salir y de rendirse, inactividad (D231). El
+	// tiempo parado se descuenta una sola vez (`utils/session-clock.ts`).
+	const clockPausesRef = useRef(createClockPauses());
+	const gameEndNotice = useGameEndNotice();
+	// Inactividad y límite de 1 h (D231). Tras rendirse ya no vigila: solo
+	// queda "Ver resultados", que es lo que registra la sesión.
+	const guard = useSessionGuard({
+		enabled: activeGame !== null && !hasSurrendered,
+		kind: "rush",
+		onPause: (reason, at) => pauseClock(clockPausesRef.current, reason, at),
+		onResume: (reason) => {
+			const pausedMs = resumeClock(
+				clockPausesRef.current,
+				reason,
+				performance.now(),
+			);
+			if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
+		},
+		onExit: (reason) => {
+			gameEndNotice.show(reason);
+			exitGame();
+		},
+	});
 	const ambiguousTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 	// Evita aceptar dos veces el mismo país (doble disparo del `onChange`,
 	// timeout ambiguo que vence justo cuando también se pulsa Enter…), mismo
@@ -76,7 +107,10 @@ export function CountriesRush() {
 
 	useEffect(() => {
 		const intervalId = window.setInterval(() => {
-			if (startTimeRef.current !== null && !isClockPausedRef.current) {
+			if (
+				startTimeRef.current !== null &&
+				!isClockPaused(clockPausesRef.current)
+			) {
 				setElapsedMs(performance.now() - startTimeRef.current);
 			}
 		}, 100);
@@ -116,44 +150,40 @@ export function CountriesRush() {
 	);
 	const foundCount = acceptedCodesRef.current.size;
 
-	/** Corrige `startTimeRef` por el tiempo que estuvo abierto un modal, sin contarlo para la carrera. */
-	function applyModalPauseCorrection() {
-		if (modalOpenedAtRef.current !== null) {
-			const pausedMs = performance.now() - modalOpenedAtRef.current;
-			if (startTimeRef.current !== null) {
-				startTimeRef.current += pausedMs;
-			}
-			modalOpenedAtRef.current = null;
-		}
+	/** Suelta una pausa y corre el inicio lo que estuvo parado, sin contarlo para la carrera. */
+	function resume(reason: ClockPauseReason) {
+		const pausedMs = resumeClock(
+			clockPausesRef.current,
+			reason,
+			performance.now(),
+		);
+		if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
 	}
 
 	function handleOpenExitModal() {
-		isClockPausedRef.current = true;
-		modalOpenedAtRef.current = performance.now();
+		pauseClock(clockPausesRef.current, "exit", performance.now());
 		setIsExitModalOpen(true);
 	}
 
 	function handleCancelExit() {
-		applyModalPauseCorrection();
-		isClockPausedRef.current = false;
+		resume("exit");
 		setIsExitModalOpen(false);
 	}
 
 	function handleOpenSurrenderModal() {
-		isClockPausedRef.current = true;
-		modalOpenedAtRef.current = performance.now();
+		pauseClock(clockPausesRef.current, "surrender", performance.now());
 		setIsSurrenderModalOpen(true);
 	}
 
 	function handleCancelSurrender() {
-		applyModalPauseCorrection();
-		isClockPausedRef.current = false;
+		resume("surrender");
 		setIsSurrenderModalOpen(false);
 	}
 
 	/** D033: al rendirse se revelan los países que faltaban como "missed" y la sesión no se cierra todavía — falta "Ver resultados". */
 	function handleConfirmSurrender() {
-		applyModalPauseCorrection();
+		// La pausa de rendirse no se suelta: el tiempo se queda en el del
+		// momento en que se pulsó "Rendirme", el mismo que muestra la cabecera.
 		setIsSurrenderModalOpen(false);
 
 		const missedCountries = countries.filter(
@@ -188,12 +218,20 @@ export function CountriesRush() {
 		setHasSurrendered(true);
 	}
 
+	/** Tiempo de carrera hasta ahora, sin la pausa en curso. */
+	function getFinalElapsedMs() {
+		return startTimeRef.current !== null
+			? getElapsedMs(
+					startTimeRef.current,
+					clockPausesRef.current,
+					performance.now(),
+				)
+			: elapsedMs;
+	}
+
 	function completeRush() {
-		isClockPausedRef.current = true;
-		const finalElapsedMs =
-			startTimeRef.current !== null
-				? performance.now() - startTimeRef.current
-				: elapsedMs;
+		const finalElapsedMs = getFinalElapsedMs();
+		pauseClock(clockPausesRef.current, "advance", performance.now());
 
 		finishGame({
 			mode: "competitive",
@@ -205,14 +243,12 @@ export function CountriesRush() {
 			skippedAnswers: 0,
 			finishedAt: new Date().toISOString(),
 			elapsedMs: finalElapsedMs,
+			idleMs: guard.getIdleMs(),
 		});
 	}
 
 	function handleSeeResults() {
-		const finalElapsedMs =
-			startTimeRef.current !== null
-				? performance.now() - startTimeRef.current
-				: elapsedMs;
+		const finalElapsedMs = getFinalElapsedMs();
 
 		finishGame({
 			mode: "competitive",
@@ -224,6 +260,7 @@ export function CountriesRush() {
 			skippedAnswers: totalCount - acceptedCodesRef.current.size,
 			finishedAt: new Date().toISOString(),
 			elapsedMs: finalElapsedMs,
+			idleMs: guard.getIdleMs(),
 		});
 	}
 
@@ -342,7 +379,15 @@ export function CountriesRush() {
 
 	return (
 		<>
-			<section className="flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)]">
+			<section
+				className={`flex h-[min(100%,45rem)] md:h-[min(100%,50rem)] max-h-full w-full max-w-session flex-col overflow-hidden rounded-lg border border-surface-border bg-surface p-[0.85rem] min-[44rem]:rounded-2xl min-[44rem]:p-[clamp(1rem,2.5vh,2rem)] relative ${guard.isCovered ? "invisible" : ""}`}
+				aria-hidden={guard.isCovered || undefined}
+			>
+				<SessionGuardLayer
+					guard={guard}
+					kind="rush"
+					onFinishAfterLimit={exitGame}
+				/>
 				<Header
 					regionLabel={scopeLabel}
 					// `Header` siempre muestra `currentIndex + 1`: aquí no hay

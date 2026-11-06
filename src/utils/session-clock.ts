@@ -6,24 +6,39 @@
  *
  * Todo en `performance.now()`, como el resto del reloj (D132).
  */
-export type ClockPauseReason = "advance" | "exit" | "stimulus";
+export type ClockPauseReason =
+	| "advance"
+	| "exit"
+	| "surrender"
+	| "stimulus"
+	| "idle"
+	| "limit";
 
 export interface ClockPauses {
 	reasons: Set<ClockPauseReason>;
 	/** Cuándo empezó la pausa en curso; `null` si el reloj corre. */
 	pausedAt: number | null;
+	/** Cuándo terminó la última pausa: una pausa con efecto atrás no empieza antes (D231). */
+	resumedAt: number | null;
 }
 
 export function createClockPauses(): ClockPauses {
-	return { reasons: new Set(), pausedAt: null };
+	return { reasons: new Set(), pausedAt: null, resumedAt: null };
 }
 
+/**
+ * Para el reloj. `now` puede ser del pasado (el "¿Sigues ahí?" que se detecta
+ * tarde, D231): nunca antes de que terminara la pausa anterior, para no
+ * descontar dos veces el mismo tramo.
+ */
 export function pauseClock(
 	pauses: ClockPauses,
 	reason: ClockPauseReason,
 	now: number,
 ): void {
-	if (pauses.reasons.size === 0) pauses.pausedAt = now;
+	if (pauses.reasons.size === 0) {
+		pauses.pausedAt = Math.max(now, pauses.resumedAt ?? now);
+	}
 	pauses.reasons.add(reason);
 }
 
@@ -41,6 +56,7 @@ export function resumeClock(
 
 	const pausedMs = now - pauses.pausedAt;
 	pauses.pausedAt = null;
+	pauses.resumedAt = now;
 
 	return Math.max(0, pausedMs);
 }

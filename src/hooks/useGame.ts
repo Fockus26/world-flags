@@ -109,6 +109,7 @@ function toSessionRecord(result: GameResult): SessionRecord {
 		skippedAnswers: result.skippedAnswers,
 		score: result.mode === "practice" ? result.score : null,
 		elapsedMs: result.elapsedMs,
+		...(result.idleMs ? { idleMs: result.idleMs } : {}),
 	});
 }
 
@@ -117,6 +118,8 @@ export interface DailyPracticeSummary {
 	totalCountries: number;
 	correctAnswers: number;
 	elapsedMs: number;
+	/** Inactividad dentro de `elapsedMs` (D231). */
+	idleMs?: number;
 }
 
 export function useGame() {
@@ -493,6 +496,7 @@ export function useGame() {
 				skippedAnswers: 0,
 				score: null,
 				elapsedMs: summary.elapsedMs,
+				...(summary.idleMs ? { idleMs: summary.idleMs } : {}),
 			}),
 		);
 
