@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useOtherTabsLearningData } from "@/hooks/useOtherTabsLearningData";
 
 import { discardRejectedSession, recheckSession } from "@/lib/auth-session";
 
@@ -146,6 +147,13 @@ export function GameEffects() {
 	const { user, status } = useAuth();
 
 	const userId = user?.id ?? null;
+
+	// Lo que guarden otras pestañas entra en esta antes de volver a escribir (D236).
+	useOtherTabsLearningData(
+		status === "authenticated" ? userId : null,
+		hydrationStatus === "ready" &&
+			(status === "guest" || status === "authenticated"),
+	);
 
 	const hydratedUserRef = useRef<string | null>(null);
 

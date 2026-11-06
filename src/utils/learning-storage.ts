@@ -419,6 +419,8 @@ export function getLearningData(): UserLearningData {
 	try {
 		const storedData = window.localStorage.getItem(STORAGE_KEY);
 
+		lastKnownRaw = storedData;
+
 		if (!storedData) {
 			return createDefaultLearningData();
 		}
@@ -458,14 +460,111 @@ export function hasLearningProgress(data: UserLearningData): boolean {
 	);
 }
 
+/**
+ * Lo último que ESTA pestaña leyó o escribió en `STORAGE_KEY` (D236): la base
+ * con la que se fusiona lo que escriba otra pestaña. `undefined` = aún nada.
+ */
+let lastKnownRaw: string | null | undefined;
+
 export function saveLearningData(data: UserLearningData): void {
-	window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+	const raw = JSON.stringify(data);
+	window.localStorage.setItem(STORAGE_KEY, raw);
+	lastKnownRaw = raw;
 }
 
 /** Logout real (D009): se van los datos de la cuenta y, con ellos, su base de sincronización. */
 export function clearLearningData(): void {
 	window.localStorage.removeItem(STORAGE_KEY);
+	lastKnownRaw = null;
 	clearSyncBase();
+}
+
+/**
+ * De quién son los datos guardados: la cuenta de la base de sincronización,
+ * que se escribe en la misma tarea que los datos (D049), o `null` (invitado).
+ */
+function getStoredDataOwner(): string | null {
+	try {
+		const stored = window.localStorage.getItem(SYNC_BASE_STORAGE_KEY);
+		if (!stored) return null;
+		const parsed = JSON.parse(stored) as Partial<StoredSyncBase>;
+		return typeof parsed.userId === "string" ? parsed.userId : null;
+	} catch {
+		return null;
+	}
+}
+
+function parseStoredLearningData(raw: string): UserLearningData | null {
+	try {
+		return normalizeLearningData(JSON.parse(raw) as Partial<UserLearningData>);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Otra pestaña escribió `raw` en `STORAGE_KEY` (D236). Sin esto, cada pestaña
+ * guardaba su estado entero y pisaba lo que había jugado la otra: sesiones del
+ * lote, repasos SM2, estadísticas.
+ *
+ * Se fusiona con `mergeLearningData`: lo de la otra pestaña hace de "remoto",
+ * lo de esta de "local", y la base es lo último que esta pestaña leyó o
+ * escribió (lo que cambió aquí desde entonces, si algo, gana). Si lo de aquí
+ * aporta algo que la otra no tenía (escribieron casi a la vez), se vuelve a
+ * guardar la fusión; si no, no se escribe nada, y así las pestañas no se
+ * contestan sin fin.
+ *
+ * Solo entre datos del mismo dueño (`ownerId`: la cuenta de esta pestaña, o
+ * `null` si es invitado): si otra pestaña entró o salió de una cuenta, lo
+ * resuelve la hidratación de esa transición, y los datos del invitado nunca se
+ * fusionan con los de una cuenta (D056).
+ *
+ * Devuelve lo que esta pestaña debe tener en pantalla, o `null` si no cambia.
+ */
+export function adoptOtherTabLearningData(
+	raw: string | null,
+	current: UserLearningData,
+	ownerId: string | null,
+): UserLearningData | null {
+	// Clave borrada (logout en otra pestaña): lo lleva el flujo de sesión.
+	if (raw === null || raw === lastKnownRaw) return null;
+	if (getStoredDataOwner() !== ownerId) return null;
+
+	const incoming = parseStoredLearningData(raw);
+	if (!incoming) return null;
+
+	const base =
+		(typeof lastKnownRaw === "string"
+			? parseStoredLearningData(lastKnownRaw)
+			: null) ?? current;
+
+	const merged = mergeLearningData(incoming, current, base);
+
+	lastKnownRaw = raw;
+
+	if (!isSameValue(merged, incoming)) {
+		saveLearningData(merged);
+	}
+
+	return isSameValue(merged, current) ? null : merged;
+}
+
+/**
+ * Escucha lo que escriben las otras pestañas en los datos de aprendizaje
+ * (`storage` solo avisa a las OTRAS). Devuelve la función que la suelta.
+ */
+export function subscribeToOtherTabsLearningData(
+	listener: (raw: string | null) => void,
+): () => void {
+	const onStorage = (event: StorageEvent) => {
+		if (event.key !== STORAGE_KEY) return;
+		if (event.storageArea !== window.localStorage) return;
+		listener(event.newValue);
+	};
+
+	window.addEventListener("storage", onStorage);
+
+	return () => window.removeEventListener("storage", onStorage);
 }
 
 /**
