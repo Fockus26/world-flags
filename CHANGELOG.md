@@ -9,6 +9,21 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.11.1] - 2026-11-06
+
+### Corregido
+
+- Las banderas se guardan para jugar sin conexión aunque la red vaya a tirones:
+  si una descarga falla o se queda colgada, se reintenta sola en vez de dejar el
+  resto sin guardar hasta recargar la página.
+- Durante la partida se descargan primero las banderas que vienen a
+  continuación, para que no tarden en aparecer.
+- Si una bandera tarda en cargar, el tiempo se para y no se puede responder ni
+  saltar hasta que se vea, así que ya no hay castigos ni saltos a ciegas. La
+  bandera se sigue intentando sola.
+- Si a los 10 segundos sigue sin verse, aparece el botón Probar otra: pasa a
+  otra bandera sin castigo, y la que no cargaba vuelve al final de la partida.
+
 ## [2.11.0] - 2026-11-04
 
 ### Añadido
