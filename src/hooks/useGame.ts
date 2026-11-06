@@ -31,6 +31,7 @@ import {
 	createLearningPath,
 	getLearningPathReservedCodes,
 	getLearningPathStatus,
+	learningPathSessionCountsTowardLimit,
 	reconcileLearningPathKnown,
 } from "@/utils/learning-path";
 import {
@@ -166,8 +167,13 @@ export function useGame() {
 		requestedConfiguration: GameConfigurationType,
 		{
 			isLearningPath = false,
+			isLearningPathRetry = false,
 			sessionLabel,
-		}: { isLearningPath?: boolean; sessionLabel?: string } = {},
+		}: {
+			isLearningPath?: boolean;
+			isLearningPathRetry?: boolean;
+			sessionLabel?: string;
+		} = {},
 	): boolean => {
 		// El modo competitivo ("rush") siempre es difícil y aleatorio: no son
 		// ajustables, así que se fuerzan acá sin importar qué haya quedado
@@ -230,6 +236,7 @@ export function useGame() {
 				configuration: effectiveConfiguration,
 				countries: prepareCountries(countries, effectiveConfiguration),
 				...(isLearningPath && { isLearningPath }),
+				...(isLearningPathRetry && { isLearningPathRetry }),
 				...(sessionLabel && { sessionLabel }),
 			}),
 		);
@@ -258,6 +265,9 @@ export function useGame() {
 		const isNewRecord =
 			previousBest !== undefined && result.elapsedMs < previousBest;
 		const isLearningPath = store.getState().game.activeGame?.isLearningPath;
+		// Antes de `setActiveGame(null)`: la que solo repite fallados no cuenta
+		// para el tope de sesiones (D235).
+		const isRetry = store.getState().game.activeGame?.isLearningPathRetry;
 		const stamped: GameResult = isLearningPath
 			? { ...result, isLearningPath }
 			: result;
@@ -288,8 +298,9 @@ export function useGame() {
 			toSessionRecord(result),
 		);
 
-		// Sesión del lote terminada: cuenta para el límite diario (D235).
-		if (isLearningPath) {
+		// Sesión del lote terminada: cuenta para el límite diario (D235), salvo
+		// la que solo repite países fallados hoy.
+		if (isLearningPath && !isRetry) {
 			updatedData = registerLearningPathSessionDone(updatedData, gameType);
 		}
 
@@ -484,10 +495,14 @@ export function useGame() {
 
 	const startDailyPractice = (gameType: GameType) => {
 		// `getDueCountries` ya descarta los códigos fuera del catálogo.
-		// Sin los países que el lote se reserva hasta consolidarlos (D235).
+		// Sin los países que el lote se reserva hasta consolidarlos (D235),
+		// con el recorrido recalculado: el mismo que usa "Práctica diaria (n)",
+		// así el número y la cola coinciden (un ya sabido degradado, D189).
 		const dueCodes = getDueCountries(
 			toGameView(learningData, gameType).countryHistory,
-			getLearningPathReservedCodes(getLearningPath(learningData, gameType)),
+			getLearningPathReservedCodes(
+				getLearningPathOverview(gameType)?.path ?? null,
+			),
 		);
 
 		if (dueCodes.length === 0) return;
@@ -624,6 +639,10 @@ export function useGame() {
 			},
 			{
 				isLearningPath: true,
+				isLearningPathRetry: !learningPathSessionCountsTowardLimit(
+					overview.path,
+					overview.status.todayCodes,
+				),
 				// "Lote N de M" (P49): el alcance de la sesión son unos países
 				// sueltos y se leía "5 países personalizados".
 				sessionLabel: `Lote ${(overview.status.currentBatchIndex ?? 0) + 1} de ${overview.status.batchCount}`,

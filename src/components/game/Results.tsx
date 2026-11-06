@@ -250,9 +250,13 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 						: `lote ${(learningPath.status.currentBatchIndex ?? 0) + 1} de ${learningPath.status.batchCount}`}
 					, {learningPath.status.consolidatedCount} de{" "}
 					{learningPath.status.totalCountries} consolidados.
+					{/* El mismo criterio que el panel (QA de D235): si lo que falta
+					    se acertó hace menos de 4 h y quedan sesiones, hoy aún hay. */}
 					{!learningPath.status.isComplete &&
 						!canRestart &&
-						" Vuelve mañana para seguir."}
+						(learningPath.status.canComeBackLater
+							? " Vuelve en unas horas para otra sesión, o mañana."
+							: " Vuelve mañana para seguir.")}
 				</p>
 			) : (
 				result.scope.type !== "world" && (

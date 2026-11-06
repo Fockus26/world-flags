@@ -21,6 +21,7 @@ import {
 	getLearningPathReservedCodes,
 	getLearningPathStatus,
 	isLearningPathCountryConsolidated,
+	learningPathSessionCountsTowardLimit,
 	meetsLearningPathConsolidation,
 	mergeLearningPaths,
 	normalizeLearningPaths,
@@ -776,5 +777,116 @@ describe("fusión de aciertos con hora y sesiones (D235)", () => {
 		}).flags?.path;
 		assert.equal(old?.progress[code].passes, undefined);
 		assert.equal(old?.sessions, undefined);
+	});
+});
+
+describe("fechas de un reloj adelantado (QA de D235)", () => {
+	const FUTURE = new Date(2027, 10, 6, 8);
+
+	test("un acierto de dentro de un año no bloquea el lote hoy", () => {
+		const path = makePath();
+		const first = getLearningPathBatches(path)[0];
+		const ahead = passAll(path, first, FUTURE);
+
+		const status = getLearningPathStatus(ahead, { now: DAY_2 });
+		assert.deepEqual(status.todayCodes, first);
+		assert.equal(status.canStartSession, true);
+	});
+
+	test("sesiones del futuro no cuentan ni desplazan la de hoy", () => {
+		let path = makePath();
+		for (let i = 0; i < 6; i++) {
+			path = registerLearningPathSession(path, at(FUTURE, i));
+		}
+		path = registerLearningPathSession(path, DAY_1);
+
+		assert.equal(path.sessions?.includes(DAY_1.toISOString()), true);
+		assert.equal(getLearningPathStatus(path, { now: DAY_1 }).sessionsToday, 1);
+	});
+
+	test("la fusión descarta lo que viene del futuro", () => {
+		const code = makePath().codes[0];
+		const ahead = registerLearningPathPass(makePath(), code, FUTURE);
+		const merged = mergeLearningPaths(
+			{ flags: { path: ahead, updatedAt: DAY_1.toISOString() } },
+			{ flags: { path: makePath(), updatedAt: DAY_1.toISOString() } },
+			DAY_1,
+		).flags?.path;
+
+		assert.equal(merged?.progress[code].passes, undefined);
+	});
+
+	test("un acierto de hace 1 min «del futuro» (hora del panel atrasada) sí es reciente", () => {
+		const code = makePath().codes[0];
+		const path = registerLearningPathPass(makePath(), code, at(DAY_1, 1 / 60));
+
+		assert.equal(
+			getLearningPathStatus(path, { now: DAY_1 }).todayCodes.includes(code),
+			false,
+		);
+	});
+});
+
+describe("«vuelve en unas horas» o «mañana» (QA de D235)", () => {
+	test("de madrugada, sin sesión hoy y con aciertos de hace menos de 4 h: en unas horas", () => {
+		const night = new Date(2026, 8, 1, 23);
+		const path = registerLearningPathSession(
+			passAll(makePath(), getLearningPathBatches(makePath())[0], night),
+			night,
+		);
+		const status = getLearningPathStatus(path, { now: at(night, 2) });
+
+		assert.equal(status.sessionsToday, 0);
+		assert.equal(status.canStartSession, false);
+		assert.equal(status.canComeBackLater, true);
+	});
+
+	test("tras la tercera sesión del día: mañana", () => {
+		let path = passAll(
+			makePath(),
+			getLearningPathBatches(makePath())[0],
+			DAY_1,
+		);
+		for (const hours of [0, 1, 2]) {
+			path = registerLearningPathSession(path, at(DAY_1, hours));
+		}
+		const status = getLearningPathStatus(path, { now: at(DAY_1, 3) });
+
+		assert.equal(status.canComeBackLater, false);
+	});
+});
+
+describe("repetir los fallados no gasta una de las tres (D235)", () => {
+	test("la primera del día cuenta siempre", () => {
+		const path = makePath();
+		const first = getLearningPathBatches(path)[0];
+
+		assert.equal(
+			learningPathSessionCountsTowardLimit(path, first, DAY_1),
+			true,
+		);
+	});
+
+	test("después, solo con los fallados de hoy, no cuenta", () => {
+		const path = makePath();
+		const [hit, ...missed] = getLearningPathBatches(path)[0];
+		const afterFirst = registerLearningPathSession(
+			registerLearningPathPass(path, hit, DAY_1),
+			DAY_1,
+		);
+
+		assert.equal(
+			learningPathSessionCountsTowardLimit(afterFirst, missed, at(DAY_1, 0.2)),
+			false,
+		);
+		// A las 4 h vuelve el acertado: va a por su 2.º acierto y cuenta.
+		assert.equal(
+			learningPathSessionCountsTowardLimit(
+				afterFirst,
+				[hit, ...missed],
+				at(DAY_1, 4),
+			),
+			true,
+		);
 	});
 });

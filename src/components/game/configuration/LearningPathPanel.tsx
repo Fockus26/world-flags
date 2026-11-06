@@ -1,9 +1,6 @@
 import { Button, WRAPPING_BUTTON_TEXT } from "@/components/ui/Button";
 import type { LearningPath } from "@/types/progress";
-import {
-	type LearningPathStatus,
-	MAX_LEARNING_PATH_SESSIONS_PER_DAY,
-} from "@/utils/learning-path";
+import type { LearningPathStatus } from "@/utils/learning-path";
 
 /** Título del panel: también destino del foco al crear un aprendizaje (P51). */
 export const LEARNING_PATH_PANEL_TITLE_ID = "learning-path-panel-title";
@@ -49,11 +46,6 @@ export function LearningPathPanel({
 		status.pendingCodes.length === 1
 			? "el país que falta"
 			: `los ${status.pendingCodes.length} países que faltan`;
-	// Ya hubo sesión hoy y quedan más, pero lo que falta se acertó hace menos
-	// de 4 h: no cuenta hasta entonces (D235).
-	const canComeBackLater =
-		status.sessionsToday > 0 &&
-		status.sessionsToday < MAX_LEARNING_PATH_SESSIONS_PER_DAY;
 
 	return (
 		<section
@@ -149,7 +141,7 @@ export function LearningPathPanel({
 				</>
 			) : (
 				<p className="m-0 text-caption text-text-placeholder" role="status">
-					{canComeBackLater
+					{status.canComeBackLater
 						? `Por ahora está listo. Vuelve en unas horas para otra sesión, o mañana, para consolidar ${pendingLabel} del lote.`
 						: `Por hoy está listo. Vuelve mañana para consolidar ${pendingLabel} del lote.`}
 				</p>
