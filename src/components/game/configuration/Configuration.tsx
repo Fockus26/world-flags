@@ -11,6 +11,7 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/hooks/useAuth";
 import { useGame } from "@/hooks/useGame";
 import { useHydration } from "@/hooks/useHydration";
+import { useMinuteTick } from "@/hooks/useMinuteTick";
 import { useTutorial } from "@/hooks/useTutorial";
 import {
 	DEFAULT_DIFFICULTY,
@@ -23,6 +24,7 @@ import {
 import { getAvatarUrl } from "@/utils/avatar";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 import { focusIfLost } from "@/utils/focus";
+import { getLearningPathReservedCodes } from "@/utils/learning-path";
 import {
 	calculateLearningProgress,
 	countLearnedCountries,
@@ -131,10 +133,17 @@ export function Configuration() {
 		countries.length,
 	);
 
-	const dueCount = getDueCountries(gameView.countryHistory).length;
-	const dailyPracticeLabel = `Práctica diaria (${dueCount})`;
 	const title = GAME_TYPE_TITLES[gameType];
-	const learningPath = getLearningPathOverview(gameType);
+	// La hora como entrada (D235): el panel cambia cuando pasan las 4 h.
+	const now = useMinuteTick();
+	const learningPath = getLearningPathOverview(gameType, now);
+	// Sin los países que el lote se reserva hasta consolidarlos (D235), como
+	// `startDailyPractice`.
+	const dueCount = getDueCountries(
+		gameView.countryHistory,
+		getLearningPathReservedCodes(learningPath?.path ?? null),
+	).length;
+	const dailyPracticeLabel = `Práctica diaria (${dueCount})`;
 
 	function handleMenuAction(action: ConfigurationMenuAction) {
 		if (action === "achievements") setIsAchievementsOpen(true);

@@ -29,6 +29,7 @@ import type {
 import { isPlausibleRushTime } from "@/utils/leaderboard-validation";
 import {
 	createLearningPath,
+	getLearningPathReservedCodes,
 	getLearningPathStatus,
 	reconcileLearningPathKnown,
 } from "@/utils/learning-path";
@@ -45,6 +46,7 @@ import {
 	registerCountryAttempts,
 	registerCountryPracticed,
 	registerLearningPathAttempt,
+	registerLearningPathSessionDone,
 	registerRegionBestTime,
 	registerRegionGame,
 	registerSessionOutcome,
@@ -186,7 +188,10 @@ export function useGame() {
 			return false;
 		}
 
-		if (configuration.mode === "practice") {
+		// La sesión del lote no pasa por el candado "practicado hoy" (D235): ya
+		// trae sus países (sin acierto en las últimas 4 h), y con «Hacer otra
+		// sesión hoy» vuelve a países que la propia sesión de hoy marcó.
+		if (configuration.mode === "practice" && !isLearningPath) {
 			const effectiveCodes = getUnpracticedCodesToday(
 				toGameView(getCurrentLearningData(), configuration.gameType),
 				requestedCodes,
@@ -282,6 +287,11 @@ export function useGame() {
 			getCurrentLearningData(),
 			toSessionRecord(result),
 		);
+
+		// Sesión del lote terminada: cuenta para el límite diario (D235).
+		if (isLearningPath) {
+			updatedData = registerLearningPathSessionDone(updatedData, gameType);
+		}
 
 		if (result.mode === "practice") {
 			let view = toGameView(updatedData, gameType);
@@ -457,7 +467,11 @@ export function useGame() {
 		let updatedData = fromGameView(current, touchActiveDay(view), gameType);
 
 		// "Otra vez" es el único fallo (el mismo criterio que cuenta los aciertos).
-		if (isFirstAttempt && grade !== "again") {
+		// Solo cuenta el acierto de la sesión del lote (D235): ni la práctica
+		// diaria ni la práctica libre.
+		const isLearningPathSession =
+			store.getState().game.activeGame?.isLearningPath === true;
+		if (isLearningPathSession && isFirstAttempt && grade !== "again") {
 			updatedData = registerLearningPathAttempt(
 				updatedData,
 				gameType,
@@ -470,8 +484,10 @@ export function useGame() {
 
 	const startDailyPractice = (gameType: GameType) => {
 		// `getDueCountries` ya descarta los códigos fuera del catálogo.
+		// Sin los países que el lote se reserva hasta consolidarlos (D235).
 		const dueCodes = getDueCountries(
 			toGameView(learningData, gameType).countryHistory,
+			getLearningPathReservedCodes(getLearningPath(learningData, gameType)),
 		);
 
 		if (dueCodes.length === 0) return;
@@ -518,7 +534,10 @@ export function useGame() {
 	/** El recorrido en curso de `gameType` y su estado de hoy, o `null` (D185). */
 	// Del selector (no de `getCurrentLearningData`): se pinta en la
 	// configuración, y React Compiler solo recalcula lo que depende del render.
-	const getLearningPathOverview = (gameType: GameType) => {
+	const getLearningPathOverview = (
+		gameType: GameType,
+		now: Date = new Date(),
+	) => {
 		const data = learningData;
 		const stored = getLearningPath(data, gameType);
 		if (!stored) return null;
@@ -531,9 +550,9 @@ export function useGame() {
 			countryHistory: view.countryHistory,
 			regionGameScores: view.regionGameScores,
 		});
-		const status = getLearningPathStatus(path, {
-			isPracticedToday: (code) => hasPracticedCountryToday(view, code),
-		});
+		// Sin el candado "practicado hoy" de los otros modos (D235): ya no
+		// cuentan para el lote, así que tampoco lo bloquean.
+		const status = getLearningPathStatus(path, { now });
 
 		return { path, status };
 	};
@@ -574,7 +593,13 @@ export function useGame() {
 	 */
 	const startLearningPathSession = (gameType: GameType): boolean => {
 		const overview = getLearningPathOverview(gameType);
-		if (!overview || overview.status.todayCodes.length === 0) return false;
+		// La de hoy o, con «Hacer otra sesión hoy», hasta tres al día (D235).
+		if (
+			!overview ||
+			!(overview.status.canStartSession || overview.status.canStartExtraSession)
+		) {
+			return false;
+		}
 
 		// Lo que se va a jugar sale del recorrido recalculado: que quede guardado.
 		const current = getCurrentLearningData();

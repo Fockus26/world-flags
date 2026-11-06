@@ -89,10 +89,13 @@ export function LearningPathModal({
 				id="learning-path-description"
 				className="m-0 mb-4 text-label text-text-placeholder"
 			>
+				{/* PLACEHOLDER copy (CONTENT_CHECKLIST, D235). */}
 				Aprende poco a poco {NOUN_ARTICLES[gameType]} {noun}. Un país queda
-				consolidado cuando lo aciertas a la primera en dos días distintos;
-				cuando todo el lote está consolidado, se abre el siguiente. Lo que ya
-				sabías (con su continente en 10/10) cuenta como consolidado.
+				consolidado cuando lo aciertas a la primera en la sesión del lote dos
+				días distintos, o tres veces el mismo día con 4 horas entre una y otra;
+				cuando todo el lote está consolidado, se abre el siguiente. Mientras
+				tanto, sus países no salen en la práctica diaria. Lo que ya sabías (con
+				su continente en 10/10) cuenta como consolidado.
 			</p>
 
 			<div className="flex flex-col gap-5">

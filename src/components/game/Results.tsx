@@ -222,7 +222,10 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 		? getLearningPathOverview(result.gameType)
 		: null;
 	const learningPathTodayCount = learningPath?.status.todayCodes.length ?? 0;
-	const canRestart = !learningPath || learningPathTodayCount > 0;
+	// Tras la sesión del día, "seguir" es «Hacer otra sesión hoy» (hasta tres, D235).
+	const isExtraSession = learningPath?.status.canStartExtraSession ?? false;
+	const canRestart =
+		!learningPath || learningPath.status.canStartSession || isExtraSession;
 
 	useEffect(() => {
 		focusWhenVisible(document.getElementById(RESULTS_TITLE_ID));
@@ -248,7 +251,7 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 					, {learningPath.status.consolidatedCount} de{" "}
 					{learningPath.status.totalCountries} consolidados.
 					{!learningPath.status.isComplete &&
-						learningPathTodayCount === 0 &&
+						!canRestart &&
 						" Vuelve mañana para seguir."}
 				</p>
 			) : (
@@ -284,7 +287,9 @@ export function Results({ result, onRestart, onExit }: ResultsProps) {
 						onClick={onRestart}
 					>
 						{learningPath
-							? `Seguir aprendiendo (${learningPathTodayCount})`
+							? isExtraSession
+								? `Hacer otra sesión hoy (${learningPathTodayCount})`
+								: `Seguir aprendiendo (${learningPathTodayCount})`
 							: "Repetir práctica"}
 					</Button>
 				)}

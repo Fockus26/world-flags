@@ -18,11 +18,15 @@ import { toLearningDataRow } from "@/utils/learning-data-row";
 import {
 	createLearningPath,
 	getLearningPathBatches,
+	getLearningPathReservedCodes,
 	getLearningPathStatus,
+	isLearningPathCountryConsolidated,
+	meetsLearningPathConsolidation,
 	mergeLearningPaths,
 	normalizeLearningPaths,
 	reconcileLearningPathKnown,
 	registerLearningPathPass,
+	registerLearningPathSession,
 } from "@/utils/learning-path";
 import {
 	createDefaultLearningData,
@@ -54,8 +58,6 @@ const oceania: Country[] = countries.filter(
 const caribbean: Country[] = countries.filter(
 	(country) => country.region === "caribbean",
 );
-
-const neverPracticed = () => false;
 
 /** Historial SM2 con `repetitions` en cada país de `list`. */
 function historyWith(
@@ -129,9 +131,7 @@ describe("createLearningPath", () => {
 		assert.deepEqual(path.knownCodes, [known]);
 		assert.ok(!path.codes.includes(known));
 
-		const status = getLearningPathStatus(path, {
-			isPracticedToday: neverPracticed,
-		});
+		const status = getLearningPathStatus(path);
 		assert.equal(status.totalCountries, oceania.length);
 		assert.equal(status.consolidatedCount, 1);
 	});
@@ -156,11 +156,7 @@ describe("ya sabido (D189)", () => {
 
 		assert.deepEqual(path.knownCodes, []);
 		assert.equal(path.codes.length, caribbean.length);
-		assert.equal(
-			getLearningPathStatus(path, { isPracticedToday: neverPracticed })
-				.isComplete,
-			false,
-		);
+		assert.equal(getLearningPathStatus(path).isComplete, false);
 	});
 
 	test("continente en 10/10 y 2+ repeticiones: ya sabido", () => {
@@ -240,21 +236,13 @@ describe("reconcileLearningPathKnown", () => {
 
 	test("un recorrido viejo completo se reabre, en orden por continente y nombre", () => {
 		const old = oldCompletePath();
-		assert.equal(
-			getLearningPathStatus(old, { isPracticedToday: neverPracticed })
-				.isComplete,
-			true,
-		);
+		assert.equal(getLearningPathStatus(old).isComplete, true);
 
 		const path = reconcileLearningPathKnown(old, caribbean3());
 
 		assert.deepEqual(path.knownCodes, []);
 		assert.deepEqual(path.codes, makePath({ countries: caribbean }).codes);
-		assert.equal(
-			getLearningPathStatus(path, { isPracticedToday: neverPracticed })
-				.isComplete,
-			false,
-		);
+		assert.equal(getLearningPathStatus(path).isComplete, false);
 	});
 
 	test("es idempotente y sin cambios devuelve el mismo objeto", () => {
@@ -356,41 +344,37 @@ describe("getLearningPathStatus", () => {
 		let path = makePath();
 		const [first, second] = getLearningPathBatches(path);
 
-		let status = getLearningPathStatus(path, {
-			isPracticedToday: neverPracticed,
-			today: getLocalDateString(DAY_1),
-		});
+		let status = getLearningPathStatus(path, { now: DAY_1 });
 		assert.equal(status.currentBatchIndex, 0);
 		assert.deepEqual(status.todayCodes, first);
 
 		path = passAll(path, first, DAY_1);
-		status = getLearningPathStatus(path, {
-			isPracticedToday: neverPracticed,
-			today: getLocalDateString(DAY_1),
-		});
-		// Acertados hoy: el mismo lote, nada más que hacer hasta mañana.
+		status = getLearningPathStatus(path, { now: DAY_1 });
+		// Acertados hace nada: el mismo lote, nada que hacer durante 4 h.
 		assert.equal(status.currentBatchIndex, 0);
 		assert.deepEqual(status.todayCodes, []);
 
 		path = passAll(path, first, DAY_2);
-		status = getLearningPathStatus(path, {
-			isPracticedToday: neverPracticed,
-			today: getLocalDateString(DAY_2),
-		});
+		status = getLearningPathStatus(path, { now: DAY_2 });
 		assert.equal(status.currentBatchIndex, 1);
 		assert.deepEqual(status.todayCodes, second);
 	});
 
-	test("lo practicado hoy (aunque se fallara) espera a mañana", () => {
-		const path = makePath();
+	test("lo de otros modos ya no bloquea; un acierto de hace menos de 4 h sí (D235)", () => {
+		let path = makePath();
 		const [first] = getLearningPathBatches(path);
+		path = registerLearningPathPass(path, first[0], DAY_1);
 
-		const status = getLearningPathStatus(path, {
-			isPracticedToday: (code) => code === first[0],
+		const soon = getLearningPathStatus(path, {
+			now: new Date(DAY_1.getTime() + 3 * 3_600_000),
 		});
+		assert.deepEqual(soon.todayCodes, first.slice(1));
+		assert.equal(soon.pendingCodes.length, first.length);
 
-		assert.deepEqual(status.todayCodes, first.slice(1));
-		assert.equal(status.pendingCodes.length, first.length);
+		const later = getLearningPathStatus(path, {
+			now: new Date(DAY_1.getTime() + 4 * 3_600_000),
+		});
+		assert.deepEqual(later.todayCodes, first);
 	});
 
 	test("con todo consolidado, el recorrido está completo", () => {
@@ -398,9 +382,7 @@ describe("getLearningPathStatus", () => {
 		path = passAll(path, path.codes, DAY_1);
 		path = passAll(path, path.codes, DAY_2);
 
-		const status = getLearningPathStatus(path, {
-			isPracticedToday: neverPracticed,
-		});
+		const status = getLearningPathStatus(path, { now: DAY_2 });
 		assert.equal(status.isComplete, true);
 		assert.equal(status.currentBatchIndex, null);
 		assert.equal(status.consolidatedCount, oceania.length);
@@ -589,5 +571,210 @@ describe("almacenamiento y sincronización", () => {
 			toLearningDataRow(merged).learning_paths,
 			merged.learningPaths,
 		);
+	});
+});
+
+const HOUR = 3_600_000;
+const at = (base: Date, hours: number) =>
+	new Date(base.getTime() + hours * HOUR);
+
+describe("consolidar en el mismo día (D235)", () => {
+	test("tres aciertos el mismo día separados 4 h consolidan", () => {
+		const code = makePath().codes[0];
+		const morning = new Date(2026, 8, 1, 8);
+		let path = registerLearningPathPass(makePath(), code, morning);
+		path = registerLearningPathPass(path, code, at(morning, 4));
+		assert.equal(isLearningPathCountryConsolidated(path, code), false);
+
+		path = registerLearningPathPass(path, code, at(morning, 8));
+		assert.equal(isLearningPathCountryConsolidated(path, code), true);
+		assert.equal(path.progress[code].passDays.length, 1);
+		assert.equal(path.progress[code].passes?.length, 3);
+	});
+
+	test("un acierto a menos de 4 h del anterior no suma", () => {
+		const code = makePath().codes[0];
+		const morning = new Date(2026, 8, 1, 8);
+		const path = registerLearningPathPass(makePath(), code, morning);
+
+		assert.equal(registerLearningPathPass(path, code, at(morning, 3.9)), path);
+	});
+
+	test("dos días distintos siguen consolidando, como antes", () => {
+		const code = makePath().codes[0];
+		let path = registerLearningPathPass(makePath(), code, DAY_1);
+		path = registerLearningPathPass(path, code, DAY_2);
+
+		assert.equal(isLearningPathCountryConsolidated(path, code), true);
+	});
+
+	test("la regla: días distintos o tres separados en un mismo día", () => {
+		const day = (hour: number) => new Date(2026, 8, 1, hour).toISOString();
+
+		assert.equal(
+			meetsLearningPathConsolidation(["2026-09-01", "2026-09-02"]),
+			true,
+		);
+		assert.equal(
+			meetsLearningPathConsolidation(
+				["2026-09-01"],
+				[day(8), day(12), day(16)],
+			),
+			true,
+		);
+		// Tres, pero dos demasiado juntos.
+		assert.equal(
+			meetsLearningPathConsolidation(
+				["2026-09-01"],
+				[day(8), day(10), day(16)],
+			),
+			false,
+		);
+	});
+
+	test("un día de acierto de hoy sin hora (registro viejo) bloquea hoy", () => {
+		const path = makePath();
+		const code = path.codes[0];
+		const legacy: LearningPath = {
+			...path,
+			progress: {
+				[code]: { passDays: [getLocalDateString(DAY_1)], consolidatedAt: null },
+			},
+		};
+
+		assert.equal(registerLearningPathPass(legacy, code, DAY_1_LATER), legacy);
+		const next = registerLearningPathPass(legacy, code, DAY_2);
+		assert.equal(isLearningPathCountryConsolidated(next, code), true);
+	});
+});
+
+describe("sesiones al día (D235)", () => {
+	test("tras la sesión del día solo queda «otra sesión», hasta tres", () => {
+		let path = makePath();
+		const first = getLearningPathBatches(path)[0];
+
+		let status = getLearningPathStatus(path, { now: DAY_1 });
+		assert.equal(status.canStartSession, true);
+		assert.equal(status.canStartExtraSession, false);
+
+		// Primera sesión: falla todo (sin aciertos). Queda trabajo, pero ya
+		// solo como sesión extra.
+		path = registerLearningPathSession(path, DAY_1);
+		status = getLearningPathStatus(path, { now: at(DAY_1, 1) });
+		assert.equal(status.sessionsToday, 1);
+		assert.equal(status.canStartSession, false);
+		assert.equal(status.canStartExtraSession, true);
+		assert.deepEqual(status.todayCodes, first);
+
+		path = registerLearningPathSession(path, at(DAY_1, 1));
+		path = registerLearningPathSession(path, at(DAY_1, 2));
+		status = getLearningPathStatus(path, { now: at(DAY_1, 3) });
+		assert.equal(status.sessionsToday, 3);
+		assert.equal(status.canStartExtraSession, false);
+
+		// Al día siguiente vuelve la sesión normal.
+		status = getLearningPathStatus(path, { now: DAY_2 });
+		assert.equal(status.sessionsToday, 0);
+		assert.equal(status.canStartSession, true);
+	});
+});
+
+describe("países reservados para la diaria (D235)", () => {
+	test("el lote en curso y los futuros sin consolidar; nada sin recorrido", () => {
+		let path = makePath();
+		const [first, ...rest] = getLearningPathBatches(path);
+		path = passAll(path, [first[0]], DAY_1);
+		path = passAll(path, [first[0]], DAY_2);
+
+		const reserved = getLearningPathReservedCodes(path);
+		assert.equal(reserved.has(first[0]), false);
+		assert.equal(reserved.has(first[1]), true);
+		assert.equal(reserved.has(rest.flat()[0]), true);
+		assert.equal(getLearningPathReservedCodes(null).size, 0);
+	});
+});
+
+describe("fusión de aciertos con hora y sesiones (D235)", () => {
+	test("dos aciertos en un dispositivo y uno en otro, separados 4 h, consolidan", () => {
+		const code = makePath().codes[0];
+		const morning = new Date(2026, 8, 1, 8);
+		let a = registerLearningPathPass(makePath(), code, morning);
+		a = registerLearningPathPass(a, code, at(morning, 4));
+		const b = registerLearningPathPass(makePath(), code, at(morning, 8));
+
+		const merged = mergeLearningPaths(
+			{ flags: { path: a, updatedAt: DAY_1.toISOString() } },
+			{ flags: { path: b, updatedAt: DAY_1.toISOString() } },
+		).flags?.path;
+
+		assert.ok(merged);
+		assert.equal(merged.progress[code].passes?.length, 3);
+		assert.equal(isLearningPathCountryConsolidated(merged, code), true);
+	});
+
+	test("las sesiones de los dos lados se unen sin repetir", () => {
+		const a = registerLearningPathSession(makePath(), DAY_1);
+		const b = registerLearningPathSession(
+			registerLearningPathSession(makePath(), DAY_1),
+			at(DAY_1, 5),
+		);
+
+		const merged = mergeLearningPaths(
+			{ flags: { path: a, updatedAt: DAY_1.toISOString() } },
+			{ flags: { path: b, updatedAt: DAY_1.toISOString() } },
+		).flags?.path;
+
+		assert.equal(merged?.sessions?.length, 2);
+	});
+
+	test("un lado sin horas (cliente viejo) no borra las del otro", () => {
+		const code = makePath().codes[0];
+		const withPasses = registerLearningPathPass(makePath(), code, DAY_1);
+		const legacy: LearningPath = {
+			...makePath(),
+			progress: {
+				[code]: { passDays: [getLocalDateString(DAY_1)], consolidatedAt: null },
+			},
+		};
+
+		const merged = mergeLearningPaths(
+			{ flags: { path: legacy, updatedAt: DAY_1.toISOString() } },
+			{ flags: { path: withPasses, updatedAt: DAY_1.toISOString() } },
+		).flags?.path;
+
+		assert.equal(merged?.progress[code].passes?.length, 1);
+	});
+
+	test("normalizar conserva horas y sesiones, y acepta registros sin ellas", () => {
+		const code = makePath().codes[0];
+		const path = registerLearningPathSession(
+			registerLearningPathPass(makePath(), code, DAY_1),
+			DAY_1,
+		);
+		const normalized = normalizeLearningPaths(
+			JSON.parse(
+				JSON.stringify({ flags: { path, updatedAt: DAY_1.toISOString() } }),
+			),
+		).flags?.path;
+
+		assert.deepEqual(
+			normalized?.progress[code].passes,
+			path.progress[code].passes,
+		);
+		assert.deepEqual(normalized?.sessions, path.sessions);
+
+		const old = normalizeLearningPaths({
+			flags: {
+				path: {
+					...makePath(),
+					progress: {
+						[code]: { passDays: ["2026-09-01"], consolidatedAt: null },
+					},
+				},
+				updatedAt: DAY_1.toISOString(),
+			},
+		}).flags?.path;
+		assert.equal(old?.progress[code].passes, undefined);
+		assert.equal(old?.sessions, undefined);
 	});
 });
