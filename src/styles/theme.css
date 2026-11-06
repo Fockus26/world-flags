@@ -129,6 +129,10 @@
 	   en `--spacing-*` que en `--container-*` y pisaría ese ancho. */
 	--spacing-dialog-inset: min(1.5rem, 7.5vw);
 	--container-session: 58rem;
+	/* Cifras del cronómetro del rush (D232): `105:30` cabe en 6ch con
+	   `tabular-nums`, así la píldora no cambia de ancho al pasar de `9:59`
+	   a `10:00` ni con los castigos. En `ch`: crece con la letra. */
+	--container-stopwatch: 6ch;
 
 	/* ===========================
 	   Tamaños de letra (D178)
