@@ -36,6 +36,11 @@ interface AnswerFormProps {
 	 * que el lector de pantalla lo anuncie con el aviso.
 	 */
 	answerNote?: ReactNode;
+	/**
+	 * La bandera todavía no se ve (D230): "Comprobar" y "Saltar" se apagan. Se
+	 * puede ir escribiendo; la partida ignora el envío hasta que se vea.
+	 */
+	isStimulusPending?: boolean;
 	/** Expone el input real al padre — lo necesita el modo Países como origen de la animación de "vuelo" hacia el tablero. */
 	inputRef?: RefObject<HTMLInputElement | null>;
 }
@@ -54,6 +59,7 @@ export function AnswerForm({
 	placeholder = "Escribe el nombre del país",
 	correctSuffix,
 	answerNote,
+	isStimulusPending = false,
 	inputRef,
 }: AnswerFormProps) {
 	const isAnswerChecked = answerStatus !== "idle";
@@ -120,13 +126,14 @@ export function AnswerForm({
 				// En rem, el umbral crece con la letra: con el texto al 200 % a
 				// 320 px los dos botones no caben en fila y se apilan (D213).
 				<div className="grid grid-cols-[2fr_1fr] gap-2 @max-3xs:grid-cols-1">
-					<Button type="submit" disabled={!answer.trim()}>
+					<Button type="submit" disabled={isStimulusPending || !answer.trim()}>
 						Comprobar
 					</Button>
 					<Button
 						type="button"
 						variant="outline"
 						color="neutral"
+						disabled={isStimulusPending}
 						onClick={onSkip}
 					>
 						Saltar

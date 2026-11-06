@@ -15,8 +15,16 @@ import {
 } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
 import { toGameView } from "@/utils/learning-storage";
+import { moveCardToEnd } from "@/utils/practice-queue";
 import { getScopeLabel } from "@/utils/practice-scope";
 import { calculateScore } from "@/utils/score";
+import {
+	createClockPauses,
+	getElapsedMs,
+	isClockPaused,
+	pauseClock,
+	resumeClock,
+} from "@/utils/session-clock";
 import { playSound } from "@/utils/sound";
 import { AnswerForm } from "./AnswerForm";
 import { Header } from "./Header";
@@ -25,6 +33,7 @@ import {
 	type CardGameType,
 	isCardGameType,
 	SESSION_CARDS,
+	stimulusNeedsLoading,
 } from "./session-cards";
 
 const GRADE_BY_KEY: Record<string, ReviewGrade> = {
@@ -116,10 +125,16 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	// daría un tiempo absurdo (negativo o de horas) (D132, P15).
 	const startTimeRef = useRef<number | null>(null);
 	// El cronómetro se pausa mientras se muestra el resultado de una bandera
-	// (antes de pasar a la siguiente) y mientras está abierto el modal de
-	// abandonar, para que esas esperas no cuenten como tiempo de carrera.
-	const isClockPausedRef = useRef(false);
-	const exitModalOpenedAtRef = useRef<number | null>(null);
+	// (antes de pasar a la siguiente), mientras está abierto el modal de
+	// abandonar y mientras la bandera no se ve (D230), para que esas esperas no
+	// cuenten como tiempo de carrera. Pueden coincidir: el tiempo parado se
+	// descuenta una sola vez (`utils/session-clock.ts`).
+	const clockPausesRef = useRef(createClockPauses());
+	// Código de la última bandera que llegó a verse (D230). Mientras la de la
+	// tarjeta no se vea, no se puede responder ni saltar y el reloj no corre.
+	const [readyCode, setReadyCode] = useState<string | null>(null);
+	// Orden del rush: "Probar otra" manda la bandera que no carga al final (D230).
+	const [rushOrder, setRushOrder] = useState(() => countries);
 	// Clave (código + turno de la cola) de la bandera a la que pertenece el
 	// `timeLeft` actual: al avanzar de bandera, el efecto del cronómetro
 	// necesita reiniciar el conteo en el mismo pase en el que detecta el
@@ -170,7 +185,11 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 				finishedAt: new Date().toISOString(),
 				elapsedMs:
 					startTimeRef.current !== null
-						? performance.now() - startTimeRef.current
+						? getElapsedMs(
+								startTimeRef.current,
+								clockPausesRef.current,
+								performance.now(),
+							)
 						: 0,
 				totalCountries: countries.length,
 				scope: activeGame?.configuration.scope ?? { type: "world" },
@@ -181,18 +200,40 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 
 	const currentCountry = isPracticeMode
 		? countries.find((country) => country.code === practiceQueue.currentCode)
-		: countries[currentIndex];
+		: rushOrder[currentIndex];
 	const isLastCountry = currentIndex === countries.length - 1;
+	const needsLoading = stimulusNeedsLoading(gameType);
+	const isStimulusReady =
+		!needsLoading ||
+		(currentCountry !== undefined && readyCode === currentCountry.code);
+	const canSwap = isPracticeMode
+		? practiceQueue.canDefer
+		: currentIndex < rushOrder.length - 1;
 
 	useUpcomingFlagPrecache(
-		gameType !== "flags"
+		!needsLoading
 			? []
 			: isPracticeMode
 				? practiceQueue.upcomingCodes
-				: countries
+				: rushOrder
 						.slice(currentIndex, currentIndex + UPCOMING_FLAGS_AHEAD)
 						.map((country) => country.code),
 	);
+
+	// Sin bandera a la vista, el reloj no corre (D230): ni el cronómetro del
+	// rush ni el tiempo de práctica que va a las estadísticas. La espera de la
+	// primera bandera tampoco cuenta.
+	useEffect(() => {
+		const now = performance.now();
+
+		if (!isStimulusReady) {
+			pauseClock(clockPausesRef.current, "stimulus", now);
+			return;
+		}
+
+		const pausedMs = resumeClock(clockPausesRef.current, "stimulus", now);
+		if (startTimeRef.current !== null) startTimeRef.current += pausedMs;
+	}, [isStimulusReady]);
 
 	function recordFirstAttempt(code: string, isCorrect: boolean) {
 		if (code in firstAttemptResultsRef.current) return;
@@ -217,7 +258,10 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	useEffect(() => {
 		if (!isCompetitiveMode) return;
 		const intervalId = window.setInterval(() => {
-			if (startTimeRef.current !== null && !isClockPausedRef.current) {
+			if (
+				startTimeRef.current !== null &&
+				!isClockPaused(clockPausesRef.current)
+			) {
 				setElapsedMs(performance.now() - startTimeRef.current);
 			}
 		}, 100);
@@ -247,6 +291,10 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		}
 		const effectiveTimeLeft = isNewCard ? timerDuration : timeLeft;
 
+		// Sin bandera a la vista la cuenta atrás espera (D230): si no, agotaría
+		// la bandera y la saltaría sola.
+		if (!isStimulusReady) return;
+
 		if (effectiveTimeLeft <= 0) {
 			handleSkip();
 			return;
@@ -263,6 +311,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		timeLeft,
 		answerStatus,
 		isExitModalOpen,
+		isStimulusReady,
 	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: handleGrade estabilizado por React Compiler (ver docs/components.md)
@@ -307,7 +356,11 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 		if (isLastCountry) {
 			const finalElapsedMs =
 				startTimeRef.current !== null
-					? performance.now() - startTimeRef.current
+					? getElapsedMs(
+							startTimeRef.current,
+							clockPausesRef.current,
+							performance.now(),
+						)
 					: elapsedMs;
 
 			finishGame({
@@ -351,7 +404,13 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	function applyPenalty(penaltyMs: number) {
 		if (startTimeRef.current === null) return;
 		startTimeRef.current -= penaltyMs;
-		setElapsedMs(performance.now() - startTimeRef.current);
+		setElapsedMs(
+			getElapsedMs(
+				startTimeRef.current,
+				clockPausesRef.current,
+				performance.now(),
+			),
+		);
 		penaltyIdRef.current += 1;
 		const id = penaltyIdRef.current;
 		setPenalties((current) => [...current, { id, penaltyMs }]);
@@ -364,20 +423,41 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 
 	/** Congela el cronómetro durante la transición y lo reanuda al avanzar, sin contar esa espera. */
 	function pauseThenAdvance() {
-		isClockPausedRef.current = true;
+		pauseClock(clockPausesRef.current, "advance", performance.now());
 		window.setTimeout(() => {
+			const pausedMs = resumeClock(
+				clockPausesRef.current,
+				"advance",
+				performance.now(),
+			);
 			if (startTimeRef.current !== null) {
-				startTimeRef.current += RUSH_ADVANCE_MS;
+				startTimeRef.current += pausedMs;
 			}
-			isClockPausedRef.current = false;
 			advanceCompetitive();
 		}, RUSH_ADVANCE_MS);
+	}
+
+	/**
+	 * "Probar otra" (D230): la bandera que no carga va al final y sale la
+	 * siguiente, sin castigo ni calificación. Lo escrito se borra: era para la
+	 * otra.
+	 */
+	function handleSwap() {
+		if (isStimulusReady || cardStepRef.current !== "idle" || !canSwap) return;
+
+		if (isPracticeMode) {
+			practiceQueue.defer();
+		} else {
+			setRushOrder((order) => moveCardToEnd(order, currentIndex));
+		}
+		setAnswer("");
 	}
 
 	function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (
 			!currentCountry ||
+			!isStimulusReady ||
 			cardStepRef.current !== "idle" ||
 			answerStatus !== "idle" ||
 			!answer.trim()
@@ -414,21 +494,20 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 
 	/** Pausa el temporizador de práctica y el cronómetro del rush mientras se decide si abandonar. */
 	function handleOpenExitModal() {
-		isClockPausedRef.current = true;
-		exitModalOpenedAtRef.current = performance.now();
+		pauseClock(clockPausesRef.current, "exit", performance.now());
 		setIsExitModalOpen(true);
 	}
 
 	/** Al seguir practicando, el tiempo que estuvo abierto el modal no cuenta para el cronómetro del rush. */
 	function handleCancelExit() {
-		if (exitModalOpenedAtRef.current !== null) {
-			const pausedMs = performance.now() - exitModalOpenedAtRef.current;
-			if (startTimeRef.current !== null) {
-				startTimeRef.current += pausedMs;
-			}
-			exitModalOpenedAtRef.current = null;
+		const pausedMs = resumeClock(
+			clockPausesRef.current,
+			"exit",
+			performance.now(),
+		);
+		if (startTimeRef.current !== null) {
+			startTimeRef.current += pausedMs;
 		}
-		isClockPausedRef.current = false;
 		setIsExitModalOpen(false);
 	}
 
@@ -444,6 +523,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 	function handleSkip() {
 		if (
 			!currentCountry ||
+			!isStimulusReady ||
 			cardStepRef.current !== "idle" ||
 			answerStatus !== "idle"
 		) {
@@ -498,7 +578,10 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 				/>
 
 				<div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-[0.65rem] min-[30rem]:gap-[clamp(0.75rem,2vh,1.5rem)]">
-					{card.renderStimulus(currentCountry, answerStatus)}
+					{card.renderStimulus(currentCountry, answerStatus, {
+						onReady: () => setReadyCode(currentCountry.code),
+						onSwap: canSwap ? handleSwap : undefined,
+					})}
 					<AnswerForm
 						countryName={card.getAnswer(currentCountry)}
 						label={card.getQuestion(currentCountry)}
@@ -512,6 +595,7 @@ export function Session({ runtime, exitDescription }: SessionProps) {
 						mode={configuration.mode}
 						onGrade={handleGrade}
 						hideGradeButtons={isSkipPending}
+						isStimulusPending={!isStimulusReady}
 					/>
 				</div>
 			</section>

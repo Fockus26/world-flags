@@ -11,9 +11,19 @@ import type { GameType } from "@/types/country";
 import type { ReviewGrade } from "@/types/progress";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
 import { toGameView } from "@/utils/learning-storage";
+import {
+	createClockPauses,
+	getElapsedMs,
+	pauseClock,
+	resumeClock,
+} from "@/utils/session-clock";
 import { playSound } from "@/utils/sound";
 import { CountryClozeCard } from "./countries/CountryClozeCard";
-import { isCardGameType, SESSION_CARDS } from "./session-cards";
+import {
+	isCardGameType,
+	SESSION_CARDS,
+	stimulusNeedsLoading,
+} from "./session-cards";
 
 interface DailyPracticeProps {
 	gameType: GameType;
@@ -50,6 +60,10 @@ export function DailyPractice({
 	// cambia a mitad de la práctica, `Date.now()` saltaría y el tiempo final
 	// saldría negativo o de horas. El valor inicial se toma al montar (D165).
 	const startTimeRef = useRef(performance.now());
+	// Mientras la bandera no se ve, el tiempo no cuenta para las estadísticas
+	// y no se puede revelar (D230), igual que en `Session`.
+	const clockPausesRef = useRef(createClockPauses());
+	const [readyCode, setReadyCode] = useState<string | null>(null);
 	const slotRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 	// La cola ya llega sin códigos fuera del catálogo (`getDueCountries`),
 	// pero se filtra otra vez aquí: un código sin bandera ni nombre en la
@@ -66,6 +80,8 @@ export function DailyPractice({
 		completedCount,
 		completedCodes,
 		grade,
+		defer,
+		canDefer,
 	} = usePracticeQueue({
 		initialCodes: playableCodes,
 		countryHistory: toGameView(learningData, gameType).countryHistory,
@@ -90,7 +106,11 @@ export function DailyPractice({
 			onComplete({
 				totalCountries: playableCodes.length,
 				correctAnswers: correctAnswersRef.current,
-				elapsedMs: performance.now() - startTimeRef.current,
+				elapsedMs: getElapsedMs(
+					startTimeRef.current,
+					clockPausesRef.current,
+					performance.now(),
+				),
 			}),
 	});
 
@@ -101,8 +121,33 @@ export function DailyPractice({
 	);
 	// Países va con su tablero (cloze); los demás, con la tarjeta de su juego (D068).
 	const card = isCardGameType(gameType) ? SESSION_CARDS[gameType] : null;
+	const isStimulusReady =
+		!stimulusNeedsLoading(gameType) ||
+		(currentCountry !== undefined && readyCode === currentCountry.code);
+
+	useEffect(() => {
+		const now = performance.now();
+
+		if (!isStimulusReady) {
+			pauseClock(clockPausesRef.current, "stimulus", now);
+			return;
+		}
+
+		startTimeRef.current += resumeClock(
+			clockPausesRef.current,
+			"stimulus",
+			now,
+		);
+	}, [isStimulusReady]);
+
+	/** "Probar otra" (D230): la bandera que no carga va al final, sin calificar. */
+	function handleSwap() {
+		if (isStimulusReady || isAwaitingGradeRef.current) return;
+		defer();
+	}
 
 	function reveal() {
+		if (!isStimulusReady) return;
 		isAwaitingGradeRef.current = true;
 		setIsRevealed(true);
 	}
@@ -173,7 +218,10 @@ export function DailyPractice({
 							slotRefs={slotRefs}
 						/>
 					) : (
-						card.renderStimulus(currentCountry)
+						card.renderStimulus(currentCountry, undefined, {
+							onReady: () => setReadyCode(currentCountry.code),
+							onSwap: canDefer ? handleSwap : undefined,
+						})
 					)}
 
 					<div className="flex flex-col items-center gap-3">
@@ -186,7 +234,8 @@ export function DailyPractice({
 							<button
 								type="button"
 								onClick={reveal}
-								className="m-0 cursor-pointer border-0 bg-transparent p-0 text-center text-body-sm text-text-placeholder animate-in fade-in-0 duration-150"
+								disabled={!isStimulusReady}
+								className="m-0 cursor-pointer border-0 bg-transparent p-0 text-center text-body-sm text-text-placeholder animate-in fade-in-0 duration-150 disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								Presiona{" "}
 								<kbd className="hidden rounded-sm border border-surface-border bg-surface-soft px-2 py-[0.15rem] text-label text-secondary-soft min-[44rem]:inline">
