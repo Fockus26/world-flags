@@ -398,8 +398,11 @@ export function GameEffects() {
 				 * nube; la diferencia con `authenticatedData`, si la hay, es lo
 				 * jugado durante el vuelo, que el efecto de subidas manda.
 				 */
-				saveLearningData(authenticatedData);
+				// La base primero: otra pestaña que oiga los datos mira la base
+				// para saber de quién son, y sin ella los tomaría por del
+				// invitado (D236, D056).
 				saveSyncBase(user.id, syncedData);
+				saveLearningData(authenticatedData);
 				syncBaseRef.current = toSyncBaseRef(user.id, syncedData);
 
 				dispatch(setLearningData(authenticatedData));

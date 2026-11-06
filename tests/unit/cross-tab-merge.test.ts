@@ -15,7 +15,9 @@ import {
 	adoptOtherTabLearningData,
 	createDefaultLearningData,
 	createSessionRecord,
+	fromGameView,
 	getLearningData,
+	isFromOtherTab,
 	registerLearningPathAttempt,
 	registerLearningPathSessionDone,
 	registerSessionOutcome,
@@ -24,6 +26,7 @@ import {
 	saveReviewResult,
 	saveSyncBase,
 	saveUserProfile,
+	toGameView,
 } from "@/utils/learning-storage";
 
 class MemoryStorage {
@@ -128,6 +131,7 @@ describe("adoptOtherTabLearningData (D236)", () => {
 		);
 
 		assert.ok(adopted, "hay cambios que adoptar");
+		assert.ok(isFromOtherTab(adopted), "marcado como llegado de otra pestaña");
 		assert.equal(adopted.learningPaths.flags?.path?.sessions?.length, 1);
 		assert.ok(adopted.countryHistory.au?.review, "repaso SM2 de la otra");
 		assert.equal(adopted.sessionHistory.length, 1);
@@ -227,5 +231,40 @@ describe("adoptOtherTabLearningData (D236)", () => {
 		// La pestaña de esa misma cuenta sí la adopta.
 		const adopted = adoptOtherTabLearningData(raw, guest, "user-1");
 		assert.equal(adopted?.sessionHistory.length, 1);
+	});
+
+	test("una vista de otro juego nunca se guarda: solo su versión corregida (QA de D236)", () => {
+		const start = thisTabHas(saveReviewResult(shared(), "fr", "good"));
+		const writes: string[] = [];
+		const setItem = storage.setItem.bind(storage);
+		storage.setItem = (key: string, value: string) => {
+			if (key === KEY) writes.push(value);
+			setItem(key, value);
+		};
+
+		try {
+			const view = saveReviewResult(
+				toGameView(start, "capitals"),
+				"au",
+				"good",
+			);
+			assert.equal(writes.length, 0, "la vista no se escribe");
+
+			const corrected = fromGameView(start, view, "capitals");
+			assert.equal(writes.length, 1, "una sola escritura, la corregida");
+
+			const stored = getLearningData();
+			assert.equal(stored.countryHistory.au, undefined, "Banderas intacto");
+			assert.ok(stored.countryHistory.fr?.review);
+			assert.ok(stored.capitalsGame.countryHistory.au?.review);
+			assert.equal(JSON.stringify(stored), JSON.stringify(corrected));
+			assert.equal(
+				Object.getOwnPropertySymbols(corrected).length,
+				0,
+				"sin la marca de vista",
+			);
+		} finally {
+			storage.setItem = setItem;
+		}
 	});
 });

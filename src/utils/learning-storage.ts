@@ -466,7 +466,24 @@ export function hasLearningProgress(data: UserLearningData): boolean {
  */
 let lastKnownRaw: string | null | undefined;
 
+/**
+ * Marca de una vista de `toGameView` (juego que no es Banderas). La copian los
+ * spread de las funciones puras y `JSON.stringify` la ignora. Una vista nunca
+ * se guarda: lleva el progreso de otro juego en los campos de Banderas, y otra
+ * pestaña la fusionaría como si fuera Banderas (D236). Se guarda solo lo que
+ * devuelve `fromGameView`.
+ */
+const GAME_VIEW = Symbol("gameView");
+
+type GameView = UserLearningData & { [GAME_VIEW]?: GameType };
+
+function isGameView(data: UserLearningData): boolean {
+	return (data as GameView)[GAME_VIEW] !== undefined;
+}
+
 export function saveLearningData(data: UserLearningData): void {
+	if (isGameView(data)) return;
+
 	const raw = JSON.stringify(data);
 	window.localStorage.setItem(STORAGE_KEY, raw);
 	lastKnownRaw = raw;
@@ -546,7 +563,21 @@ export function adoptOtherTabLearningData(
 		saveLearningData(merged);
 	}
 
-	return isSameValue(merged, current) ? null : merged;
+	if (isSameValue(merged, current)) return null;
+
+	adoptedFromOtherTab.add(merged);
+	return merged;
+}
+
+/** Los objetos que devolvió `adoptOtherTabLearningData` (ver `isFromOtherTab`). */
+const adoptedFromOtherTab = new WeakSet<UserLearningData>();
+
+/**
+ * ¿`data` es tal cual lo que llegó de otra pestaña? Los logros que trae los
+ * sella y los anuncia esa pestaña, no esta (D236).
+ */
+export function isFromOtherTab(data: UserLearningData): boolean {
+	return adoptedFromOtherTab.has(data);
 }
 
 /**
@@ -628,7 +659,14 @@ export function toGameView(
 ): UserLearningData {
 	if (gameType === "flags") return data;
 
-	return setGameProgress(data, "flags", getGameProgress(data, gameType));
+	const view: GameView = setGameProgress(
+		data,
+		"flags",
+		getGameProgress(data, gameType),
+	);
+	view[GAME_VIEW] = gameType;
+
+	return view;
 }
 
 /**
@@ -641,12 +679,11 @@ export function toGameView(
  * sessionHistory, achievements, lastConfiguration, profile) que la función
  * pura haya tocado.
  *
- * Vuelve a persistir con `saveLearningData` cuando `gameType` no es "flags":
- * la función pura que se llamó sobre la vista (p. ej. `saveReviewResult`) ya
- * persistió por su cuenta, pero lo que escribió a `localStorage` es la VISTA
- * — de primer nivel trae el progreso de ese juego, y su sub-objeto todavía
- * está desactualizado. Sin este segundo `saveLearningData`, una recarga
- * antes del siguiente cambio leería ese estado a medio corregir.
+ * Persiste con `saveLearningData` cuando `gameType` no es "flags": la función
+ * pura que se llamó sobre la vista (p. ej. `saveReviewResult`) no guarda nada,
+ * porque la vista va marcada (`GAME_VIEW`) — de primer nivel trae el progreso
+ * de ese juego y otra pestaña la fusionaría como Banderas (D236). Esta es la
+ * única escritura, ya corregida y sin la marca.
  */
 export function fromGameView(
 	original: UserLearningData,
@@ -655,10 +692,11 @@ export function fromGameView(
 ): UserLearningData {
 	if (gameType === "flags") return view;
 
+	const { [GAME_VIEW]: _view, ...plain } = view as GameView;
 	const corrected = setGameProgress(
-		setGameProgress(view, "flags", getGameProgress(original, "flags")),
+		setGameProgress(plain, "flags", getGameProgress(original, "flags")),
 		gameType,
-		getGameProgress(view, "flags"),
+		getGameProgress(plain, "flags"),
 	);
 
 	saveLearningData(corrected);
@@ -1999,12 +2037,14 @@ export function restorePendingAccountData(userId: string): PendingRestore {
 		const guest = getLearningData();
 		const pendingData = normalizeLearningData(pending.data);
 
+		// La base antes que los datos: otra pestaña reacciona a cada `setItem`
+		// por separado y mira la base para saber de quién son (D236).
+		saveSyncBase(userId, normalizeLearningData(pending.base));
 		saveLearningData(
 			pending.guestFollows
 				? mergeGuestIntoPending(pendingData, guest)
 				: pendingData,
 		);
-		saveSyncBase(userId, normalizeLearningData(pending.base));
 		window.localStorage.removeItem(PENDING_ACCOUNT_STORAGE_KEY);
 
 		return {

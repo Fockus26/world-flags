@@ -10,5 +10,10 @@
 - **Lo que no cubre:**
   - Clave borrada (logout en otra pestaña): la lleva el flujo de sesión.
   - Dos escrituras en el mismo milisegundo, antes de que ninguna pestaña reciba el evento de la otra: la siguiente escritura de cualquiera las une.
+- **Arreglos de la QA funcional** (repros `.qa/repro/24…27`):
+  - **Una escritura por acción, siempre completa:** la vista de `toGameView` (Capitales, Países) va marcada con un símbolo (`GAME_VIEW`) y `saveLearningData` no la guarda. Solo se guarda lo que devuelve `fromGameView`, ya sin la marca. Antes, la vista pasaba por `localStorage` y la otra pestaña la fusionaba como si fuera Banderas.
+  - **La base antes que los datos:** la hidratación de la cuenta (`GameEffects`) y `restorePendingAccountData` guardan la base de sincronización antes que los datos. La otra pestaña reacciona a cada `setItem` por separado, y con el orden inverso tomaba los datos de la cuenta por los del invitado (D056).
+  - **La sesión es del lote con que empezó:** `activeGame.learningPathId`. Si otra pestaña abandona el lote o crea otro a mitad, lo jugado no cuenta en el nuevo, ni la sesión ni los aciertos.
+  - **Los logros los anuncia la pestaña donde se ganan:** `AchievementsEffects` no evalúa los datos que acaban de llegar de otra pestaña (`isFromOtherTab`). El sello llega con la siguiente escritura de esa pestaña.
 - **Persistencia:** sigue pasando solo por `learning-storage.ts`. Redux, solo desde `store/slices` y el hook.
 - **Tests:** `tests/unit/cross-tab-merge.test.ts`.
