@@ -79,19 +79,21 @@ export function AccountTab({ profile, onSaveProfile }: AccountTabProps) {
 					/>
 
 					<Fieldset className="gap-3" legend="Avatar" hideLegend>
-						<Select
-							id="avatar-style-select"
-							label="Avatar"
-							options={AVATAR_STYLE_OPTIONS}
-							value={profile.avatarStyle}
-							onChange={(value) =>
-								handleAvatarStyleChange(value as AvatarStyle)
-							}
-						/>
 						<Avatar
 							avatarStyle={profile.avatarStyle}
 							value={profile.avatarSeed}
 							onChange={handleAvatarSeedChange}
+							styleControl={
+								<Select
+									id="avatar-style-select"
+									label="Avatar"
+									options={AVATAR_STYLE_OPTIONS}
+									value={profile.avatarStyle}
+									onChange={(value) =>
+										handleAvatarStyleChange(value as AvatarStyle)
+									}
+								/>
+							}
 						/>
 					</Fieldset>
 				</div>

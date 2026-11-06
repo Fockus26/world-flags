@@ -1,5 +1,5 @@
 import { DiceFive } from "iconoir-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import type { AvatarStyle } from "@/types/progress";
@@ -14,6 +14,11 @@ interface AvatarProps {
 	avatarStyle: AvatarStyle;
 	value: string;
 	onChange: (seed: string) => void;
+	/**
+	 * El selector de estilo, que va en la misma fila que el dado (D234): el
+	 * dado ya no tiene fila propia. La tanda y el dado siguen aquí (D190).
+	 */
+	styleControl?: ReactNode;
 }
 
 /**
@@ -46,7 +51,12 @@ function AvatarOptionImage({ src, number }: { src: string; number: number }) {
 	);
 }
 
-export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
+export function Avatar({
+	avatarStyle,
+	value,
+	onChange,
+	styleControl,
+}: AvatarProps) {
 	// Al volver la red se remontan las imágenes para reintentar las que fallaron.
 	const { isOnline } = useSyncStatus();
 	// Tanda visible (D190): estado local, no se persiste. Tirar el dado no
@@ -70,8 +80,16 @@ export function Avatar({ avatarStyle, value, onChange }: AvatarProps) {
 	}
 
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="flex items-center justify-end">
+		<div className="flex flex-col gap-3">
+			{/* Selector de estilo y dado en una fila (D234): el selector ocupa lo
+			    que queda y el dado se alinea con su campo (`items-end`, bajo la
+			    etiqueta). `basis-40` (10rem, crece con la letra, como los avisos de
+			    D222): con el texto al 200 % a 320 px el selector se quedaba en
+			    110 px con el nombre saliéndose; así el dado baja de línea. */}
+			<div className="flex flex-wrap items-end justify-end gap-2">
+				{styleControl && (
+					<div className="min-w-0 flex-1 basis-40">{styleControl}</div>
+				)}
 				<IconButton
 					type="button"
 					color="neutral"
