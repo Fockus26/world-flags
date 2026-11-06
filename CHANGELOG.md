@@ -9,6 +9,33 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.12.0] - 2026-11-06
+
+### Añadido
+
+- Si dejas la partida un rato, la bandera se duerme. A los 90 segundos te
+  preguntamos si sigues ahí, con el tiempo en pausa. A los 5 minutos la partida
+  se cierra: lo que has aprendido se guarda, pero no la marca.
+- Las partidas tienen un límite de una hora. En el rush la partida termina sin
+  marca; en la práctica te avisamos y puedes seguir.
+- Aprender por lotes: después de la sesión del día puedes hacer otra, hasta tres
+  al día. Un país queda consolidado si lo aciertas a la primera en dos días
+  distintos, o tres veces el mismo día con 4 horas entre una y otra.
+- En Elegir países, mantén Mayús al pulsar una casilla para marcar o desmarcar
+  de golpe todos los países que hay entre esa y la última que pulsaste. También
+  funciona con Mayús y Espacio en el teclado.
+
+### Cambiado
+
+- El cronómetro del rush tiene un icono de reloj, siempre se ve como minutos y
+  segundos (0:08) y ya no cambia de ancho mientras corre.
+- El tiempo que pasas sin jugar ya no cuenta en tu tiempo total de juego.
+- Para consolidar un país del lote solo cuentan los aciertos de la sesión del
+  lote, no los de la práctica diaria ni los de la práctica libre.
+- Los países del lote que estás aprendiendo ya no salen en la práctica diaria
+  hasta que los consolidas. Si abandonas el aprendizaje por lotes, vuelven a
+  ella.
+
 ## [2.11.1] - 2026-11-06
 
 ### Corregido
