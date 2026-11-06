@@ -41,6 +41,7 @@ import {
 	normalizeLearningPaths,
 	reconcileLearningPathKnown,
 	registerLearningPathPass,
+	registerLearningPathSession,
 } from "@/utils/learning-path";
 import { REGION_COUNTRY_COUNTS } from "@/utils/region-stats";
 import {
@@ -2305,10 +2306,16 @@ export function saveReviewResults(
  * "Práctica diaria (N)" y, al llegar a la cabeza de la cola, no habría
  * bandera ni nombre que mostrar.
  */
-export function getDueCountries(history: CountriesLearningHistory): string[] {
+export function getDueCountries(
+	history: CountriesLearningHistory,
+	/** Los que el recorrido por lotes se reserva hasta consolidarlos (D235). */
+	excludedCodes: ReadonlySet<string> = new Set(),
+): string[] {
 	return Object.keys(history).filter(
 		(code) =>
-			isCatalogCountryCode(code) && isDue(history[code]?.review ?? null),
+			isCatalogCountryCode(code) &&
+			!excludedCodes.has(code) &&
+			isDue(history[code]?.review ?? null),
 	);
 }
 
@@ -2381,6 +2388,33 @@ export function reconcileLearningPath(
 		learningPaths: {
 			...currentData.learningPaths,
 			[gameType]: { ...slot, path },
+		},
+	};
+
+	saveLearningData(updatedData);
+	return updatedData;
+}
+
+/**
+ * Una sesión del lote de `gameType` terminada (D235): cuenta para el límite
+ * de sesiones al día. Sin recorrido, devuelve los mismos datos.
+ */
+export function registerLearningPathSessionDone(
+	currentData: UserLearningData,
+	gameType: GameType,
+	now: Date = new Date(),
+): UserLearningData {
+	const slot = currentData.learningPaths[gameType];
+	if (!slot?.path) return currentData;
+
+	const updatedData: UserLearningData = {
+		...currentData,
+		learningPaths: {
+			...currentData.learningPaths,
+			[gameType]: {
+				...slot,
+				path: registerLearningPathSession(slot.path, now),
+			},
 		},
 	};
 

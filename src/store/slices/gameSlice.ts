@@ -35,6 +35,11 @@ export interface ActiveGame {
 	/** Sesión del recorrido por lotes (D185): sus resultados muestran el avance del recorrido. */
 	isLearningPath?: boolean;
 	/**
+	 * Sesión del lote que no cuenta para el tope de tres al día: solo repite
+	 * países fallados hoy (`learningPathSessionCountsTowardLimit`, D235).
+	 */
+	isLearningPathRetry?: boolean;
+	/**
 	 * Título de la sesión en la cabecera en vez del alcance ("Lote 2 de 5" en
 	 * una sesión de lote; P49). Sin él, la cabecera muestra el alcance.
 	 */

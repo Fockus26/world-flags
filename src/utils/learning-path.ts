@@ -25,6 +25,45 @@ import { shuffle } from "@/utils/shuffle";
 /** Aciertos a la primera, en días distintos, para consolidar un país. */
 export const PASS_DAYS_TO_CONSOLIDATE = 2;
 
+/**
+ * O aciertos a la primera el mismo día, separados al menos
+ * `PASS_SPACING_MS` (D235): quien hace varias sesiones al día no tiene que
+ * esperar a mañana, pero con un acierto más.
+ */
+export const SAME_DAY_PASSES_TO_CONSOLIDATE = 3;
+
+/**
+ * Separación mínima entre dos aciertos que cuentan (D235). Un país acertado
+ * hace menos no sale en la sesión del lote ni suma otro acierto.
+ */
+export const PASS_SPACING_MS = 4 * 60 * 60 * 1000;
+
+/** Sesiones del lote al día: una, o hasta tres con «Hacer otra sesión hoy» (D235). */
+export const MAX_LEARNING_PATH_SESSIONS_PER_DAY = 3;
+
+/** Aciertos con hora que se guardan por país: los que puede necesitar la regla. */
+const MAX_STORED_PASSES = 6;
+
+/** Sesiones del lote que se guardan: con las de hoy basta, se dejan unas pocas más. */
+const MAX_STORED_SESSIONS = 6;
+
+/**
+ * Cuánto "del futuro" se acepta en un acierto o una sesión: el retraso de la
+ * hora con la que se pinta (`useMinuteTick`, hasta 1 min). Más allá es un
+ * reloj adelantado (aquí o en otro dispositivo, por la fusión) y se ignora:
+ * si no, bloqueaba el lote hasta esa fecha y desplazaba lo de hoy al recortar
+ * (QA de D235).
+ */
+const FUTURE_TOLERANCE_MS = 5 * 60_000;
+
+/** Fechas ISO creíbles respecto a `nowMs`: válidas y no más allá de la tolerancia. */
+function plausibleTimes(values: readonly string[], nowMs: number): string[] {
+	return values.filter((value) => {
+		const time = Date.parse(value);
+		return Number.isFinite(time) && time <= nowMs + FUTURE_TOLERANCE_MS;
+	});
+}
+
 export const DEFAULT_LEARNING_PATH_BATCH_SIZE: LearningPathBatchSize = 5;
 
 /** Repeticiones SM2 a partir de las cuales un país puede darse por sabido. */
@@ -208,20 +247,112 @@ export interface LearningPathStatus {
 	currentBatch: string[];
 	/** Los del lote en curso que todavía no se han consolidado. */
 	pendingCodes: string[];
-	/** Los pendientes que se pueden practicar hoy: sin acierto hoy y no practicados hoy. */
+	/**
+	 * Los pendientes que se pueden practicar ahora: sin acierto que cuente en
+	 * las últimas 4 h (D235). Lo de otros modos ya no cuenta ni bloquea.
+	 */
 	todayCodes: string[];
+	/** Sesiones del lote terminadas hoy. */
+	sessionsToday: number;
+	/** La sesión de hoy: la primera del día, con algo que practicar. */
+	canStartSession: boolean;
+	/** «Hacer otra sesión hoy»: ya hubo una, quedan hasta tres y hay algo que practicar (D235). */
+	canStartExtraSession: boolean;
+	/**
+	 * Ahora no hay sesión, pero hoy aún puede haberla: lo que falta se acertó
+	 * hace menos de 4 h y quedan sesiones. El texto dice «vuelve en unas horas»
+	 * y no «mañana» (panel y Resultados, QA de D235).
+	 */
+	canComeBackLater: boolean;
 	isComplete: boolean;
 }
 
 interface LearningPathStatusOptions {
-	/** Si el país ya se practicó hoy (el candado "practicado hoy" del juego). */
-	isPracticedToday: (code: string) => boolean;
-	today?: string;
+	now?: Date;
+}
+
+/** Los aciertos creíbles de un país, en ms; los registros anteriores no traen hora. */
+function getPassTimes(
+	progress: LearningPathCountryProgress | undefined,
+	nowMs: number,
+) {
+	return plausibleTimes(progress?.passes ?? [], nowMs).map((pass) =>
+		Date.parse(pass),
+	);
+}
+
+/**
+ * ¿Hay un acierto que cuente hace menos de 4 h? Un día de acierto de hoy
+ * sin hora (registro anterior a D235) cuenta como reciente: no se sabe.
+ */
+function hasRecentPass(
+	progress: LearningPathCountryProgress | undefined,
+	now: Date,
+): boolean {
+	const nowMs = now.getTime();
+	const times = getPassTimes(progress, nowMs);
+	// Uno algo "del futuro" (dentro de la tolerancia) también cuenta como
+	// reciente: quien pinta puede tener una hora de hace un rato.
+	if (times.some((time) => nowMs - time < PASS_SPACING_MS)) {
+		return true;
+	}
+
+	const today = getLocalDateString(now);
+	const hasTimedPassToday = times.some(
+		(time) => getLocalDateString(new Date(time)) === today,
+	);
+
+	return (progress?.passDays.includes(today) ?? false) && !hasTimedPassToday;
+}
+
+/**
+ * Regla de consolidación (D235): dos aciertos a la primera en días distintos
+ * (como siempre, D185), o tres el mismo día separados al menos 4 h.
+ */
+export function meetsLearningPathConsolidation(
+	passDays: readonly string[],
+	passes: readonly string[] = [],
+): boolean {
+	if (new Set(passDays).size >= PASS_DAYS_TO_CONSOLIDATE) return true;
+
+	const byDay = new Map<string, number[]>();
+	for (const pass of passes) {
+		const time = Date.parse(pass);
+		if (!Number.isFinite(time)) continue;
+		const day = getLocalDateString(new Date(time));
+		byDay.set(day, [...(byDay.get(day) ?? []), time]);
+	}
+
+	for (const times of byDay.values()) {
+		let count = 0;
+		let last = Number.NEGATIVE_INFINITY;
+		for (const time of times.sort((a, b) => a - b)) {
+			if (time - last >= PASS_SPACING_MS) {
+				count += 1;
+				last = time;
+			}
+		}
+		if (count >= SAME_DAY_PASSES_TO_CONSOLIDATE) return true;
+	}
+
+	return false;
+}
+
+/** Sesiones del lote terminadas el día local de `now`. */
+export function countLearningPathSessionsToday(
+	path: LearningPath,
+	now: Date = new Date(),
+): number {
+	const today = getLocalDateString(now);
+
+	return plausibleTimes(path.sessions ?? [], now.getTime()).filter(
+		(session) => getLocalDateString(new Date(Date.parse(session))) === today,
+	).length;
 }
 
 export function getLearningPathStatus(
 	path: LearningPath,
-	{ isPracticedToday, today = getLocalDateString() }: LearningPathStatusOptions,
+	{ now = new Date() }: LearningPathStatusOptions = {},
 ): LearningPathStatus {
 	const batches = getLearningPathBatches(path);
 	const isConsolidated = (code: string) =>
@@ -231,6 +362,7 @@ export function getLearningPathStatus(
 	const learnable = batches.flat();
 	const consolidatedCount =
 		playableKnown.length + learnable.filter(isConsolidated).length;
+	const sessionsToday = countLearningPathSessionsToday(path, now);
 
 	const currentBatchIndex = batches.findIndex((batch) =>
 		batch.some((code) => !isConsolidated(code)),
@@ -245,6 +377,10 @@ export function getLearningPathStatus(
 			currentBatch: [],
 			pendingCodes: [],
 			todayCodes: [],
+			sessionsToday,
+			canStartSession: false,
+			canStartExtraSession: false,
+			canComeBackLater: false,
 			isComplete: true,
 		};
 	}
@@ -252,9 +388,9 @@ export function getLearningPathStatus(
 	const currentBatch = batches[currentBatchIndex];
 	const pendingCodes = currentBatch.filter((code) => !isConsolidated(code));
 	const todayCodes = pendingCodes.filter(
-		(code) =>
-			!path.progress[code]?.passDays.includes(today) && !isPracticedToday(code),
+		(code) => !hasRecentPass(path.progress[code], now),
 	);
+	const hasWork = todayCodes.length > 0;
 
 	return {
 		totalCountries: playableKnown.length + learnable.length,
@@ -264,14 +400,82 @@ export function getLearningPathStatus(
 		currentBatch,
 		pendingCodes,
 		todayCodes,
+		sessionsToday,
+		canStartSession: hasWork && sessionsToday === 0,
+		canStartExtraSession:
+			hasWork &&
+			sessionsToday > 0 &&
+			sessionsToday < MAX_LEARNING_PATH_SESSIONS_PER_DAY,
+		canComeBackLater:
+			!hasWork &&
+			pendingCodes.length > 0 &&
+			sessionsToday < MAX_LEARNING_PATH_SESSIONS_PER_DAY,
 		isComplete: false,
 	};
 }
 
 /**
- * Un acierto a la primera de `code`. Cuenta venga de donde venga (la sesión
- * del recorrido, la práctica libre o la diaria): lo que importa es que se
- * sepa en dos días distintos. Devuelve el mismo objeto si no cambia nada.
+ * Los países que el recorrido se reserva (D235): los del lote en curso y de
+ * los siguientes que no se han consolidado. No salen en la práctica diaria
+ * hasta consolidarse; al abandonar el recorrido vuelven solos.
+ */
+export function getLearningPathReservedCodes(
+	path: LearningPath | null,
+): Set<string> {
+	if (!path) return new Set();
+
+	return new Set(
+		path.codes.filter(
+			(code) =>
+				isCatalogCountryCode(code) &&
+				!isLearningPathCountryConsolidated(path, code),
+		),
+	);
+}
+
+/**
+ * ¿Esta sesión cuenta para el tope de tres al día? (decisión del dueño, QA de
+ * D235). La primera del día, siempre. Después, solo si trae algún país que ya
+ * se acertó hoy (el que va a por su 2.º o 3.er acierto): repetir en el acto
+ * los que se acaban de fallar no gasta una de las tres, así la vía de los
+ * tres aciertos el mismo día sigue abierta.
+ */
+export function learningPathSessionCountsTowardLimit(
+	path: LearningPath,
+	codes: readonly string[],
+	now: Date = new Date(),
+): boolean {
+	if (countLearningPathSessionsToday(path, now) === 0) return true;
+
+	const nowMs = now.getTime();
+	const today = getLocalDateString(now);
+
+	return codes.some((code) =>
+		getPassTimes(path.progress[code], nowMs).some(
+			(time) => getLocalDateString(new Date(time)) === today,
+		),
+	);
+}
+
+/** Una sesión del lote terminada (D235). Se guardan solo las recientes. */
+export function registerLearningPathSession(
+	path: LearningPath,
+	now: Date = new Date(),
+): LearningPath {
+	const sessions = [
+		...plausibleTimes(path.sessions ?? [], now.getTime()),
+		now.toISOString(),
+	]
+		.sort()
+		.slice(-MAX_STORED_SESSIONS);
+
+	return { ...path, sessions };
+}
+
+/**
+ * Un acierto a la primera de `code` en la sesión del lote (D235: solo cuenta
+ * ahí; la diaria y la práctica libre ya no). Si hubo otro hace menos de 4 h,
+ * no suma. Devuelve el mismo objeto si no cambia nada.
  */
 export function registerLearningPathPass(
 	path: LearningPath,
@@ -281,45 +485,73 @@ export function registerLearningPathPass(
 	if (!path.codes.includes(code)) return path;
 	if (isLearningPathCountryConsolidated(path, code)) return path;
 
-	const today = getLocalDateString(now);
-	const previous = path.progress[code]?.passDays ?? [];
-	if (previous.includes(today)) return path;
+	const progress = path.progress[code];
+	if (hasRecentPass(progress, now)) return path;
 
-	const passDays = [...previous, today].sort();
-	const consolidatedAt =
-		passDays.length >= PASS_DAYS_TO_CONSOLIDATE ? now.toISOString() : null;
+	const today = getLocalDateString(now);
+	const previousDays = progress?.passDays ?? [];
+	const passDays = previousDays.includes(today)
+		? previousDays
+		: [...previousDays, today].sort();
+	const passes = [
+		...plausibleTimes(progress?.passes ?? [], now.getTime()),
+		now.toISOString(),
+	]
+		.sort()
+		.slice(-MAX_STORED_PASSES);
+	const consolidatedAt = meetsLearningPathConsolidation(passDays, passes)
+		? now.toISOString()
+		: null;
 
 	return {
 		...path,
-		progress: { ...path.progress, [code]: { passDays, consolidatedAt } },
+		progress: {
+			...path.progress,
+			[code]: { passDays, consolidatedAt, passes },
+		},
 	};
 }
 
 function mergeCountryProgress(
 	a: LearningPathCountryProgress | undefined,
 	b: LearningPathCountryProgress | undefined,
+	nowMs: number,
 ): LearningPathCountryProgress {
 	const passDays = [
 		...new Set([...(a?.passDays ?? []), ...(b?.passDays ?? [])]),
 	]
 		.sort()
 		.slice(0, PASS_DAYS_TO_CONSOLIDATE);
+	const passes = plausibleTimes(
+		[...new Set([...(a?.passes ?? []), ...(b?.passes ?? [])])],
+		nowMs,
+	)
+		.sort()
+		.slice(-MAX_STORED_PASSES);
 	const dates = [a?.consolidatedAt, b?.consolidatedAt].filter(
 		(value): value is string => typeof value === "string",
 	);
 	let consolidatedAt = dates.length > 0 ? dates.sort()[0] : null;
 
-	// Un día en cada dispositivo: juntos ya suman dos.
-	if (consolidatedAt === null && passDays.length >= PASS_DAYS_TO_CONSOLIDATE) {
-		consolidatedAt = `${passDays[passDays.length - 1]}T00:00:00.000Z`;
+	// Juntando los dos lados ya cumple la regla (un día en cada dispositivo, o
+	// los aciertos del mismo día repartidos): se consolida con el último.
+	if (
+		consolidatedAt === null &&
+		meetsLearningPathConsolidation(passDays, passes)
+	) {
+		consolidatedAt =
+			passes.at(-1) ?? `${passDays[passDays.length - 1]}T00:00:00.000Z`;
 	}
 
-	return { passDays, consolidatedAt };
+	return passes.length > 0
+		? { passDays, consolidatedAt, passes }
+		: { passDays, consolidatedAt };
 }
 
 function mergeSlot(
 	remote: LearningPathSlot | undefined,
 	local: LearningPathSlot | undefined,
+	nowMs: number,
 ): LearningPathSlot | undefined {
 	if (!remote) return local;
 	if (!local) return remote;
@@ -348,9 +580,22 @@ function mergeSlot(
 			]),
 		].filter((code) => !remoteLearnable.has(code) && !knownSet.has(code));
 
+		const sessions = plausibleTimes(
+			[
+				...new Set([
+					...(remote.path.sessions ?? []),
+					...(local.path.sessions ?? []),
+				]),
+			],
+			nowMs,
+		)
+			.sort()
+			.slice(-MAX_STORED_SESSIONS);
+
 		return {
 			path: {
 				...remote.path,
+				...(sessions.length > 0 ? { sessions } : {}),
 				codes:
 					added.length > 0
 						? addLearnableCodes(remote.path.order, remote.path.codes, added)
@@ -362,6 +607,7 @@ function mergeSlot(
 						mergeCountryProgress(
 							remote.path?.progress[code],
 							local.path?.progress[code],
+							nowMs,
 						),
 					]),
 				),
@@ -379,12 +625,14 @@ function mergeSlot(
 
 /**
  * Por juego: el mismo recorrido en los dos lados suma avances (unión de días
- * de acierto, intersección de ya sabidos); recorridos distintos, gana el último creado o abandonado. Las
+ * y horas de acierto y de sesiones, intersección de ya sabidos); recorridos distintos, gana el último creado o abandonado. Las
  * claves salen ordenadas: la sincronización compara `JSON.stringify`.
  */
 export function mergeLearningPaths(
 	remote: LearningPaths,
 	local: LearningPaths,
+	/** Para descartar fechas de un reloj adelantado (QA de D235). */
+	now: Date = new Date(),
 ): LearningPaths {
 	const gameTypes = [
 		...new Set([...Object.keys(remote), ...Object.keys(local)]),
@@ -392,7 +640,7 @@ export function mergeLearningPaths(
 	const merged: LearningPaths = {};
 
 	for (const gameType of gameTypes) {
-		const slot = mergeSlot(remote[gameType], local[gameType]);
+		const slot = mergeSlot(remote[gameType], local[gameType], now.getTime());
 		if (slot) merged[gameType] = slot;
 	}
 
@@ -425,6 +673,7 @@ function normalizePath(raw: unknown): LearningPath | null {
 			passDays: entry.passDays,
 			consolidatedAt:
 				typeof entry.consolidatedAt === "string" ? entry.consolidatedAt : null,
+			...(isStringArray(entry.passes) ? { passes: entry.passes } : {}),
 		};
 	}
 
@@ -437,6 +686,7 @@ function normalizePath(raw: unknown): LearningPath | null {
 		codes: path.codes,
 		knownCodes: isStringArray(path.knownCodes) ? path.knownCodes : [],
 		progress,
+		...(isStringArray(path.sessions) ? { sessions: path.sessions } : {}),
 	};
 }
 

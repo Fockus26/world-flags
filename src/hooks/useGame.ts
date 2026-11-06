@@ -29,7 +29,9 @@ import type {
 import { isPlausibleRushTime } from "@/utils/leaderboard-validation";
 import {
 	createLearningPath,
+	getLearningPathReservedCodes,
 	getLearningPathStatus,
+	learningPathSessionCountsTowardLimit,
 	reconcileLearningPathKnown,
 } from "@/utils/learning-path";
 import {
@@ -45,6 +47,7 @@ import {
 	registerCountryAttempts,
 	registerCountryPracticed,
 	registerLearningPathAttempt,
+	registerLearningPathSessionDone,
 	registerRegionBestTime,
 	registerRegionGame,
 	registerSessionOutcome,
@@ -164,8 +167,13 @@ export function useGame() {
 		requestedConfiguration: GameConfigurationType,
 		{
 			isLearningPath = false,
+			isLearningPathRetry = false,
 			sessionLabel,
-		}: { isLearningPath?: boolean; sessionLabel?: string } = {},
+		}: {
+			isLearningPath?: boolean;
+			isLearningPathRetry?: boolean;
+			sessionLabel?: string;
+		} = {},
 	): boolean => {
 		// El modo competitivo ("rush") siempre es difícil y aleatorio: no son
 		// ajustables, así que se fuerzan acá sin importar qué haya quedado
@@ -186,7 +194,10 @@ export function useGame() {
 			return false;
 		}
 
-		if (configuration.mode === "practice") {
+		// La sesión del lote no pasa por el candado "practicado hoy" (D235): ya
+		// trae sus países (sin acierto en las últimas 4 h), y con «Hacer otra
+		// sesión hoy» vuelve a países que la propia sesión de hoy marcó.
+		if (configuration.mode === "practice" && !isLearningPath) {
 			const effectiveCodes = getUnpracticedCodesToday(
 				toGameView(getCurrentLearningData(), configuration.gameType),
 				requestedCodes,
@@ -225,6 +236,7 @@ export function useGame() {
 				configuration: effectiveConfiguration,
 				countries: prepareCountries(countries, effectiveConfiguration),
 				...(isLearningPath && { isLearningPath }),
+				...(isLearningPathRetry && { isLearningPathRetry }),
 				...(sessionLabel && { sessionLabel }),
 			}),
 		);
@@ -253,6 +265,9 @@ export function useGame() {
 		const isNewRecord =
 			previousBest !== undefined && result.elapsedMs < previousBest;
 		const isLearningPath = store.getState().game.activeGame?.isLearningPath;
+		// Antes de `setActiveGame(null)`: la que solo repite fallados no cuenta
+		// para el tope de sesiones (D235).
+		const isRetry = store.getState().game.activeGame?.isLearningPathRetry;
 		const stamped: GameResult = isLearningPath
 			? { ...result, isLearningPath }
 			: result;
@@ -282,6 +297,12 @@ export function useGame() {
 			getCurrentLearningData(),
 			toSessionRecord(result),
 		);
+
+		// Sesión del lote terminada: cuenta para el límite diario (D235), salvo
+		// la que solo repite países fallados hoy.
+		if (isLearningPath && !isRetry) {
+			updatedData = registerLearningPathSessionDone(updatedData, gameType);
+		}
 
 		if (result.mode === "practice") {
 			let view = toGameView(updatedData, gameType);
@@ -457,7 +478,11 @@ export function useGame() {
 		let updatedData = fromGameView(current, touchActiveDay(view), gameType);
 
 		// "Otra vez" es el único fallo (el mismo criterio que cuenta los aciertos).
-		if (isFirstAttempt && grade !== "again") {
+		// Solo cuenta el acierto de la sesión del lote (D235): ni la práctica
+		// diaria ni la práctica libre.
+		const isLearningPathSession =
+			store.getState().game.activeGame?.isLearningPath === true;
+		if (isLearningPathSession && isFirstAttempt && grade !== "again") {
 			updatedData = registerLearningPathAttempt(
 				updatedData,
 				gameType,
@@ -470,8 +495,14 @@ export function useGame() {
 
 	const startDailyPractice = (gameType: GameType) => {
 		// `getDueCountries` ya descarta los códigos fuera del catálogo.
+		// Sin los países que el lote se reserva hasta consolidarlos (D235),
+		// con el recorrido recalculado: el mismo que usa "Práctica diaria (n)",
+		// así el número y la cola coinciden (un ya sabido degradado, D189).
 		const dueCodes = getDueCountries(
 			toGameView(learningData, gameType).countryHistory,
+			getLearningPathReservedCodes(
+				getLearningPathOverview(gameType)?.path ?? null,
+			),
 		);
 
 		if (dueCodes.length === 0) return;
@@ -518,7 +549,10 @@ export function useGame() {
 	/** El recorrido en curso de `gameType` y su estado de hoy, o `null` (D185). */
 	// Del selector (no de `getCurrentLearningData`): se pinta en la
 	// configuración, y React Compiler solo recalcula lo que depende del render.
-	const getLearningPathOverview = (gameType: GameType) => {
+	const getLearningPathOverview = (
+		gameType: GameType,
+		now: Date = new Date(),
+	) => {
 		const data = learningData;
 		const stored = getLearningPath(data, gameType);
 		if (!stored) return null;
@@ -531,9 +565,9 @@ export function useGame() {
 			countryHistory: view.countryHistory,
 			regionGameScores: view.regionGameScores,
 		});
-		const status = getLearningPathStatus(path, {
-			isPracticedToday: (code) => hasPracticedCountryToday(view, code),
-		});
+		// Sin el candado "practicado hoy" de los otros modos (D235): ya no
+		// cuentan para el lote, así que tampoco lo bloquean.
+		const status = getLearningPathStatus(path, { now });
 
 		return { path, status };
 	};
@@ -574,7 +608,13 @@ export function useGame() {
 	 */
 	const startLearningPathSession = (gameType: GameType): boolean => {
 		const overview = getLearningPathOverview(gameType);
-		if (!overview || overview.status.todayCodes.length === 0) return false;
+		// La de hoy o, con «Hacer otra sesión hoy», hasta tres al día (D235).
+		if (
+			!overview ||
+			!(overview.status.canStartSession || overview.status.canStartExtraSession)
+		) {
+			return false;
+		}
 
 		// Lo que se va a jugar sale del recorrido recalculado: que quede guardado.
 		const current = getCurrentLearningData();
@@ -599,6 +639,10 @@ export function useGame() {
 			},
 			{
 				isLearningPath: true,
+				isLearningPathRetry: !learningPathSessionCountsTowardLimit(
+					overview.path,
+					overview.status.todayCodes,
+				),
 				// "Lote N de M" (P49): el alcance de la sesión son unos países
 				// sueltos y se leía "5 países personalizados".
 				sessionLabel: `Lote ${(overview.status.currentBatchIndex ?? 0) + 1} de ${overview.status.batchCount}`,

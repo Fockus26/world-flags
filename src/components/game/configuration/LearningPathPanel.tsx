@@ -42,6 +42,10 @@ export function LearningPathPanel({
 			? null
 			: `Lote ${status.currentBatchIndex + 1} de ${status.batchCount}`;
 	const todayCount = status.todayCodes.length;
+	const pendingLabel =
+		status.pendingCodes.length === 1
+			? "el país que falta"
+			: `los ${status.pendingCodes.length} países que faltan`;
 
 	return (
 		<section
@@ -106,7 +110,7 @@ export function LearningPathPanel({
 						Nuevo aprendizaje por lotes
 					</Button>
 				</>
-			) : todayCount > 0 ? (
+			) : status.canStartSession ? (
 				<Button
 					color="secondary"
 					variant="outline"
@@ -116,13 +120,30 @@ export function LearningPathPanel({
 				>
 					Seguir aprendiendo ({todayCount})
 				</Button>
+			) : status.canStartExtraSession ? (
+				// Hasta tres sesiones al día, a petición (D235). PLACEHOLDER copy
+				// (CONTENT_CHECKLIST).
+				<>
+					<p className="m-0 text-caption text-text-placeholder" role="status">
+						Sesión de hoy hecha. Si quieres, haz otra: un acierto cuenta si van
+						4 horas desde el anterior, y con tres en el mismo día el país queda
+						consolidado.
+					</p>
+					<Button
+						color="secondary"
+						variant="outline"
+						type="button"
+						className={WRAPPING_BUTTON_TEXT}
+						onClick={onContinue}
+					>
+						Hacer otra sesión hoy ({todayCount})
+					</Button>
+				</>
 			) : (
 				<p className="m-0 text-caption text-text-placeholder" role="status">
-					Por hoy está listo. Vuelve mañana para consolidar{" "}
-					{status.pendingCodes.length === 1
-						? "el país que falta"
-						: `los ${status.pendingCodes.length} países que faltan`}{" "}
-					del lote.
+					{status.canComeBackLater
+						? `Por ahora está listo. Vuelve en unas horas para otra sesión, o mañana, para consolidar ${pendingLabel} del lote.`
+						: `Por hoy está listo. Vuelve mañana para consolidar ${pendingLabel} del lote.`}
 				</p>
 			)}
 		</section>

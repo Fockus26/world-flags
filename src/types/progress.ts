@@ -195,6 +195,13 @@ export interface LearningPathCountryProgress {
 	passDays: string[];
 	/** Cuándo se consolidó (ISO); `null` mientras no. */
 	consolidatedAt: string | null;
+	/**
+	 * Cuándo fue cada acierto a la primera que contó (ISO), separados al menos
+	 * 4 h (D235): con tres el mismo día también consolida. Opcional: los
+	 * registros anteriores solo traen `passDays`, y un cliente viejo lo pierde
+	 * al normalizar (sigue valiendo `consolidatedAt`).
+	 */
+	passes?: string[];
 }
 
 /**
@@ -219,6 +226,12 @@ export interface LearningPath {
 	 */
 	knownCodes: string[];
 	progress: Record<string, LearningPathCountryProgress>;
+	/**
+	 * Sesiones del lote terminadas (ISO), las recientes (D235): una al día, o
+	 * hasta tres con «Hacer otra sesión hoy». Opcional por los registros
+	 * anteriores.
+	 */
+	sessions?: string[];
 }
 
 /**
