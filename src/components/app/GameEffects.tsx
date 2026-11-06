@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useOtherTabsLearningData } from "@/hooks/useOtherTabsLearningData";
 
 import { discardRejectedSession, recheckSession } from "@/lib/auth-session";
 
@@ -146,6 +147,13 @@ export function GameEffects() {
 	const { user, status } = useAuth();
 
 	const userId = user?.id ?? null;
+
+	// Lo que guarden otras pestañas entra en esta antes de volver a escribir (D236).
+	useOtherTabsLearningData(
+		status === "authenticated" ? userId : null,
+		hydrationStatus === "ready" &&
+			(status === "guest" || status === "authenticated"),
+	);
 
 	const hydratedUserRef = useRef<string | null>(null);
 
@@ -390,8 +398,11 @@ export function GameEffects() {
 				 * nube; la diferencia con `authenticatedData`, si la hay, es lo
 				 * jugado durante el vuelo, que el efecto de subidas manda.
 				 */
-				saveLearningData(authenticatedData);
+				// La base primero: otra pestaña que oiga los datos mira la base
+				// para saber de quién son, y sin ella los tomaría por del
+				// invitado (D236, D056).
 				saveSyncBase(user.id, syncedData);
+				saveLearningData(authenticatedData);
 				syncBaseRef.current = toSyncBaseRef(user.id, syncedData);
 
 				dispatch(setLearningData(authenticatedData));

@@ -9,7 +9,7 @@ import { setLearningData } from "@/store/slices/gameSlice";
 import { createAchievementAnnouncementGate } from "@/utils/achievement-announcements";
 import { getNewlyUnlocked } from "@/utils/achievements";
 
-import { sealAchievements } from "@/utils/learning-storage";
+import { isFromOtherTab, sealAchievements } from "@/utils/learning-storage";
 import { playSound } from "@/utils/sound";
 
 /**
@@ -78,6 +78,11 @@ export function AchievementsEffects() {
 		// dejaría el anuncio del logro sin disparar. Mismo criterio que
 		// `getCurrentLearningData` en `useGame.ts`.
 		const currentData = store.getState().game.learningData;
+
+		// Recién llegado de otra pestaña: allí se sella y se anuncia, y el sello
+		// llega con su siguiente escritura. Aquí saldría el aviso repetido (D236).
+		if (isFromOtherTab(currentData)) return;
+
 		const newlyUnlocked = getNewlyUnlocked(currentData);
 
 		// Se consulta ANTES de mirar si hay delta: la primera pasada gasta el

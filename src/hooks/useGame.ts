@@ -97,6 +97,22 @@ function getRushBestTimeKey(result: GameResult): BestTimeKey | null {
  * arman su cambio sobre el estado más reciente del store en ese instante,
  * no sobre el valor de `useAppSelector` de este render.
  */
+/**
+ * ¿Sigue el lote con el que empezó la sesión? Otra pestaña puede abandonarlo
+ * o crear otro a mitad (D236): entonces lo jugado aquí no cuenta en el nuevo.
+ * Sin id (sesión anterior a D236), se da por el mismo.
+ */
+function isSameLearningPath(
+	data: UserLearningData,
+	gameType: GameType,
+	startedPathId: string | undefined,
+): boolean {
+	return (
+		startedPathId === undefined ||
+		getLearningPath(data, gameType)?.id === startedPathId
+	);
+}
+
 function getCurrentLearningData(): UserLearningData {
 	return store.getState().game.learningData;
 }
@@ -168,10 +184,12 @@ export function useGame() {
 		{
 			isLearningPath = false,
 			isLearningPathRetry = false,
+			learningPathId,
 			sessionLabel,
 		}: {
 			isLearningPath?: boolean;
 			isLearningPathRetry?: boolean;
+			learningPathId?: string;
 			sessionLabel?: string;
 		} = {},
 	): boolean => {
@@ -237,6 +255,7 @@ export function useGame() {
 				countries: prepareCountries(countries, effectiveConfiguration),
 				...(isLearningPath && { isLearningPath }),
 				...(isLearningPathRetry && { isLearningPathRetry }),
+				...(learningPathId && { learningPathId }),
 				...(sessionLabel && { sessionLabel }),
 			}),
 		);
@@ -268,6 +287,7 @@ export function useGame() {
 		// Antes de `setActiveGame(null)`: la que solo repite fallados no cuenta
 		// para el tope de sesiones (D235).
 		const isRetry = store.getState().game.activeGame?.isLearningPathRetry;
+		const startedPathId = store.getState().game.activeGame?.learningPathId;
 		const stamped: GameResult = isLearningPath
 			? { ...result, isLearningPath }
 			: result;
@@ -300,7 +320,11 @@ export function useGame() {
 
 		// Sesión del lote terminada: cuenta para el límite diario (D235), salvo
 		// la que solo repite países fallados hoy.
-		if (isLearningPath && !isRetry) {
+		if (
+			isLearningPath &&
+			!isRetry &&
+			isSameLearningPath(updatedData, gameType, startedPathId)
+		) {
 			updatedData = registerLearningPathSessionDone(updatedData, gameType);
 		}
 
@@ -480,8 +504,10 @@ export function useGame() {
 		// "Otra vez" es el único fallo (el mismo criterio que cuenta los aciertos).
 		// Solo cuenta el acierto de la sesión del lote (D235): ni la práctica
 		// diaria ni la práctica libre.
+		const activeGame = store.getState().game.activeGame;
 		const isLearningPathSession =
-			store.getState().game.activeGame?.isLearningPath === true;
+			activeGame?.isLearningPath === true &&
+			isSameLearningPath(updatedData, gameType, activeGame.learningPathId);
 		if (isLearningPathSession && isFirstAttempt && grade !== "again") {
 			updatedData = registerLearningPathAttempt(
 				updatedData,
@@ -639,6 +665,7 @@ export function useGame() {
 			},
 			{
 				isLearningPath: true,
+				learningPathId: overview.path.id,
 				isLearningPathRetry: !learningPathSessionCountsTowardLimit(
 					overview.path,
 					overview.status.todayCodes,

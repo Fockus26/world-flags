@@ -40,6 +40,11 @@ export interface ActiveGame {
 	 */
 	isLearningPathRetry?: boolean;
 	/**
+	 * Id del lote con el que empezó la sesión: si otra pestaña lo abandona o
+	 * crea otro mientras tanto, lo jugado aquí no cuenta en el nuevo (D236).
+	 */
+	learningPathId?: string;
+	/**
 	 * Título de la sesión en la cabecera en vez del alcance ("Lote 2 de 5" en
 	 * una sesión de lote; P49). Sin él, la cabecera muestra el alcance.
 	 */
