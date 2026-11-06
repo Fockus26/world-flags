@@ -1,11 +1,15 @@
 import { NavArrowDown } from "iconoir-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { countries } from "@/data/countries";
 import { REGION_LABELS, REGIONS, type Region } from "@/types/country";
 import { isCatalogCountryCode } from "@/utils/country-catalog";
+import {
+	applyRangeSelection,
+	getVisibleCountryOrder,
+} from "@/utils/country-range";
 import { focusAfterRemoval } from "@/utils/focus";
 
 interface CountryPickerModalProps {
@@ -35,18 +39,27 @@ const countriesByRegion = REGIONS.reduce(
 	{} as Record<Region, typeof countries>,
 );
 
+/** Códigos de cada continente en el orden de su rejilla, para el rango con Shift (D233). */
+const codesByRegion = Object.fromEntries(
+	REGIONS.map((region) => [
+		region,
+		countriesByRegion[region].map((country) => country.code),
+	]),
+) as Record<Region, string[]>;
+
 interface CountryCheckboxProps {
 	label: string;
 	checked: boolean;
 	disabled?: boolean;
-	onChange: () => void;
+	/** `withShift`: Shift pulsado (clic o Shift+Espacio) para marcar un rango (D233). */
+	onToggle: (withShift: boolean) => void;
 }
 
 function CountryCheckbox({
 	label,
 	checked,
 	disabled,
-	onChange,
+	onToggle,
 }: CountryCheckboxProps) {
 	// Nombres largos (D169): hasta dos líneas con `line-clamp-2` en vez de
 	// `truncate` ("San Vicente y las Granadinas" se leía cortado a 320 px y a
@@ -70,7 +83,12 @@ function CountryCheckbox({
 				type="checkbox"
 				checked={checked}
 				disabled={disabled}
-				onChange={onChange}
+				// React avisa del cambio de una casilla desde su `click`, que
+				// trae `shiftKey` también cuando se activa con Shift+Espacio.
+				onChange={(event) => {
+					const { nativeEvent } = event;
+					onToggle("shiftKey" in nativeEvent && nativeEvent.shiftKey === true);
+				}}
 				className="peer absolute size-px opacity-0"
 			/>
 			<span
@@ -166,6 +184,8 @@ export function CountryPickerModal({
 	const [expandedRegions, setExpandedRegions] = useState<Set<Region>>(
 		new Set(),
 	);
+	// Última casilla pulsada: el ancla del Shift+clic (D233).
+	const rangeAnchorRef = useRef<string | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: solo se resetea al abrir, no en cada cambio de la selección inicial
 	useEffect(() => {
@@ -177,6 +197,7 @@ export function CountryPickerModal({
 			initialSelectedCodes.filter((code) => !isCountryDisabled?.(code)),
 		);
 		setSelected(initialSet);
+		rangeAnchorRef.current = null;
 		// Se abren de entrada los continentes que ya tienen algo elegido.
 		setExpandedRegions(
 			new Set(
@@ -199,8 +220,29 @@ export function CountryPickerModal({
 		});
 	}
 
-	function toggleCountry(code: string) {
+	function toggleCountry(code: string, withShift: boolean) {
 		if (isCountryDisabled?.(code)) return;
+
+		const anchor = rangeAnchorRef.current;
+		rangeAnchorRef.current = code;
+
+		// Shift (D233): del ancla a esta, en el orden visible, saltando las de
+		// «hoy». Sin ancla visible, un clic normal.
+		if (withShift) {
+			const order = getVisibleCountryOrder(
+				REGIONS,
+				expandedRegions,
+				codesByRegion,
+			);
+			const ranged = applyRangeSelection(selected, order, anchor, code, (c) =>
+				Boolean(isCountryDisabled?.(c)),
+			);
+			if (ranged) {
+				setSelected(ranged);
+				return;
+			}
+		}
+
 		setSelected((current) => {
 			const next = new Set(current);
 			if (next.has(code)) {
@@ -384,7 +426,9 @@ export function CountryPickerModal({
 												label={country.name}
 												checked={selected.has(country.code)}
 												disabled={isCountryDisabled?.(country.code)}
-												onChange={() => toggleCountry(country.code)}
+												onToggle={(withShift) =>
+													toggleCountry(country.code, withShift)
+												}
 											/>
 										))}
 									</div>
