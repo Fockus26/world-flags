@@ -9,6 +9,19 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.12.1] - 2026-11-06
+
+### Cambiado
+
+- En Perfil y configuración, el botón del dado para ver otros avatares está
+  ahora junto al selector de estilo, en la misma fila.
+
+### Corregido
+
+- Con el juego abierto en dos pestañas, lo que juegas en una ya no borra lo que
+  jugaste en la otra: las sesiones del lote, los repasos y las estadísticas se
+  suman.
+
 ## [2.12.0] - 2026-11-06
 
 ### Añadido
