@@ -22,6 +22,20 @@ export function isCardGameType(gameType: GameType): gameType is CardGameType {
 }
 
 /**
+ * Para los estímulos que se descargan (la bandera, D230): avisan cuando ya se
+ * ven y ofrecen cambiar a otra si no cargan. Capitales no lo necesita.
+ */
+export interface StimulusLoading {
+	onReady: () => void;
+	onSwap?: () => void;
+}
+
+/** Si el estímulo de este juego se descarga: hasta que `onReady` avise, no hay nada que responder. */
+export function stimulusNeedsLoading(gameType: GameType): boolean {
+	return gameType === "flags";
+}
+
+/**
  * Lo que cambia por juego dentro de `Session` y de la práctica diaria (D068):
  * qué se muestra, qué respuesta vale y los textos del input. Todo lo demás
  * (cola, cronómetro, calificación, resultados) es igual para todos.
@@ -32,7 +46,11 @@ export interface SessionCard {
 	 * `feedback` anima el marco al acertar o fallar (D151); la práctica
 	 * diaria no lo pasa.
 	 */
-	renderStimulus: (country: Country, feedback?: AnswerStatus) => ReactNode;
+	renderStimulus: (
+		country: Country,
+		feedback?: AnswerStatus,
+		loading?: StimulusLoading,
+	) => ReactNode;
 	/** La respuesta que se enseña al acertar, fallar o revelar. */
 	getAnswer: (country: Country) => string;
 	isCorrect: (
@@ -80,8 +98,13 @@ export const SESSION_CARDS: Record<CardGameType, SessionCard> = {
 	// Banderas compara con `isCorrectAnswer` tal cual, no con el comparador de
 	// Capitales: así acepta exactamente lo mismo que antes (D068).
 	flags: {
-		renderStimulus: (country, feedback) => (
-			<FlagDisplay countryCode={country.code} feedback={feedback} />
+		renderStimulus: (country, feedback, loading) => (
+			<FlagDisplay
+				countryCode={country.code}
+				feedback={feedback}
+				onReady={loading?.onReady}
+				onSwap={loading?.onSwap}
+			/>
 		),
 		getAnswer: (country) => country.name,
 		isCorrect: (answer, country, difficulty) =>

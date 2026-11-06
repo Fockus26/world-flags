@@ -5,6 +5,7 @@ import {
 	advancePracticeQueue,
 	decideRequeue,
 	decideReviewCount,
+	deferCurrentCard,
 	type PracticeCardState,
 	type PracticeQueueState,
 	type ReviewSessionPhase,
@@ -116,6 +117,11 @@ export function usePracticeQueue({
 		setQueueState(nextQueueState);
 	}
 
+	/** "Probar otra" (D230): la tarjeta actual va al final, sin calificar. */
+	function defer() {
+		setQueueState(deferCurrentCard);
+	}
+
 	return {
 		currentCode,
 		/** La cola tal cual: la tarjeta en pantalla primero (D229 precarga las siguientes). */
@@ -131,5 +137,8 @@ export function usePracticeQueue({
 		completedCodes,
 		attemptedCount,
 		grade,
+		defer,
+		/** Hay otra tarjeta a la que cambiar con `defer`. */
+		canDefer: queueState.queue.length > 1,
 	};
 }

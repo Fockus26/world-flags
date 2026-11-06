@@ -116,6 +116,34 @@ export interface PracticeQueueStep {
 	finished: boolean;
 }
 
+/**
+ * Manda al final de la lista la tarjeta de `index`, sin calificarla: "Probar
+ * otra" con una bandera que no carga (D230). Lo que va detrás no cambia de
+ * orden. Si es la última, la lista queda igual.
+ */
+export function moveCardToEnd<T>(cards: readonly T[], index: number): T[] {
+	const next = [...cards];
+	if (index < 0 || index >= next.length - 1) return next;
+
+	const [card] = next.splice(index, 1);
+	next.push(card as T);
+
+	return next;
+}
+
+/**
+ * "Probar otra" en la cola de práctica (D230): la tarjeta actual va al final
+ * sin calificar y el turno sube, para que la siguiente arranque de cero
+ * (temporizador, guardas) aunque sea el mismo código.
+ */
+export function deferCurrentCard(
+	state: PracticeQueueState,
+): PracticeQueueState {
+	if (state.queue.length <= 1) return state;
+
+	return { queue: moveCardToEnd(state.queue, 0), turn: state.turn + 1 };
+}
+
 /** Avanza la cola tras calificar la tarjeta actual (`state.queue[0]`). */
 export function advancePracticeQueue(
 	state: PracticeQueueState,
