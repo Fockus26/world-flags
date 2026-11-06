@@ -1,6 +1,7 @@
-import { LogOut } from "iconoir-react";
+import { Clock, LogOut } from "iconoir-react";
 import { Button } from "@/components/ui/Button";
 import { formatPenaltyAnnouncement } from "@/utils/rush-penalty";
+import { formatStopwatch } from "@/utils/stopwatch";
 import { PenaltyBadge, type PenaltyEvent } from "./PenaltyBadge";
 import { Timer } from "./Timer";
 
@@ -17,17 +18,6 @@ interface HeaderProps {
 	/** Un castigo terminó su salida: quién lo pinta lo quita de `penalties`. */
 	onPenaltyDone?: (id: number) => void;
 	onExit: () => void;
-}
-
-function formatStopwatch(elapsedMs: number): string {
-	const totalSeconds = Math.floor(elapsedMs / 1000);
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	const tenths = Math.floor((elapsedMs % 1000) / 100);
-
-	return minutes > 0
-		? `${minutes}:${String(seconds).padStart(2, "0")}`
-		: `${seconds}.${tenths}s`;
 }
 
 export function Header({
@@ -56,7 +46,10 @@ export function Header({
 					</p>
 				</div>
 
-				<div className="flex shrink-0 items-center gap-4">
+				{/* Con la píldora de ancho fijo, a 320 px con el texto al 200 % el
+				    grupo no cabe en una línea: puede partirse, para que
+				    "Abandonar" no quede recortado fuera de la sesión (D232). */}
+				<div className="flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2">
 					{timeLeft !== undefined && timerDuration !== undefined && (
 						<Timer timeLeft={timeLeft} totalDuration={timerDuration} />
 					)}
@@ -69,11 +62,16 @@ export function Header({
 									onDone={() => onPenaltyDone?.(penalty.id)}
 								/>
 							))}
-							{/* El cronómetro "salta" con cada castigo: la `key` del
-							    último lo remonta y rearranca el `zoom-in` (D132). */}
+							{/* Píldora de ancho fijo (D232): icono de reloj y `m:ss` en
+							    6ch con `tabular-nums`, así no cambia de ancho al correr
+							    ni con los castigos (cabe `105:30`). `primary-hover`
+							    sobre `primary-soft`: 5,15:1 en claro y 6,54:1 en
+							    oscuro (`primary` daba 3,97:1). El cronómetro "salta" con
+							    cada castigo: la `key` del último lo remonta y rearranca
+							    el `zoom-in` (D132). */}
 							<span
 								key={latestPenalty?.id ?? 0}
-								className={`font-extrabold text-primary text-lg tabular-nums ${
+								className={`inline-flex items-center gap-1.5 rounded-full border border-primary-border bg-primary-soft px-3 py-1 font-extrabold text-primary-hover text-lg tabular-nums ${
 									latestPenalty
 										? "animate-in zoom-in-125 duration-300 motion-reduce:animate-none"
 										: ""
@@ -81,7 +79,10 @@ export function Header({
 								role="timer"
 								aria-live="off"
 							>
-								{formatStopwatch(elapsedMs)}
+								<Clock className="size-4 shrink-0" aria-hidden="true" />
+								<span className="w-stopwatch text-center">
+									{formatStopwatch(elapsedMs)}
+								</span>
 							</span>
 							{/* Nunca solo visual (D134): el badge es `aria-hidden` y
 							    esto lo dice. Montada desde el principio para que el
