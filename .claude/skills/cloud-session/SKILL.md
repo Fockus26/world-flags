@@ -52,6 +52,7 @@ Without an assigned branch, `git-flow` §1.2 as always.
 | `pwsh`, `wt.ps1` (worktree pool), `new-project.ps1` | There is no PowerShell. `orchestrate` does not use the pool here: the wave's units go **one after another** in this session, each closed with §2 before the next one opens |
 | `bun run qa:local` (Supabase in Docker / Firebase emulators) | No Docker: `--offline` (guest only) and say what was not tested with accounts. Firebase: the emulators need Java and `firebase-tools`; if the container has a JDK they work, otherwise `--offline` too |
 | `.env.local` (`vercel env pull`) | `cloud-setup.sh` pulls it at start when the cloud environment has `VERCEL_TOKEN` (secret), `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (and `VERCEL_ENV_FILE` if the app is not at the root) and allows `api.vercel.com` (`reference/tech/vercel.md` §2d). Without them: say so and point César to that setup. **Never ask César to paste keys or a `.env` into the chat**: it stays in the transcript; if he does, use it only in the container's gitignored file and tell him to rotate what he pasted. A missing variable is reported, never invented or hardcoded |
+| Playwright (`shots`, axe, QA scripts) | The container brings Chromium in `/opt/pw-browsers`, often a different build from the one the installed `playwright` expects ("Executable doesn't exist"). Do not download another: point to it, `chromium.launch({ executablePath })` with the path `ls -d /opt/pw-browsers/chromium_headless_shell-*/*/chrome-headless-shell` gives (KREA) |
 | Dev server, screenshots | Allowed (it is your container). `shots:publish` pushes to `pr-shots`: if the push is refused, the screenshots go as "no disponibles — <motivo>" |
 | `kit-update` | Works: it clones the kit and downloads `pwsh` to the scratchpad (its "Cloud session" section) |
 
@@ -90,6 +91,12 @@ with no QA and three High data-loss findings came out weeks later.
 7. **After the merge**: if another unit follows, restart the branch from the updated `main`
    (`git fetch origin main && git checkout -B <branch> origin/main`) and open the next one.
    Never stack new commits on an already-merged PR.
+   If the remote branch still exists (the repo does not delete branches on merge), its tip
+   is the old commit the squash already integrated, and a push of the restarted branch is
+   refused as non-fast-forward. **Never force** (the classifier blocks `--force-with-lease`
+   anyway): `git merge --no-edit origin/<branch>` — it changes no file, since `main`
+   already has that content — and a normal push (KREA ×3). Better, tell César once to turn
+   on Settings › General › "Automatically delete head branches".
 
 **Never merged by you**, even in the cloud: the `chore(release): version` PR (César publishes
 when he wants), and a PR whose unit César asked to review before merging.

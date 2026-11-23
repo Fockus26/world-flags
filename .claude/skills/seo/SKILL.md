@@ -55,6 +55,11 @@ export const metadata: Metadata = {
 `NEXT_PUBLIC_SITE_URL` goes into `.env.example` from day one. Without `metadataBase` every
 OG and canonical URL comes out relative and **does not work when shared**.
 
+A page's `openGraph` or `twitter` **replaces** the layout's whole object, not field by
+field: `/ingresar` set its own `openGraph.title` and lost the `og:image` (KREA). Keep the
+shared part in `lib/seo.ts` (`export const baseOpenGraph = { … }`) and spread it in each
+page: `openGraph: { ...baseOpenGraph, title: '…' }`.
+
 ### `app/robots.ts`
 
 ```ts

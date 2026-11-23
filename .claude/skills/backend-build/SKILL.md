@@ -58,9 +58,11 @@ These are not discussed or postponed "for later". Later never comes.
   `ADMIN_EMAIL_TEST`/`ADMIN_PASSWORD_TEST`, and `<ROLE>_EMAIL_TEST`/`<ROLE>_PASSWORD_TEST`
   for each other role. Documented empty in `.env.example`, under `# QA → .env.test.local`.
   The app's code does not read them: only the QA agents (`wave-qa`, `functional-qa`), and
-  `scripts/qa-local.ts` creates them in the local database on every run. Giving them values
-  is an **action for César** in your delivery (made up: they do not exist outside the local
-  database). A new role = its new pair.
+  `scripts/qa-local.ts` creates them in the local database on every run. **You write the
+  file yourself**, with made-up values (`qa-<role>@example.test` and a generated password):
+  they exist only in the local database, so there is nothing for César to give. A new role =
+  its new pair. Never offer César to log in himself for a QA: with no `.env.test.local`, the
+  agent offered it to KREA although `qa:local` solved it.
 
 ### Local database for QA
 QA never runs against the real database: `bun run qa:local` (`scripts/qa-local.ts`) starts a

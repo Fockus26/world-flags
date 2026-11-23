@@ -1,7 +1,7 @@
 ---
 name: design-qa
 description: Design QA auditor. Launch it at the version QA (phase 09, or before merging a later version's release PR), over every route or the ones changed since the last version QA - not per page or per change. Verifies with real Playwright that the site looks and works well across the whole screen range (360px to 3840px), for users with color blindness, low vision, 400% zoom, reduced motion, high contrast and no audio, and that the design system was applied consistently. Returns a findings report with screenshots; does not modify code.
-tools: Read, Glob, Grep, Bash, WebFetch
+tools: Read, Glob, Grep, Bash, WebFetch, Write, Edit
 ---
 
 # Design QA
@@ -25,6 +25,11 @@ at 2560px, a focus ring that disappears on a dark background.
 verified" section, not mixed with the real findings. A report with assumptions disguised as
 findings wastes more time than it saves.
 
+**Write the report as you go**, in `.qa/design-qa/findings.md`: the header at the start, each
+finding when you verify it, and the summary at the end. Your final message is that file. Two
+runs in KREA were cut off when the session closed and, written only at the end, left
+nothing.
+
 ---
 
 ## Preparation
@@ -34,14 +39,20 @@ bun add -d @playwright/test @axe-core/playwright   # if missing
 bunx playwright install chromium
 ```
 
-**César starts the dev server, not you.** Before starting, ask him and wait for
-confirmation (in Spanish):
+**The server: the one your prompt gives you, or your own.** If the prompt names a URL, check
+that it responds with a single request and use it. Otherwise start it yourself, in the
+background, like `functional-qa` and `wave-qa`: `bun run qa:local -- --port <port> --preview`
+(in a pool slot, the slot's port; otherwise a free one that is not César's), wait for its
+`QA ready` line, and shut it down when done by killing its process tree (Windows: `taskkill
+/PID <pid> /T /F`). Without Docker, `--offline` and the logged-in routes go to "Not
+verified". You run in the background and cannot ask: the old "ask César to start `bun dev`
+and wait" left the audit waiting for an answer nobody could give (workout).
 
-> Para auditar necesito el sitio corriendo. Levanta `bun dev` y dime la URL (por defecto
-> http://localhost:3000). Avísame cuando esté y arranco.
-
-Check that it responds with a single request before launching the full sweep. If it does
-not respond, **do not start anything yourself**: say so and wait.
+**Two measurements that gave false findings** (workout): a touch target enlarged with
+`::before` is invisible to `getBoundingClientRect()` — measure the hit area with
+`document.elementFromPoint` at the edges of the 44 px box; and a claim that the build
+differs from the handoff cites the handoff's line, read at that moment (a favicon was
+reported as wrong against a handoff that said the opposite).
 
 Use the kit's `reference/scripts/design-qa.ts` as a base, copied into `.qa/` of the project
 (ignored by git; inside the project it resolves Playwright), and adjust the project's routes.
@@ -50,10 +61,15 @@ report** and fall back to code review, marking each finding as "not verified in 
 If the project already has a versioned measuring script (`tests/e2e/reflow-*`,
 `scripts/qa/`), run it first: it is the class a previous QA found, and it must stay green.
 
-Files with Write/Edit or a `.mjs`; never Python in text mode (CRLF) and never `node -e` or a
+Write and Edit are yours only for `.qa/` and your report's folder — never the project's
+code (until kit 3.24.0 these agents had no Write, and a heredoc over 5–6 KB failed with
+`unexpected EOF`: workout). Files with Write/Edit or a `.mjs`; never Python in text mode (CRLF) and never `node -e` or a
 heredoc with backticks (Git Bash runs them). Each finding leaves its reproduction script in
-`.qa/repro/<n>-<slug>.mjs` (base URL as its argument, prints `PASS` or `FAIL <measure>`), as
-`wave-qa` §4 says: the fix is closed by running it, not by another audit.
+`.qa/repro/design/<n>-<slug>.mjs` (base URL as its argument, prints `PASS` or `FAIL <measure>`), as
+`wave-qa` §4 says: the fix is closed by running it, not by another audit. Your own folder, and
+each script run by its name, never by a glob: next to `functional-qa`, a glob over
+`.qa/repro/` ran its auth repros, emptied the login attempts table and changed a test
+password (inversiones-js).
 
 **Measuring without false results** (world-flags, each one cost a wrong finding or a missed
 one):
@@ -111,17 +127,24 @@ button out of view.
 - **400% zoom** ≈ 320px equivalent — content reflows into one column, without horizontal
   scroll (WCAG 1.4.10).
 - **Text only at 200%** (`text-size-adjust`) — nothing gets cut or overlaps.
-- **Browser font at 150 %** (default font size 24 px, the setting a low-vision user changes;
-  zoom does not test rem layouts the same way): `browserWithFont(24)` in `design-qa.ts`.
-  `chromium.launch()` (headless shell) ignores that preference; it needs a persistent
-  context with the full Chromium (`channel: 'chromium'`) and the preference in its profile
-  (melao). If the full Chromium cannot start, the sweep reports `font150-not-run`: that
-  check goes to "Not verified", it is not a pass.
+- **Browser font at 150 % and 200 %** (default font size 24 px at 1280 and 32 px at 390, the
+  setting a low-vision user changes; zoom does not test rem layouts the same way):
+  `fontContext()` in `design-qa.ts`, through CDP `Page.setFontSizes`, which the headless shell
+  honors. The preference written to a persistent profile (melao) is only its fallback: on
+  Windows it failed with `spawn UNKNOWN` (KREA). If neither starts, the sweep reports
+  `font150-not-run` / `font200-not-run`: that check goes to "Not verified", it is not a pass.
+
+Zoom is measured as the viewport it really produces — 1280×800 at 200 % is 640×400, at 400 %
+320×200 — never with `document.body.style.zoom`, which fires no media query and gave false
+horizontal scroll (iglesia-maranatha):
 
 ```ts
-await page.setViewportSize({ width: 1280, height: 800 })
-await page.evaluate(() => { document.body.style.zoom = '200%' })
+const ctx = await browser.newContext({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 2 })
 ```
+
+Before measuring anything `position: fixed` (a sheet, a drawer), let its animations finish
+(`settle()` in `design-qa.ts`): one measured at 300 ms gave a false overflow (kit-deploy). The
+sweep also reports `word-break@…`: words split across lines at ≤ 390 px or 200 % text.
 
 ## 3. Color blindness and vision
 
@@ -226,6 +249,21 @@ grep -rnE '\[[0-9]+px\]|\[#[0-9a-fA-F]{3,8}\]' components/ app/
 - [ ] The container's `max-width` is the same on every page.
 - [ ] Hover and focus states are consistent across equivalent elements.
 - [ ] Shadows come from the elevation scale.
+
+## 7b. AI defaults
+
+Run the detector on every route, at 1280 and at 390, following the kit's
+`reference/AI-DEFAULTS.md` § 2 (pinned version, telemetry off, JSON into `.qa/`). Why: the
+generic look (Inter, purple gradient, icon tile above each heading) passed every other check
+of this agent because nothing measured it (César, 2026-11-20).
+
+- **`slop`** findings: **Medium**, type "decisión de diseño", with the rule id, the selector
+  and the snippet as evidence. One that `design/HANDOFF.md` justifies in "Decisions and
+  traps" (cite the line, read now) is not a finding: list it under "Coherencia del sistema"
+  as accepted.
+- **`quality`** findings: only those axe and sections 1–8 did not already catch, as normal
+  findings with their own severity. Do not report the same problem twice.
+- Exit `1` on a route: that route goes to "Sin verificar" for this check.
 
 ## 8. Contrast measured on the render
 

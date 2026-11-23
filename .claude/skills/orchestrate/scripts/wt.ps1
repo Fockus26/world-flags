@@ -23,7 +23,10 @@
   listening on that port (orphaned servers from the previous unit).
 
   `.qa/` (each slot's measuring scripts and logs) is ignored by git in every slot: `init`
-  and `take` add it to `.git/info/exclude`.
+  and `take` add it to `.git/info/exclude`. When `take` puts a different branch in the slot,
+  it removes the previous unit's `.qa/pr-body.md`, `progress.md`, `review.diff`, `*.log`,
+  `session*.json`, `.qa/shots/`, `.pr-shots/` and `.next/dev`, `.next/types`; the scripts in
+  `.qa/` stay.
 
   The `.env*` files (except `.env.example`) are copied from the main folder only if git
   ignores them in the slot: they are never committed.
@@ -142,7 +145,10 @@ function CopyEnv([string] $path) {
 # The port belongs to the slot: whatever listens there when taking or freeing it is a server
 # the previous unit left (a kill that only killed the shell, a cut-off session). If it stays,
 # the next server jumps to another port without warning and lands on another slot's.
-function StopServers([string] $s) {
+# Only if it is this pool's: the port of a slot was taken by another project's server (krea),
+# and stopping it would kill someone else's work. A server of the slot runs from its folder
+# (`…\<repo>-wt\wtN\node_modules\next\…`); one from another project's is reported, not stopped.
+function StopServers([string] $s, [switch] $Strict) {
   $port = $BasePort + (SlotNumber $s)
   $pids = if ($IsWindows) {
     Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
@@ -151,6 +157,19 @@ function StopServers([string] $s) {
     lsof -ti "tcp:$port" -sTCP:LISTEN
   }
   foreach ($p in $pids | Where-Object { $_ -gt 0 }) {
+    $cmd = if ($IsWindows) { (Get-CimInstance Win32_Process -Filter "ProcessId=$p" -ErrorAction SilentlyContinue).CommandLine }
+           else { (ps -o args= -p $p 2>$null) -join ' ' }
+    # Foreign = it runs from another folder's `node_modules`. A command line without one
+    # (`node server.mjs`) cannot be told apart and is treated as the slot's.
+    $norm = "$cmd".Replace('/', '\')
+    $foreign = $norm -match '(?i)[a-z]:\\[^"]*?\\node_modules\\' -and
+      $norm.IndexOf($pool.Replace('/', '\') + '\', [StringComparison]::OrdinalIgnoreCase) -lt 0
+    if ($foreign) {
+      $msg = "Port $port (slot $s) is used by a program outside this pool (PID $p): $($cmd.Substring(0, [Math]::Min(120, $cmd.Length)))"
+      if ($Strict) { throw "$msg`nNot stopping it: close it, or take another slot (-Slot wtN)." }
+      Write-Warning "$msg — left running"
+      continue
+    }
     Write-Host "  - orphaned server on port $port (PID $p): stopping it"
     if ($IsWindows) { taskkill /PID $p /T /F | Out-Null } else { kill $p }
   }
@@ -164,6 +183,38 @@ function ExcludeQa {
   if (-not (Test-Path $exclude) -or -not (Select-String -LiteralPath $exclude -Pattern '^/?\.qa/$' -Quiet)) {
     Add-Content -LiteralPath $exclude '.qa/'
   }
+}
+
+# What the slot's previous unit left that a new one would take as its own. `.qa/.branch`
+# records whose they are; when the branch changes, they go:
+# - `.qa/pr-body.md`, `.qa/progress.md`, `.qa/*.log`: a Write over the old body failed
+#   ("not read"), "when resuming, read progress.md" pointed to another unit, and one
+#   `gh pr create --body-file` published another PR's body (KREA ×14). The measuring and
+#   repro scripts in `.qa/` stay: they are reused.
+# - `.next/dev` and `.next/types`: types of routes the new branch does not have gave false
+#   `typecheck` errors (KREA ×5). Next regenerates them.
+function ClearLeftovers([string] $path, [string] $branch) {
+  $qa = Join-Path $path '.qa'
+  $mark = Join-Path $qa '.branch'
+  if ((Test-Path $mark) -and ((Get-Content -LiteralPath $mark -Raw).Trim() -eq $branch)) { return }
+  if (Test-Path $qa) {
+    $old = @(Get-ChildItem -LiteralPath $qa -File | Where-Object {
+        $_.Name -in 'pr-body.md', 'progress.md', 'review.diff' -or $_.Extension -eq '.log' -or $_.Name -like 'session*.json'
+      })
+    if ($old) { $old | Remove-Item -Force; Write-Host "  - .qa/: $($old.Count) file(s) of the previous unit removed (pr-body, progress, logs, sessions)" }
+  }
+  # Images: `shots:publish` uploads every PNG of the folder, and the previous unit's went into
+  # the next PR (iglesia-maranatha ×3, kit-deploy). A saved session (`.qa/session-a.json`) of
+  # another database was taken as valid and a repro hung 10 min on /login (kit-deploy).
+  foreach ($d in (Join-Path $qa 'shots'), (Join-Path $path '.pr-shots')) {
+    if (Test-Path $d) { Remove-Item $d -Recurse -Force; Write-Host "  - $([IO.Path]::GetRelativePath($path, $d).Replace('\', '/'))/ of the previous unit removed" }
+  }
+  foreach ($d in 'dev', 'types') {
+    $p = Join-Path (Join-Path $path '.next') $d
+    if (Test-Path $p) { Remove-Item $p -Recurse -Force; Write-Host "  - .next/$d removed (stale route types)" }
+  }
+  New-Item -ItemType Directory -Force $qa | Out-Null
+  Set-Content -LiteralPath $mark $branch
 }
 
 function ShowStatus {
@@ -209,7 +260,14 @@ switch ($Command) {
     } else {
       $free = Slots | Where-Object { IsFree $_.FullName } | Select-Object -First 1
       if (-not $free) {
-        throw "No free slots in $pool. Wait for one to be freed (wt free <wtN>) or grow the pool (wt init -Count <bigger N>)."
+        # A detached slot with changes is nobody's unit: usually an untracked file that came
+        # with the base (a `bun.lock` outside git left every slot like this, and "No free
+        # slots" did not say why: workout).
+        $stuck = Slots | Where-Object { -not (Branch $_.FullName) } | ForEach-Object {
+          "  $($_.Name): detached with changes -> $((Dirty $_.FullName | Select-Object -First 3) -join '; ')"
+        }
+        $why = if ($stuck) { "`nNot in use, but not clean (commit, ignore or delete those files in the slot):`n$($stuck -join "`n")" } else { '' }
+        throw "No free slots in $pool. Wait for one to be freed (wt free <wtN>) or grow the pool (wt init -Count <bigger N>).$why"
       }
       $Slot = $free.Name
       $path = $free.FullName
@@ -217,7 +275,7 @@ switch ($Command) {
 
     Refresh
     ExcludeQa
-    StopServers $Slot
+    StopServers $Slot -Strict
     $remote = if ($Base -match '^([^/]+)/') { "$($Matches[1])/$Name" }
     git show-ref --verify --quiet "refs/heads/$Name"
     $existsLocal = $LASTEXITCODE -eq 0
@@ -233,6 +291,16 @@ switch ($Command) {
     } else {
       GitOk -C $path switch --quiet -c $Name --no-track $Base
     }
+    # One upstream at most: a resumed branch ended with two `branch.<name>.merge` values and a
+    # plain `git push` failed (krea). The remote branch of the same name, if it exists.
+    $merges = @(git -C $path config --get-all "branch.$Name.merge")
+    if ($merges.Count -gt 1) {
+      git -C $path config --unset-all "branch.$Name.merge"
+      if ($existsRemote) { GitOk -C $path branch --quiet --set-upstream-to $remote $Name }
+      else { git -C $path config --unset-all "branch.$Name.remote" }
+      Write-Host "  ~ $Name had $($merges.Count) upstreams: left with $(if ($existsRemote) { $remote } else { 'none (the first push sets it)' })"
+    }
+    ClearLeftovers $path $Name
     Install $path -IfChanged
     CopyEnv $path
 

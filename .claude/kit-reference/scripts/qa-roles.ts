@@ -46,6 +46,14 @@ export const EXTRA_ENV_MAP: Record<string, string> = {
   // SUPABASE_ADMIN_KEY: 'SERVICE_ROLE_KEY',
 }
 
+// qa-local gives a dead value to every `*_KEY`, `*_SECRET`, `*_TOKEN`, `*_PASSWORD`, `*_DSN`
+// of the `.env*` files it does not set itself (storage, email, AI, payments): a QA run must not
+// reach the real accounts. A key the QA needs as it is — a payment provider's TEST key, a
+// sandbox — goes here.
+export const KEEP_ENV: string[] = [
+  // 'STRIPE_SECRET_KEY', // only if it is an sk_test_ key
+]
+
 export async function assignRole(id: string, role: string, { api, headers }: SupabaseCtx): Promise<void> {
   // If your project keeps the role in a table, upsert it here with the local REST API, e.g.:
   //   await fetch(`${api}/rest/v1/profiles`, { method: 'POST', headers: { ...headers,
@@ -59,6 +67,34 @@ export async function assignRole(id: string, role: string, { api, headers }: Sup
   void api
   void headers
 }
+
+// An account the project's own seed already creates (`scripts/seed-emulator.ts`,
+// `scripts/seed-db.ts`, `drizzle/seed.sql`): return true and qa-local neither creates it nor
+// assigns its role. Needed when the app has no sign-up (`disableSignUp`) or the seed gives the
+// accounts data the role alone does not (KREA). Any backend.
+export async function existingAccount({ email, role }: { email: string; role: string }): Promise<boolean> {
+  // e.g. return email.endsWith('@seed.test')
+  void email
+  void role
+  return false
+}
+
+// Postgres: an app whose accounts the sign-up route cannot create (`disableSignUp`, login by
+// ID number) or whose seed makes them without the `.env.test.local` password (krea). Export
+// it and qa-local calls it for every account instead of the sign-up — also with `--db-only`,
+// where `site` is null. Return the user's id and `assignRolePostgres` gives it its role.
+// Do not export it if the sign-up works: exported, it replaces it.
+//
+// export async function createAccountPostgres(
+//   { email, password, role }: { email: string; password: string; role: string },
+//   { databaseUrl }: { sql: (s: string) => string; databaseUrl: string; site: string | null },
+// ): Promise<string | undefined> {
+//   // e.g. the app's own factory, without Next imports:
+//   //   const { createAuth } = await import('../lib/auth/factory.ts')
+//   //   const auth = createAuth(databaseUrl)
+//   //   const { user } = await auth.api.createUser({ body: { email, password, name: role } })
+//   //   return user.id
+// }
 
 /** The Postgres backend: `sql` runs a statement in the QA database and returns its output. */
 export async function assignRolePostgres(
