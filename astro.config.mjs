@@ -34,6 +34,24 @@ for (const key of [
 // de `public/robots.txt`.
 const SITE_URL = "https://world-flags-hazel.vercel.app";
 
+/**
+ * Página de laboratorio del mapa (`/mapa-lab`), para probar `WorldMap` antes
+ * de que exista el modo Mapa. Solo existe con `MAP_LAB=1`: nunca en producción.
+ *
+ * @type {import("astro").AstroIntegration}
+ */
+const mapLab = {
+	name: "map-lab",
+	hooks: {
+		"astro:config:setup": ({ injectRoute }) => {
+			injectRoute({
+				pattern: "/mapa-lab",
+				entrypoint: "./src/lab/map-lab.astro",
+			});
+		},
+	},
+};
+
 // https://astro.build/config
 export default defineConfig({
 	site: SITE_URL,
@@ -46,6 +64,7 @@ export default defineConfig({
 			},
 		}),
 		sitemap(),
+		...(process.env.MAP_LAB ? [mapLab] : []),
 	],
 	vite: {
 		plugins: [tailwindcss()],

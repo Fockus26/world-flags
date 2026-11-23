@@ -55,6 +55,19 @@
 	--app-color-medal-bronze: #8f481e;
 	--app-color-medal-bronze-soft: #f9e4d6;
 
+	/* Continentes del modo Mapa (D238): el relleno de un país acertado. Cada
+	   tono da ≥3:1 contra la tierra sin acertar (`surface-border`) y contra
+	   el mar (`--background`), en claro y en oscuro: acertado se distingue
+	   por luminosidad, no solo por el tono. No valen como texto. */
+	--app-color-region-north-america: #c2570c;
+	--app-color-region-central-america: #a21caf;
+	--app-color-region-caribbean: #0e7490;
+	--app-color-region-south-america: #15803d;
+	--app-color-region-europe: #6d5ef0;
+	--app-color-region-africa: #7c7a0a;
+	--app-color-region-asia: #2563eb;
+	--app-color-region-oceania: #db2777;
+
 	/* Overlay */
 	--app-color-overlay: rgb(28 20 46 / 55%);
 }
@@ -113,6 +126,16 @@
 		--app-color-medal-bronze: #eba273;
 		--app-color-medal-bronze-soft: #3e2619;
 
+		/* Continentes del modo Mapa (D238) */
+		--app-color-region-north-america: #fb923c;
+		--app-color-region-central-america: #e879f9;
+		--app-color-region-caribbean: #2dd4bf;
+		--app-color-region-south-america: #4ade80;
+		--app-color-region-europe: #9b8bff;
+		--app-color-region-africa: #facc15;
+		--app-color-region-asia: #60a5fa;
+		--app-color-region-oceania: #fb7185;
+
 		/* Overlay */
 		--app-color-overlay: rgb(8 6 16 / 70%);
 	}
@@ -170,6 +193,16 @@
 	--app-color-medal-silver-soft: #2c2f3d;
 	--app-color-medal-bronze: #eba273;
 	--app-color-medal-bronze-soft: #3e2619;
+
+	/* Continentes del modo Mapa (D238) */
+	--app-color-region-north-america: #fb923c;
+	--app-color-region-central-america: #e879f9;
+	--app-color-region-caribbean: #2dd4bf;
+	--app-color-region-south-america: #4ade80;
+	--app-color-region-europe: #9b8bff;
+	--app-color-region-africa: #facc15;
+	--app-color-region-asia: #60a5fa;
+	--app-color-region-oceania: #fb7185;
 
 	/* Overlay */
 	--app-color-overlay: rgb(8 6 16 / 70%);

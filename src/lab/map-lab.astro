@@ -1,0 +1,9 @@
+---
+// Laboratorio del mapa: solo existe con `MAP_LAB=1` (ver `astro.config.mjs`).
+import Layout from "@/layouts/Layout.astro";
+import { MapLab } from "./MapLab";
+---
+
+<Layout title="Laboratorio del mapa" noindex>
+	<MapLab client:only="react" />
+</Layout>

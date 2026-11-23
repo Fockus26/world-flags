@@ -45,6 +45,21 @@
 | selection.bg / selection.text | `--accent` `#6d5ef0` / `--accent-foreground` `#ffffff` | `::selection` en `global.css` (P39, D203): 4,66:1 |
 | scrollbar.thumb / scrollbar.track | `--color-surface-border` (hover `--color-primary-border`) / transparente | scrollbar global (`global.css`), con tokens existentes. Contraste del thumb ≥ 3:1 sin medir |
 
+## Continentes del modo Mapa (D238)
+
+Relleno de un país acertado en el mapa: `fill-region-<continente>`. Cada tono da ≥3:1 contra la tierra sin acertar (`surface-border`) y contra el mar (`--background`) en los dos temas. **No valen como texto.**
+
+| Continente | Claro | Oscuro |
+|---|---|---|
+| north-america | `#c2570c` | `#fb923c` |
+| central-america | `#a21caf` | `#e879f9` |
+| caribbean | `#0e7490` | `#2dd4bf` |
+| south-america | `#15803d` | `#4ade80` |
+| europe | `#6d5ef0` | `#9b8bff` |
+| africa | `#7c7a0a` | `#facc15` |
+| asia | `#2563eb` | `#60a5fa` |
+| oceania | `#db2777` | `#fb7185` |
+
 ## Dark mode (roles principales)
 
 | Rol | Hex |
