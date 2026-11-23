@@ -8,6 +8,7 @@ import {
 
 import { db } from "../db/client";
 import { userLearningData as table } from "../db/schema";
+import { findShapeProblem } from "./learning-data-shape";
 
 /** Columna de la API → columna de Drizzle. No compila si falta alguna. */
 const COLUMNS = {
@@ -58,7 +59,8 @@ export function isLearningDataColumn(
 
 /**
  * Un `null` en una columna `jsonb` se guardaría como el JSON `null`, no como NULL, y
- * se saltaría el `not null`: se comprueba aquí. Devuelve la primera que no vale.
+ * se saltaría el `not null`: se comprueba aquí, junto con la forma y el tope de
+ * `learning-data-shape.ts`. Devuelve la primera que no vale.
  */
 export function findInvalidColumn(
 	columns: Record<string, unknown>,
@@ -72,6 +74,10 @@ export function findInvalidColumn(
 		) {
 			return column;
 		}
+
+		const problem = findShapeProblem(column, value);
+
+		if (problem) return `${column} (${problem})`;
 	}
 
 	return null;
