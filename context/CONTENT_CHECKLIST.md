@@ -59,3 +59,10 @@
 | 62 | **Enlace de confirmación ya usado** («Tu cuenta ya está confirmada» / «Inicia sesión desde Perfil y configuración.») | `auth-link-error.ts` | feat/migrate-vps | Provisional, pendiente del dueño |
 | 63 | **Cierre de sesión sin red** («No se pudo cerrar la sesión: hace falta conexión. Sigues dentro de tu cuenta.») | `AuthSection.tsx` | feat/migrate-vps | Provisional, pendiente del dueño |
 | 64 | **Política de privacidad** (texto completo y correo de contacto) | `src/pages/privacidad.astro` | feat/politica-privacidad | Borrador del agente, correo dado por el dueño; texto pendiente de su revisión. Sin revisión legal. Supabase no se menciona, por decisión del dueño |
+| 65 | **Bandera que no carga** («Cargando la bandera… El tiempo está en pausa.» / «La bandera tarda en cargar. Se sigue intentando, con el tiempo en pausa.») | `FlagDisplay.tsx` (D230) | fix/sin-bandera-sin-reloj | Provisional, pendiente del dueño |
+| 66 | **Botón «Probar otra»** (cambia la bandera que no carga) | `FlagDisplay.tsx` (D230) | fix/sin-bandera-sin-reloj | Provisional, pendiente del dueño |
+| 67 | **«¿Sigues ahí?»** (texto de rush y de práctica; botón «Sigo aquí») | `SessionGuardLayer.tsx` (D231) | feat/inactividad-y-limite | Provisional, pendiente del dueño |
+| 68 | **Aviso de 1 h en práctica** («Llevas una hora practicando», «Seguir practicando» / «Terminar») | `SessionGuardLayer.tsx` (D231) | feat/inactividad-y-limite | Provisional, pendiente del dueño |
+| 69 | **Avisos de partida cerrada** («Partida cerrada por inactividad», «Partida terminada: pasó una hora») | `GameEndNoticeSnackbar.tsx` (D231) | feat/inactividad-y-limite | Provisional, pendiente del dueño |
+| 70 | **Lotes: otra sesión hoy** («Sesión de hoy hecha. Si quieres, haz otra…», botón «Hacer otra sesión hoy (n)», «Por ahora está listo. Vuelve en unas horas…») | `LearningPathPanel.tsx`, `Results.tsx` (D235) | feat/lotes-sesiones-y-diaria | Provisional, pendiente del dueño |
+| 71 | **Descripción de Aprender por lotes** (regla de 2 días o 3 aciertos el mismo día; fuera de la diaria) | `LearningPathModal.tsx` (D235) | feat/lotes-sesiones-y-diaria | Provisional, pendiente del dueño |

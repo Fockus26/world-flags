@@ -23,6 +23,8 @@ Causas en el código:
 
 ## Unidad 1 · Precarga robusta
 
+**Hecha (D229)**, rama `fix/precarga-banderas-robusta`. La bandera colgada en pantalla (sonda B, `zw` a los 12 s) sigue: es la unidad 2.
+
 - `precacheFlags`: varias descargas a la vez (4–6), timeout por petición con `AbortController` (~8 s), un fallo no detiene el resto, y otra pasada al final.
 - Volver a pedirla al empezar partida y con `visibilitychange`, además de la carga y `online`.
 - Precargar las 2–3 banderas siguientes de la partida en curso.
@@ -31,6 +33,8 @@ Causas en el código:
 - Test: el arnés de `sw.js` y la sonda deben dar 197/197 en los casos colgada y fallo puntual.
 
 ## Unidad 2 · Sin bandera no corre el tiempo
+
+**Hecha (D230)**, rama `fix/sin-bandera-sin-reloj` (sale de la de la unidad 1). `CountriesPractice` no muestra banderas: no se toca. Sin probar la cuenta atrás de práctica con temporizador en navegador (solo por código) ni en móvil real.
 
 Decisión del dueño: **esperar o cambiarla gratis**.
 
@@ -41,6 +45,8 @@ Decisión del dueño: **esperar o cambiarla gratis**.
 - El estado se anuncia también por texto y `aria-live`, no solo visualmente. Capitales no tiene imagen: no le aplica.
 
 ## Unidad 3 · Inactividad y límite
+
+**Hecha (D231)**, PR #143. Estadísticas: `idleMs` opcional en `SessionRecord` (`getPlayedMs`). Rendirse en el rush de Países ahora congela el tiempo final en «Rendirme».
 
 Decisión del dueño: **detalle, aviso y salida**; **1 h de tiempo real**.
 
@@ -56,6 +62,8 @@ Decisión del dueño: **detalle, aviso y salida**; **1 h de tiempo real**.
 
 ## Unidad 4 · Cronómetro
 
+**Hecha (D232)**, PR #145.
+
 Decisión del dueño: **A, píldora de ancho fijo**.
 
 - En `Header`, con icono de reloj de iconoir y formato único `m:ss`: `0:08`, `59:59`. Con el límite de 1 h real, los castigos aún pueden pasar de 60 min, así que debe caber `105:30` sin saltar de ancho.
@@ -66,6 +74,8 @@ Decisión del dueño: **A, píldora de ancho fijo**.
 
 ## Unidad 5 · Selección con Shift en "Elegir países"
 
+**Hecha (D233)**, PR #146. El rango toma el estado nuevo de la casilla pulsada (Gmail).
+
 Sin decisión pendiente. `CountryPickerModal`:
 
 - Shift+clic marca o desmarca el rango desde la última casilla pulsada, y aplica el estado que tomó esa casilla.
@@ -75,12 +85,16 @@ Sin decisión pendiente. `CountryPickerModal`:
 
 ## Unidad 6 · Dado de avatares
 
+**Hecha (D234)**, PR #147.
+
 Decisión del dueño: **junto al selector de estilo**, en la misma fila; se elimina la fila propia del dado.
 
 - `AccountTab` tiene el `Select` y `Avatar` tiene el dado y la tanda: subir el estado o el botón sin perder lo de D190 (tanda local, elegido siempre visible, anuncio `role="status"`, una vuelta con `motion-safe`).
 - Comprobar 320 px y texto al 200 %. Nueva decisión que ajusta D190.
 
 ## Unidad 7 · Lotes: varias sesiones al día y separados de la diaria
+
+**Hecha (D235)**, PR #148. `functional-qa` lanzado.
 
 Decisiones del dueño (sustituyen partes de D185): **solo cuenta la sesión del lote**; **hasta 3 sesiones al día, opcional**; **los países del lote en curso no salen en la diaria hasta consolidarse**.
 
@@ -90,6 +104,8 @@ Regla de consolidación, según la opción elegida ("3 aciertos separados 4 h"; 
 - O 3 aciertos a la primera el mismo día, separados al menos 4 h entre sí.
 
 **Confirmar al revisar el PR:** esta lectura mantiene la vía de 2 días. La otra lectura sería exigir siempre 3 aciertos.
+
+**Confirmado por el dueño (2026-11-05):** 2 días distintos, o 3 el mismo día separados 4 h. Ajuste de sesiones múltiples: botón «Hacer otra sesión hoy» en `LearningPathPanel` al terminar la de hoy, hasta la 3.ª (sin interruptor en Configuración).
 
 Dónde está hoy:
 
