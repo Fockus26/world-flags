@@ -24,6 +24,12 @@
   siembres `active:` que repita un `hover:`.
 - **`transition-colors` no anima el contorno** (D129): no vuelvas a meter
   `outline-color` en una transición de un elemento con anillo de foco de `outline`.
+- Texto de **placeholder ≥ 4.5:1**: el de por defecto (texto al 50 %) da ≈3.25:1 en claro
+  y axe no lo revisa.
+- Una acción dentro de un aviso (el «Reintentar» de un toast) usa el color de ese aviso,
+  no `primary`.
+- Texto seleccionado (`::selection`) ≥ 4.5:1 en claro y oscuro; dentro de un componente con
+  fondo propio (un botón `primary`, un aviso de color), su par invertido.
 - Sin scroll horizontal a **320px**. Al 400% de zoom, una columna.
 - `prefers-reduced-motion` respetado (bloque en `global.css` + `<MotionConfig reducedMotion="user">` en `Providers.tsx`).
 - Todo control con nombre accesible. Iconos-solo → `aria-label` de la **acción**.

@@ -44,7 +44,9 @@ const browser = await chromium.launch()
 let failed = false
 
 for (const path of URLS) {
-  const page = await browser.newPage()
+  // A context of its own: `@axe-core/playwright` rejects a page from `browser.newPage()`.
+  const context = await browser.newContext()
+  const page = await context.newPage()
   await page.goto(BASE + path, { waitUntil: 'load' })
 
   const { violations } = await new AxeBuilder({ page })
@@ -57,7 +59,7 @@ for (const path of URLS) {
     console.log(`  ${v.helpUrl}`)
     for (const node of v.nodes) console.log(`  → ${node.target.join(' ')}`)
   }
-  await page.close()
+  await context.close()
 }
 
 await browser.close()
@@ -75,6 +77,32 @@ from `node_modules`. (`waitUntil: 'load'`: in dev, `networkidle` may never arriv
 
 If César does not want to start it now, **do not insist or start it yourself**: do the
 manual review, and flag in the output that axe did not run.
+
+**Plan B without a server** (a cloud session, a worker without one): after `bun run build`,
+axe over the build's prerendered HTML, served by Playwright itself (KREA improvised it in
+the cloud). Only routes Next prerendered (`.next/server/app/<route>.html`); no live data, so
+say "axe over the static HTML" in the output.
+
+**Manual only** — a worker whose prompt says "Dev server: no" and "Local build: no" (the
+machine's limits, `orchestrate` §4): neither axe nor Plan B can run, and that is expected, not
+a gap to fill by starting a server. Do the manual review below against the code, compute the
+contrast of every pair you touched from the tokens (both themes, every accent, **over the
+composed background**: a decorative layer under the text lowered it in krea), and write "a11y:
+solo revisión manual (sin servidor ni build)" in the report, so the version QA measures it.
+krea's workers had no way to say this and each improvised.
+
+```ts
+// in .qa/a11y-check.ts, instead of BASE_URL: serve .next from page.route
+import { join } from 'node:path'
+await page.route('http://kit.local/**', async (route) => {
+  const { pathname } = new URL(route.request().url())
+  const file = pathname.startsWith('/_next/static/')
+    ? join('.next', pathname.slice('/_next'.length))                       // → .next/static/…
+    : join('.next/server/app', `${pathname === '/' ? '/index' : pathname}.html`)
+  await route.fulfill({ path: file }).catch(() => route.fulfill({ status: 404 }))
+})
+await page.goto('http://kit.local/')
+```
 
 axe covers roughly 40% of the WCAG criteria. **The rest is the manual review below — do not
 skip it because axe came out green.**
@@ -199,6 +227,11 @@ Applies to everything you touched.
 - [ ] No state is conveyed **only by color**. Error, success, selected, active: always
       color **+** icon, text or shape.
 - [ ] Loading: `aria-busy="true"` or an `aria-live` that announces the result when done.
+- [ ] Progress (an upload, a long task): the live region announces **changes of state**
+      (started, done, failed), never the running value; the percentage goes in a
+      `<progress>` or `role="progressbar"` with `aria-valuenow`, which is read on demand.
+      A prompt asked for `aria-live` on an upload and "do not announce every 1 %" without
+      saying how (KREA).
 - [ ] Disabled: a real `disabled` (not just `opacity-50` + `pointer-events-none`).
 - [ ] Toggles/tabs/accordions with `aria-expanded`, `aria-selected`, `aria-controls` per
       the matching APG pattern.

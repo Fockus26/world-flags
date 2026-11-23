@@ -21,13 +21,16 @@
  *      (`qa-<package name>-mailpit`), reused if running, on free ports. They stay up afterwards.
  *   2. One database per QA port (`qa_<port>`, so slots do not collide), owned by a role that is
  *      not a superuser, like the real one. Dropped and recreated unless `--no-reset`. Then
- *      `bun run db:migrate` and `drizzle/seed.sql`.
+ *      `bun run db:migrate`, `drizzle/seed.sql` and `scripts/seed-db.ts` if the project has it.
  *   3. The server with `DATABASE_URL`/`DIRECT_URL` at the container and `SMTP_*` at Mailpit. Every
  *      Supabase variable goes to a dead address: code not yet migrated cannot reach the real one.
  *   4. Before printing `QA ready`, the `.env.test.local` accounts through Better Auth's sign-up
- *      endpoint, then `email_verified = true` by SQL; the role in `assignRolePostgres`.
+ *      endpoint, then `email_verified = true` by SQL; the role in `assignRolePostgres`. An app
+ *      with `disableSignUp` creates them in `scripts/seed-db.ts` and says so in
+ *      `existingAccount` (`scripts/qa-roles.ts`); that hook works for every backend. Or it
+ *      exports `createAccountPostgres` there and qa-local calls it instead of the sign-up.
  *   `--db-only` stops after step 2 and prints the URLs: for tests against the database, without
- *   a server.
+ *   a server. The accounts then come only from `createAccountPostgres`.
  *
  * Supabase:
  *   1. `supabase start` (Docker Desktop running): the project's local stack, with Auth's
@@ -39,6 +42,13 @@
  *      `supabase stop` between them, and the database container's log if the last one fails:
  *      the first start on a machine failed with `StatusDbNotRunningError` (world-flags ×3) and
  *      storage's "Starting database from backup" twice in a row (melao).
+ *      Nothing here waits without a limit: Docker is asked first (`docker version`, 30 s),
+ *      every `supabase` command has a cap (20 min; `QA_SUPABASE_TIMEOUT_MIN`), each failed
+ *      attempt prints its error, a database still recovering is waited for instead of
+ *      stopped, and an `unhealthy` one ends with the recovery command. Why: with Docker
+ *      Desktop not answering, a run sat for hours on the restart with nothing printed while
+ *      the other workers waited for Docker; the reason of a failed start only showed on the
+ *      third attempt, and the `stop` between attempts cut Postgres' recovery (workout ×7).
  *   2. `supabase db reset`: an empty database with the current tree's migrations and seed
  *      (in a pool slot, `main`'s), with its output live (it takes minutes). If it fails
  *      (`DbSetupError`, melao ×2), stop + start + reset once more. The local database is
@@ -81,8 +91,11 @@
  * whatever needs data fails instead of touching the real database.
  *
  * With `--preview`: the same backend, but `bun run build` with those variables and then the
- * project's `preview` script (Astro, Vite) or `start` (Next) on the port. For Playwright
- * against the build; it was done by hand (world-flags).
+ * project's `qa:serve` script if it has one, otherwise `preview` (Astro, Vite) or `start`
+ * (Next), on the port and with `NODE_ENV=production`. For Playwright against the build: the
+ * service worker and the rate limits only behave as in production there. `qa:serve` is for an
+ * adapter with no preview server (`@astrojs/vercel`: kit `tech/astro.md`); it gets
+ * `--port <port>` like the others. It was done by hand (world-flags).
  *
  * Before starting it checks the port is free: if not, it aborts (the server would jump to
  * the next one without warning and could land on another pool slot's). To stop it on
@@ -108,6 +121,9 @@
  * With Firebase, it aborts if `FIREBASE_QA_PROJECT` does not start with `demo-`. The same for
  * a variable at the VPS (`:6432`, the tunnel's `:5433`, or `KIT_VPS_HOST`) left without override:
  * a project developing against the VPS has the real URL in its `.env*`, like one on Supabase.
+ * And every third-party key of the `.env*` files (`*_KEY`, `*_SECRET`, `*_TOKEN`, `*_PASSWORD`,
+ * `*_DSN`) that the script does not set gets a dead value, so the QA server cannot write to the
+ * real storage, email or AI accounts (KREA); `KEEP_ENV` in `scripts/qa-roles.ts` keeps one.
  *
  * Before anything it checks Playwright's Chromium (wave-qa needs it) and installs it if it is
  * missing, with node and the project's own Playwright: `bunx` was not on the PATH and the QA
@@ -131,7 +147,7 @@
  */
 
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { connect } from 'node:net'
 import { pathToFileURL } from 'node:url'
 
@@ -150,10 +166,25 @@ interface QaRoles {
     ctx: { firestore: string; project: string; headers: Headers },
   ): Promise<void>
   assignRolePostgres(id: string, role: string, ctx: { sql: (statement: string) => string }): Promise<void>
+  existingAccount(account: { email: string; role: string }): boolean | Promise<boolean>
+  createAccountPostgres(
+    account: { email: string; password: string; role: string },
+    ctx: { sql: (statement: string) => string; databaseUrl: string; site: string | null },
+  ): Promise<string | undefined>
+  KEEP_ENV: string[]
 }
 const roles: Partial<QaRoles> = existsSync('scripts/qa-roles.ts')
   ? await import(pathToFileURL('scripts/qa-roles.ts').href)
   : {}
+
+// An account the project's own seed already creates (`existingAccount` in qa-roles.ts) is not
+// created again nor given its role here. Without the hook, KREA re-applied by hand a block
+// inside this file after every kit update.
+async function seeded(a: { email?: string; role: string }): Promise<boolean> {
+  if (!a.email || !(await roles.existingAccount?.({ email: a.email, role: a.role }))) return false
+  console.log(`  = test account: role ${a.role} (created by the project's seed)`)
+  return true
+}
 
 // App variable ← field of `supabase status -o json`, for Next (NEXT_PUBLIC_*), Vite (VITE_*)
 // and Astro (PUBLIC_*). Add the one your project uses here if it has another name (the
@@ -193,6 +224,11 @@ if (!args.includes('--port') || !/^\d+$/.test(port ?? '')) {
   process.exit(2)
 }
 const reset = !args.includes('--no-reset')
+// A fresh database makes every saved session stale: a `.qa/session-a.json` of the previous
+// database was taken as valid and a repro hung 10 min on /login (kit-deploy).
+if (reset && existsSync('.qa')) {
+  for (const f of readdirSync('.qa').filter((n) => /^session.*\.json$/.test(n))) rmSync(`.qa/${f}`, { force: true })
+}
 const offline = args.includes('--offline')
 const preview = args.includes('--preview')
 const dbOnly = args.includes('--db-only')
@@ -302,20 +338,45 @@ const SUPABASE_ENV = {
   ...process.env, // whatever César set wins
 }
 
+// Docker Desktop can stop answering without exiting. `docker version` and not `docker info`:
+// info hung while version and ps answered (workout).
+function dockerAnswers(): boolean {
+  const r = spawnSync('docker', ['version', '--format', '{{.Server.Version}}'], { encoding: 'utf8', timeout: 30_000 })
+  return r.status === 0
+}
+
+function requireDocker(): void {
+  if (dockerAnswers()) return
+  abort('Docker does not answer (docker version, 30 s). Open Docker Desktop — or restart it if it is open and stuck — and run this again.')
+}
+
+const SUPABASE_CAP_MIN = Number(process.env.QA_SUPABASE_TIMEOUT_MIN) || 20
+
 type Run = ReturnType<typeof spawnSync>
 // `live`: output straight to the terminal (long steps). Returns the result; never aborts.
+// Capped: a command that outlives the cap comes back as a failure instead of hanging.
 function supabaseRun(a: string[], live = false): Run {
   return spawnSync('supabase', a, {
     encoding: 'utf8',
     stdio: live ? 'inherit' : 'pipe',
     shell: process.platform === 'win32',
     env: SUPABASE_ENV,
+    timeout: SUPABASE_CAP_MIN * 60_000,
   })
 }
 
+function failure(r: Run): string {
+  if (r.error && (r.error as NodeJS.ErrnoException).code === 'ETIMEDOUT') {
+    return `no answer in ${SUPABASE_CAP_MIN} min (cap: QA_SUPABASE_TIMEOUT_MIN)`
+  }
+  return String(r.stderr || r.stdout || r.error?.message || '').trim()
+}
+
 function supabaseFail(a: string[], r: Run, extra = ''): never {
-  const detail = String(r.stderr || r.stdout || '').trim()
-  const docker = /docker|daemon|pipe/i.test(detail) ? '\n→ Is Docker Desktop running?' : ''
+  const detail = failure(r)
+  // Only when it really does not answer: every Supabase error names Docker, and the hint
+  // sent people to restart a Docker that was fine (kit test, 2026-11-18).
+  const docker = /docker|daemon|pipe/i.test(detail) && !dockerAnswers() ? '\n→ Is Docker Desktop running?' : ''
   abort(`supabase ${a.join(' ')} failed:\n${detail}${docker}${extra}`)
 }
 
@@ -346,18 +407,51 @@ function runningSiteUrl(): string | null {
   return r.stdout.match(/^GOTRUE_SITE_URL=(.*)$/m)?.[1]?.trim() ?? null
 }
 
+// '' when the container does not exist or has no health check.
+function dbHealth(): string {
+  if (!projectId) return ''
+  const r = spawnSync('docker', ['inspect', '-f', '{{if .State.Health}}{{.State.Health.Status}}{{end}}', `supabase_db_${projectId}`], {
+    encoding: 'utf8',
+    timeout: 30_000,
+  })
+  return r.status === 0 ? r.stdout.trim() : ''
+}
+
+const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+
+// After Docker hangs, Postgres can stay in its recovery fsync and fail every start.
+const UNHEALTHY_HINT =
+  '\n→ The local database is unhealthy. Recovery: `supabase stop --no-backup` (it deletes the local' +
+  "\n  database's data; the next run recreates it from the migrations and the seed) and run this again."
+
 function supabaseStart(): void {
+  requireDocker()
   const current = runningSiteUrl()
   if (current && current !== SITE) {
     console.log(`… the local stack sends links to ${current}: restarting it for ${SITE} (data kept)`)
-    supabaseRun(['stop'])
+    const stop = supabaseRun(['stop'])
+    if (stop.status !== 0) supabaseFail(['stop'], stop)
   }
   const attempts = 3
   for (let i = 1; i <= attempts; i++) {
     const r = supabaseRun(['start'])
     if (r.status === 0) return
-    if (i === attempts) supabaseFail(['start'], r, dockerLogs(`supabase_db_${projectId}`))
-    console.log(`… supabase start failed (attempt ${i}/${attempts}); supabase stop and again`)
+    let health = dbHealth()
+    if (i === attempts) {
+      supabaseFail(['start'], r, dockerLogs(`supabase_db_${projectId}`) + (health === 'unhealthy' ? UNHEALTHY_HINT : ''))
+    }
+    console.log(`… supabase start failed (attempt ${i}/${attempts}):\n${failure(r).split('\n').slice(-8).join('\n')}`)
+    requireDocker()
+    if (health === 'starting') {
+      // Stopping it now cuts the recovery and the next start begins it again (~20 min: workout).
+      console.log('… the database is still starting (recovery?): waiting for it, up to 10 min, instead of stopping it')
+      for (let s = 0; s < 120 && health === 'starting'; s++) {
+        sleepSync(5000)
+        health = dbHealth()
+      }
+      if (health === 'healthy') continue
+    }
+    console.log('… supabase stop and again')
     supabaseRun(['stop'])
   }
 }
@@ -374,8 +468,11 @@ function supabaseReset(): void {
 
 // Local sign-up without the confirmations the hosted project asks for: a repro passes here
 // and not there, and it hid the double confirmation of an email change (melao).
+// Only inside [auth.email]: `[auth.sms] enable_confirmations = false` (its default) raised
+// this warning in a project whose email confirmations were on (workout).
+const authEmail = configToml.match(/^\[auth\.email\][^\n]*\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m)?.[1] ?? ''
 for (const key of ['enable_confirmations', 'double_confirm_changes']) {
-  if (new RegExp(`^\\s*${key}\\s*=\\s*false`, 'm').test(configToml)) {
+  if (new RegExp(`^\\s*${key}\\s*=\\s*false`, 'm').test(authEmail)) {
     console.warn(`! supabase/config.toml: ${key} = false. If the hosted project has it on, local QA skips that step.`)
   }
 }
@@ -403,7 +500,11 @@ async function warmUp(beforeReady?: () => Promise<void>): Promise<void> {
         redirect: 'manual',
         signal: AbortSignal.timeout(5 * 60_000),
       })
-      console.log(`  ~ warmed ${route} (${r.status}, ${Math.round((Date.now() - started) / 1000)} s)`)
+      const seconds = Math.round((Date.now() - started) / 1000)
+      console.log(`  ~ warmed ${route} (${r.status}, ${seconds} s)`)
+      // With other `next dev` on the machine, Turbopack took ~2 min per route and 13 min in
+      // all (krea); the build compiles once (inversiones-js: dev hung on /login, --preview did not).
+      if (!preview && seconds > 120) console.warn('! A route took over 2 min to compile: with other dev servers running, --preview is faster.')
     } catch (e) {
       console.warn(`! warming ${route} failed: ${(e as Error).message}`)
     }
@@ -413,16 +514,41 @@ async function warmUp(beforeReady?: () => Promise<void>): Promise<void> {
   console.log(`QA ready: ${SITE}`)
 }
 
+// Keys of third-party services in the `.env*` files (storage, email, AI, payments, analytics)
+// would let a QA run write to the real ones: KREA's QA server had its real storage, email
+// and AI keys. Every such variable this script did not set gets a dead value; the server
+// still starts, and a call to that service fails instead of reaching the real account.
+// A key the QA needs real (a sandbox key, say) goes in `KEEP_ENV` (scripts/qa-roles.ts).
+const SECRET_NAME = /(?:SECRET|TOKEN|PASSWORD|PASS|KEY|DSN)$/
+const KEEP_ALWAYS = /^(?:NEXT_PUBLIC_|PUBLIC_|VITE_)?FIREBASE_/ // demo project: the emulators take any value
+function disableThirdParty(env: NodeJS.ProcessEnv): void {
+  const keep = new Set(roles.KEEP_ENV ?? [])
+  const off: string[] = []
+  for (const f of envFiles.filter((name) => name !== '.env.test.local')) {
+    for (const [k, v] of Object.entries(readEnv(f))) {
+      if (!SECRET_NAME.test(k) || KEEP_ALWAYS.test(k) || keep.has(k) || !v) continue
+      if (env[k] !== undefined && env[k] !== v) continue // this script already set it
+      env[k] = 'qa-local-disabled'
+      off.push(k)
+    }
+  }
+  if (off.length) console.log(`  ~ third-party keys disabled (KEEP_ENV in scripts/qa-roles.ts keeps one): ${[...new Set(off)].join(', ')}`)
+}
+
 // Never returns: the script lives as long as the server does.
 async function startServer(base: NodeJS.ProcessEnv, beforeReady?: () => Promise<void>): Promise<never> {
   const env: NodeJS.ProcessEnv = { ...base, ASTRO_DEV_BACKGROUND: '0', ASTRO_PREVIEW_BACKGROUND: '0' }
   // The app's own URL (emailRedirectTo, absolute links) is this server, not production's.
   for (const prefix of ['', 'NEXT_PUBLIC_', 'PUBLIC_', 'VITE_']) env[`${prefix}SITE_URL`] = SITE
   env.BETTER_AUTH_URL = SITE
+  disableThirdParty(env)
   let script = 'dev'
   if (preview) {
-    script = pkgScripts.preview ? 'preview' : 'start'
-    if (!pkgScripts[script]) abort('--preview: the project has neither a "preview" nor a "start" script.')
+    script = ['qa:serve', 'preview', 'start'].find((s) => pkgScripts[s]) ?? ''
+    if (!script) abort('--preview: the project has no "qa:serve", "preview" or "start" script.')
+    // Not `env.NODE_ENV = …`: Next 16's types declare it read-only and a new project's
+    // typecheck failed on this file (kit-deploy).
+    Object.assign(env, { NODE_ENV: 'production' })
     console.log('… bun run build (with the local backend\'s variables)')
     const build = launch('bun', ['run', 'build'], env)
     const code = await new Promise<number | null>((done) => build.on('exit', done))
@@ -506,8 +632,7 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
 
   const docker = (a: string[], input?: string) => spawnSync('docker', a, { encoding: 'utf8', input })
 
-  const version = docker(['version', '--format', '{{.Server.Version}}'])
-  if (version.status !== 0) abort(`Docker does not answer. Is Docker Desktop running?\n${version.stderr}`)
+  requireDocker()
 
   async function freePort(from: number): Promise<number> {
     for (let p = from; p < from + 200; p++) {
@@ -522,13 +647,33 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
     return Number(found)
   }
 
+  // A container whose first init never finished (`server did not start in time` on a hard
+  // disk) stays Exited with half a data directory, and `docker start` only repeats the failure
+  // (inversiones-js). Its data is disposable QA data: it is recreated.
+  const FAILED_INIT = /server did not start in time|initdb: error|initdb: (?:aborting|removing)/i
+
   function ensureRunning(container: string, runArgs: string[]): void {
     const state = docker(['inspect', '-f', '{{.State.Running}}', container])
     if (state.status === 0 && state.stdout.trim() === 'true') {
       console.log(`= ${container} already running`)
       return
     }
-    const r = state.status === 0 ? docker(['start', container]) : docker(['run', '-d', '--name', container, ...runArgs])
+    if (state.status === 0 && FAILED_INIT.test(dockerLogs(container))) {
+      console.log(`… ${container} stopped after a failed first init: recreating it (QA data only)`)
+      docker(['rm', '-f', container])
+      return ensureRunning(container, runArgs)
+    }
+    // Just after Docker Desktop opens, `docker start` can fail ("socket not allowed") although
+    // `docker version` answers: three attempts, 10 s apart (iglesia-maranatha).
+    let r!: ReturnType<typeof docker>
+    for (let i = 1; i <= 3; i++) {
+      r = state.status === 0 ? docker(['start', container]) : docker(['run', '-d', '--name', container, ...runArgs])
+      if (r.status === 0) break
+      if (i < 3) {
+        console.log(`… could not start ${container} (attempt ${i}/3): ${String(r.stderr).trim().split('\n').pop()}`)
+        sleepSync(10_000)
+      }
+    }
     if (r.status !== 0) abort(`Could not start ${container}:\n${r.stderr}${dockerLogs(container)}`)
     console.log(`+ ${container} started`)
   }
@@ -548,12 +693,22 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
   const mailUi = mappedPort(MAILPIT, 8025)
 
   // TCP, not the socket: during the image's init Postgres only listens on the socket.
+  // 5 minutes, and up to 20 while its log says it is still working: the first initdb on a hard
+  // disk took more than 9 (inversiones-js), and after Docker hung Postgres spent ~10 in its
+  // recovery while the script gave up at 5 (kit-deploy ×2, iglesia-maranatha).
+  const STILL_WORKING = /in recovery|starting up|syncing data directory|redo (?:starts|in progress)|initdb|init process|fixing permissions/i
   let ready = false
-  for (let i = 0; i < 120 && !ready; i++) {
+  for (let i = 1; i <= 20 * 60 && !ready; i++) {
     ready = docker(['exec', PG, 'psql', '-h', '127.0.0.1', '-U', 'postgres', '-c', 'select 1']).status === 0
-    if (!ready) await new Promise((r) => setTimeout(r, 1000))
+    if (ready) break
+    if (i % 60 === 0) {
+      const tail = dockerLogs(PG)
+      if (i >= 5 * 60 && !STILL_WORKING.test(tail.split('\n').slice(-8).join('\n'))) break
+      console.log(`  … Postgres not answering yet (${i / 60} min); its log: ${tail.trim().split('\n').pop()}`)
+    }
+    await new Promise((r) => setTimeout(r, 1000))
   }
-  if (!ready) abort(`Postgres did not answer in 2 minutes.${dockerLogs(PG)}`)
+  if (!ready) abort(`Postgres did not answer (its log no longer says it is starting or recovering).${dockerLogs(PG)}`)
 
   const sqlIn = (db: string, statement: string): string => {
     const r = docker(['exec', '-i', PG, 'psql', '-U', 'postgres', '-d', db, '-v', 'ON_ERROR_STOP=1', '-qAt'], statement)
@@ -575,6 +730,12 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
 
   const databaseUrl = `postgresql://${ROLE}:${ROLE}@127.0.0.1:${pgPort}/${DB}`
 
+  if (!pkgScripts['db:migrate']) {
+    abort(
+      'package.json has no "db:migrate" script, which applies the migrations to the QA database.\n' +
+        'Add it — Drizzle: "db:migrate": "drizzle-kit migrate" (the kit\'s reference/tech/vps-postgres.md).',
+    )
+  }
   console.log('… bun run db:migrate')
   const migrate = spawnSync('bun', ['run', 'db:migrate'], {
     stdio: 'inherit',
@@ -586,9 +747,42 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
     console.log('… drizzle/seed.sql')
     sqlIn(DB, readFileSync('drizzle/seed.sql', 'utf8'))
   }
+  // A seed that needs code (Better Auth's hashes, accounts in an app with `disableSignUp`,
+  // where the sign-up route below does not exist): the project's own, against this database.
+  if (reset && existsSync('scripts/seed-db.ts')) {
+    console.log('… scripts/seed-db.ts')
+    const seed = spawnSync('bun', ['scripts/seed-db.ts'], {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+      env: { ...process.env, DATABASE_URL: databaseUrl, DIRECT_URL: databaseUrl },
+    })
+    if (seed.status !== 0) abort('scripts/seed-db.ts failed.')
+  }
 
   console.log(`Local database: ${databaseUrl} · emails at http://127.0.0.1:${mailUi}`)
-  if (dbOnly) process.exit(0)
+
+  // The project's own way to create an account (no sign-up, an ID number instead of an email,
+  // a password set on an account the seed made): `createAccountPostgres` in qa-roles.ts. The
+  // sign-up route could not do it and `existingAccount` left the seed's account without the
+  // `.env.test.local` password (krea ×3). It returns the user's id for `assignRolePostgres`.
+  async function createWithHook(site: string | null): Promise<void> {
+    for (const a of accounts) {
+      if (!a.email || !a.password || (await seeded(a))) continue
+      const id = await roles.createAccountPostgres?.(
+        { email: a.email, password: a.password, role: a.role },
+        { sql: (statement) => sqlIn(DB, statement), databaseUrl, site },
+      )
+      if (id) await roles.assignRolePostgres?.(id, a.role, { sql: (statement) => sqlIn(DB, statement) })
+      console.log(`  + test account: role ${a.role} (createAccountPostgres)`)
+    }
+  }
+  if (dbOnly) {
+    if (roles.createAccountPostgres) await createWithHook(null)
+    else if (accounts.length) {
+      console.warn('! --db-only: the .env.test.local accounts are not created (they need the server\'s sign-up); createAccountPostgres in scripts/qa-roles.ts does it without one.')
+    }
+    process.exit(0)
+  }
 
   const env: NodeJS.ProcessEnv = { ...process.env, QA_LOCAL: '1' }
   for (const k of [...Object.keys(ENV_MAP), ...remote.map((r) => r.key)]) env[k] = dead(k)
@@ -602,21 +796,29 @@ if (args.includes('--postgres') || (hasDrizzle && !usesSupabase && !existsSync('
     SMTP_USER: '',
     SMTP_PASS: '',
     SMTP_FROM: 'QA <qa@example.test>',
+    EMAIL_FROM: 'QA <qa@example.test>', // projects that copied the guide before 3.24.0 read this name
   })
+  // Like the Supabase branch: without it, `ADMIN_EMAILS` kept the real addresses of
+  // `.env.local` and the test admin was not admin (iglesia-maranatha).
+  for (const [role, variable] of Object.entries(ROLE_BY_ENV)) {
+    env[variable] = accounts.filter((a) => a.role === role && a.email).map((a) => a.email).join(',')
+  }
 
   await startServer(env, async () => {
+    if (roles.createAccountPostgres) return createWithHook(SITE)
     for (const a of accounts) {
       if (!a.email || !a.password) {
         console.warn(`! role ${a.role}: email or password missing in .env.test.local; skipped`)
         continue
       }
+      if (await seeded(a)) continue
       const r = await fetch(`${SITE}/api/auth/sign-up/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Origin: SITE },
         body: JSON.stringify({ email: a.email, password: a.password, name: a.role }),
       })
       if (r.status === 404) {
-        console.warn('! The app has no Better Auth sign-up route yet: test accounts skipped.')
+        console.warn('! The app has no Better Auth sign-up route (not yet, or `disableSignUp`): test accounts skipped. Create them in scripts/seed-db.ts and mark them in existingAccount (scripts/qa-roles.ts).')
         return
       }
       const email = a.email.replaceAll("'", "''")
@@ -638,30 +840,51 @@ if (firebaseJson?.emulators && !existsSync('supabase/config.toml')) {
   const up = (hostPort: string) => answers('127.0.0.1', Number(hostPort.split(':')[1]))
 
   // Waits up to `seconds`, printing progress every 15 s so a slow first start does not look hung.
-  async function waitFor(hostPort: string, seconds: number): Promise<void> {
+  // Returns false if the CLI exited first: on a cold HDD Firestore took 71 s, firebase-tools
+  // gave up at 60, and the old message blamed Java (KREA).
+  async function waitFor(hostPort: string, seconds: number, cli?: ChildProcess): Promise<boolean> {
     for (let i = 1; i <= seconds; i++) {
-      if (await up(hostPort)) return
+      if (await up(hostPort)) return true
+      if (cli && cli.exitCode !== null) return false
       if (i % 15 === 0) console.log(`  … waiting for the emulator on ${hostPort} (${i} s)`)
       await new Promise((r) => setTimeout(r, 1000))
     }
-    abort(`The emulator on ${hostPort} did not answer in ${seconds} s (is Java installed?).`)
+    abort(
+      `The emulator on ${hostPort} did not answer in ${seconds} s. Look at the firebase output above;` +
+        ' if it never started, check `java -version` and that the port is free.',
+    )
   }
 
+  // Without it, firebase-tools can sit silently on its update check (KREA).
+  process.env.NO_UPDATE_NOTIFIER = '1'
   const emulatorEnv = {
     ...process.env,
     FIREBASE_AUTH_EMULATOR_HOST: AUTH,
     FIRESTORE_EMULATOR_HOST: FIRESTORE,
     GCLOUD_PROJECT: FIREBASE_QA_PROJECT,
+    // A seed that reads the project id from the app's variable got the real one from
+    // `.env.local` (Bun loads it) and aborted (inversiones-js): every prefix gets the demo one.
+    ...Object.fromEntries(['', 'NEXT_PUBLIC_', 'PUBLIC_', 'VITE_'].map((p) => [`${p}FIREBASE_PROJECT_ID`, FIREBASE_QA_PROJECT])),
   }
   if ((await up(AUTH)) && (await up(FIRESTORE))) {
     console.log('= emulators already running')
   } else {
     console.log('… firebase emulators:start (the first time on a machine: minutes)')
-    if (pkgScripts.emulators?.includes('--project')) launch('bun', ['run', 'emulators'], process.env)
-    else if (pkgScripts.emulators) launch('bun', ['run', 'emulators', '--', '--project', FIREBASE_QA_PROJECT], process.env)
-    else launch('bun', ['x', 'firebase', 'emulators:start', '--project', FIREBASE_QA_PROJECT], process.env)
-    await waitFor(AUTH, 240)
-    await waitFor(FIRESTORE, 240)
+    const start = () =>
+      pkgScripts.emulators?.includes('--project')
+        ? launch('bun', ['run', 'emulators'], process.env)
+        : pkgScripts.emulators
+          ? launch('bun', ['run', 'emulators', '--', '--project', FIREBASE_QA_PROJECT], process.env)
+          : launch('bun', ['x', 'firebase', 'emulators:start', '--project', FIREBASE_QA_PROJECT], process.env)
+    let cli = start()
+    let ready = (await waitFor(AUTH, 240, cli)) && (await waitFor(FIRESTORE, 240, cli))
+    if (!ready) {
+      // The second start is warm (the emulator's JAR and the JVM are cached): once, not a loop.
+      console.log('… firebase exited before the emulators were ready (a cold start over its 60 s?): retrying once')
+      cli = start()
+      ready = (await waitFor(AUTH, 240, cli)) && (await waitFor(FIRESTORE, 240, cli))
+    }
+    if (!ready) abort('firebase emulators:start exited twice before the emulators were ready: see its output above.')
   }
 
   if (reset && existsSync('scripts/seed-emulator.ts')) {
@@ -679,6 +902,7 @@ if (firebaseJson?.emulators && !existsSync('supabase/config.toml')) {
       console.warn(`! role ${a.role}: email or password missing in .env.test.local; skipped`)
       continue
     }
+    if (await seeded(a)) continue
     const r = await fetch(`${authApi}/accounts`, {
       method: 'POST',
       headers: owner,
@@ -766,6 +990,7 @@ for (const a of accounts) {
     console.warn(`! role ${a.role}: email or password missing in .env.test.local; skipped`)
     continue
   }
+  if (await seeded(a)) continue
   const r = await fetch(`${api}/auth/v1/admin/users`, {
     method: 'POST',
     headers,

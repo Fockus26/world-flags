@@ -37,6 +37,7 @@ minutes.
 | Cloud Functions | Route handlers or server actions | Low–medium per function |
 | `onSnapshot` | Polling with SWR/React Query, or SSE from a route handler | Medium; often polling is enough |
 | Scheduled functions | A timer on the VPS calling a route protected with `CRON_SECRET` (`vps-postgres.md`) | Low |
+| `runTransaction` (retried on conflict) | No automatic retry: a `db.transaction` that reads with `SELECT … FOR UPDATE` (Drizzle: `.for('update')`) the row it derives from, so two concurrent writes queue instead of one overwriting the other (KREA lost writes without it) | Low per transaction, but each one must be found |
 
 If it shows deep subcollections or heavy `onSnapshot`, **say so to César before starting**, with the
 estimate: maybe that project should stay. A static site with no server has one more step: `astro.md`
@@ -74,14 +75,21 @@ its authorization check from §1. Grep must end at zero: `firebase` imports left
 migration not finished. `functional-qa` runs over every flow before the cutover, on the real build
 and not only in dev (it is the version QA of a new backend).
 
+**The emulator tests become PGlite tests**, without Docker or the VPS: `@electric-sql/pglite`
+with `drizzle-orm/pglite`, applying the migrations of `drizzle/` (`migrate` from
+`drizzle-orm/pglite/migrator`) to an in-memory database per file. A small shim with the shape
+of a `DocumentSnapshot` (`exists`, `id`, `data()`) over the rows let KREA port ~3,900 lines of
+tests almost line by line; once ported, the shim goes away test by test.
+
 The export script, all or nothing, that compares content and not only counts: rehearse it on a
 temporary database. Documents without a field the new column requires are found here, not later.
 
 ## 5. Cutover, in this order, with César
 
 1. A low-traffic window. Writes frozen (maintenance banner, or the app in read-only).
-2. Production variables in Vercel: `ssh kit-vps kit-db url <project> | vercel env add DATABASE_URL
-   production`, and the SMTP and `BETTER_AUTH_*` ones.
+2. Production variables in Vercel: `DATABASE_URL` with the command in `VPS-POSTGRES.md` ›
+   Credentials (a pipe into `vercel env add` fails in an agent's shell), and the SMTP and
+   `BETTER_AUTH_*` ones.
 3. `db:migrate` through the tunnel (`vps-postgres.md` › Migrations).
 4. Final data copy with the export script, then the auth import.
 5. Counts per collection against rows per table, at both ends.

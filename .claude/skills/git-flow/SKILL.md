@@ -93,6 +93,17 @@ git checkout -b <type>/<kebab-case-description>
 In a **worktree pool slot** (a unit delegated by `orchestrate`), the branch already exists:
 `wt take` created it from `origin/main`. Do not create another one or switch branches.
 
+**Uncommitted work before opening** (`git status --short` is not empty and it is not from
+this unit): a worktree or a new branch from `origin/main` does not carry it, so the unit
+would start without that code. Do not stash, discard or carry it along silently. Show César
+the list (`git status --short`, grouped) and propose, in this order: (1) it is finished work
+→ commit it on its own branch and PR first, then open this unit from there or from `main`
+once merged; (2) it is work in progress the unit depends on → open the unit on top of that
+branch, in place, and say so in the PR; (3) it is unrelated → leave it in the main folder
+and do the unit in a pool slot. Why: in InspecChile a whole migration was uncommitted, the
+clean worktree from HEAD had no plugin, and the kit's adoption had to be done in the dirty
+tree (2026-11-07).
+
 **Valid types:** `feat`, `fix`, `refactor`, `style`, `docs`, `chore`, `perf`, `test`,
 `design`, `a11y`, `seo`.
 
@@ -124,10 +135,20 @@ Before even mentioning a commit:
    with its open findings explicitly accepted by César. Without that, it does not close.
 2. **If the unit closed a section with content, a page, or initialized the repo:** the
    `seo` skill must already have run.
-3. `bun run build` (or the project's build command) passes with no errors.
+3. **The build runs in CI, not here.** The PR is not merged until CI's `build` job is green;
+   locally, only if the unit touches `next.config`, the dependencies or the build setup, or
+   CI's build failed. With a deploy preview (Vercel), open its URL once: a route answers
+   200. Why: the local build took 109–309 s per unit on an HDD against 44 s in CI, and it
+   did not catch the production 500 (`require(esm)`) that only the real startup showed
+   (KREA; César, 2026-11-05). A project without CI keeps the local build.
 4. `bunx tsc --noEmit` and the linter pass, if the project has them configured.
 5. **Tests:** during the work `bun run test:related` was enough; here goes the full suite
-   (`bun run test`, with `--dots`). CI runs it again on the PR.
+   (`bun run test`), in the background with its output to a file and its exit code at the
+   end (`{ bun run test; echo "exit $?"; } > .qa/test.log 2>&1`): read the code from the
+   file, never through `| tail` or under `timeout`, which gave exit 0 with no output, a false
+   green (krea ×2, kit-deploy). CI runs it again on the PR; waiting for it, `gh pr checks
+   <n> --watch` the same way, in the background (it outlives the 120 s of a foreground
+   command).
 5b. **Closing QA — only for risk**, outside a wave of `orchestrate` (which has its own
    `wave-qa`): if the unit **completes a risk flow** (sign-up/login/session, a form that
    saves data, a CRUD, payments, checkout) → launch `functional-qa` on that flow, with
@@ -258,6 +279,7 @@ of the PR.
 
 ```bash
 git add <the unit's specific files>                  # never -A blindly
+git diff --cached --stat                             # only the unit's files? (a staged `git rm` slipped in: KREA)
 git commit -m "<type>(<scope>): <descripción>"       # one or several, Conventional Commits
 git push -u origin <branch>
 gh pr create --base main --title "<type>(<scope>): <descripción>" --body-file <file>
@@ -271,10 +293,25 @@ merged a PR while its QA commit was being pushed, and the commit was left out
 
 The body follows `.github/pull_request_template.md`: what changes, why, how to test it,
 **screenshots**, how it was verified and what was not, decisions taken with their
-alternative, and **manual actions** (SQL, dashboards, deploy order).
+alternative, and **manual actions** (SQL, dashboards, deploy order). A command César will
+run is written for PowerShell, his terminal: `bash scripts/x.sh` there runs WSL's bash, not
+Git's (`execvpe(/bin/bash) failed`: kit-deploy) — give `& "C:\Program Files\Git\bin\bash.exe"
+scripts/x.sh`, or say "in Git Bash".
 
 Afterwards:
 
+- **Do not stop at the open PR when the plan has more.** Take the next pending unit that
+  does not depend on a PR still open — its branch from an updated `main` — and keep the
+  questions for César in one list at the end. If everything left depends on an unmerged PR,
+  stop and say which PR unblocks what. The agent stopped to ask after every PR and César
+  had to say "no te quedes quieto" (InversionesJL22).
+- **A PR whose base is another PR's branch** (a chain) is the exception, never the way to
+  keep going: only when César asks for it. Then its body says, at the top, the merge order
+  — from the first to the last, each one after `gh pr edit <n> --base main` once the one
+  below is merged — and before reporting the work as done you check it reached `main`:
+  `git fetch origin && git branch -r --merged origin/main | grep <branch>`. Ten chained PRs
+  were merged each into its own base: only the first reached `main` and units 2–11 needed
+  an integration PR (InversionesJL22).
 - **Never** `gh pr merge`, never auto-merge, never push to `main`. The merge (squash) is César's.
 - Changes requested on the PR? New commits on the same branch + push. No amend or force-push
   over what was pushed.

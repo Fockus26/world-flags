@@ -19,6 +19,6 @@
 		}
 	],
 	"files": {
-		"includes": ["**", "!**/.claude/worktrees"]
+		"includes": ["**", "!.claude/worktrees", "!**/.claude/kit-reference"]
 	}
 }

@@ -33,6 +33,57 @@ bunx shadcn@latest add button card dialog
 **When:** projects where the design is custom and specific, and you want the design system
 to rule over the component.
 
+**`shadcn init` in a project that already has its tokens** (KREA, v4): it rewrites
+`--accent`, `--secondary`, `--input` in the global CSS, switches the fonts in `layout.tsx`
+to Geist, adds packages (`shadcn`, `tw-animate-css`, its own `cn`) and changes the `cn`
+import of every file. Run it on a clean tree and review its diff before committing: restore
+the tokens and fonts, keep the project's `cn` (with its `extendTailwindMerge`,
+`STACK-NEXTJS.md`) and point `components.json › aliases.utils` at it. After that, `add`
+only touches `components/ui/`. Also restore (iglesia-maranatha): the `tailwind.config.ts` it
+points `components.json` at in a v4 project that has none, the `@layer base` and `.dark`
+blocks it adds over the project's own, and the font switch.
+
+**The CLI, in practice:**
+
+- **Install it as a dev dependency** (`bun add -d shadcn`, then `bunx shadcn add …` runs the
+  local one): `bunx shadcn@latest` downloads it on every call and hung twice past 2 min
+  (iglesia-maranatha ×2).
+- **`add` asks before overwriting** a component you already have (`add dialog` asks about
+  `button.tsx`) and waits for an answer an agent cannot give. First `bunx shadcn add <x>
+  --dry-run` to see what it touches; then `-y`, and `--overwrite` only for files you mean to
+  replace. If it still asks, `echo n | bunx shadcn add <x> -y` keeps yours.
+- **Check the imports `add` writes.** A recent registry style imported `cn` from an npm
+  package named `cn` and added it to `package.json`, ignoring `aliases.utils`
+  (iglesia-maranatha). A guard test: no file in `components/ui/` imports `cn` from anywhere
+  but the project's alias, and `package.json` has no `cn` dependency.
+- **lucide-react ≥ 1.0 has no brand logos** (Instagram, YouTube): they go in a
+  `components/brand-icons.tsx` of the project's own, as inline SVG.
+
+**Reduced motion:** the `motion-reduce:animate-none` the components bring loses against
+`data-open:animate-in` (same specificity, later in the CSS): dialogs and selects still zoom in
+with `prefers-reduced-motion` (iglesia-maranatha, inversiones-js, checked). Write it
+`motion-reduce:animate-none!` (important) on install, or one global rule
+`@media (prefers-reduced-motion: reduce) { [data-slot] { animation: none !important } }`. The
+`a11y` gate measures it: `getComputedStyle(el).animationName` is `none` with
+`reducedMotion: 'reduce'`.
+
+**Measuring over Radix modals:** `elementFromPoint` over an open modal returns false negatives
+(Radix sets `pointer-events: none` on `body`): measure a toast's visibility with its box and
+`z-index`, not with a hit test. **Combobox (`cmdk`) in Playwright:** `getByRole('combobox', {
+name })` also matches cmdk's input and `getByLabel` does not find it; use `exact: true` or the
+placeholder (kit-deploy). A grid rebuilt with `role="row"`/`"cell"` (where MUI's `Box` had none)
+triggers Biome's a11y rules: use a real `<table>` or fix the roles (iglesia-maranatha).
+
+**Two components that pass axe and are still wrong** (workout):
+
+- **Toggle group.** Check the `role` the rendered group carries, not the one you expect: a
+  multiple-selection group came out as `role="toolbar"`. Filters are a `role="group"` with
+  its label; a choice of one is a `radiogroup` (Radix's `RadioGroup`, or `type="single"` with
+  the radio semantics).
+- **Sonner with `unstyled`.** It drops its width too: on desktop the toast stayed 184 px
+  wide, and its durations are its own, not the motion tokens. The project's toast brings the
+  minimum CSS back (a width, the stack's gap) and a test that measures it at 1280 px.
+
 ### Hero UI (formerly NextUI)
 
 A real library, installed as a dependency. Built on React Aria (Adobe) for accessibility,

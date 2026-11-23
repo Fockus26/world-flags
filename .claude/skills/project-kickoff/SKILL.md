@@ -47,6 +47,14 @@ Before the first question:
 **Never ask something he already told you.** It is the fastest way to make a flow like this
 feel bureaucratic.
 
+**The project already exists** (an app in production, or a change of framework or backend):
+the kickoff starts from the code, not from the idea. Inventory first — routes and screens,
+components, data and auth, what is deployed and where — and ask only what the code does not
+answer. In the plan, the phases the app already covers are listed as done, with what was
+checked, not repeated; a migration is its own phases, each one leaving the app working (the
+session of auth and the URLs users have saved are on the list of what moves). The skill
+assumed a new project and all of this was improvised (workout).
+
 ---
 
 ## Step 2 — Adaptive interview
@@ -137,8 +145,19 @@ Me faltan estas para armar el plan:
     > alto, ilustración por encima de foto, copy en primera persona. *Transmite:*
     > accesibilidad. *Riesgo:* puede leerse como poco serio en B2B.
 
+    **Each direction grows from an anchor in the business** (its material, place, trade, an
+    object of its work) and says which: "stamps and ledgers" for a notary, not "modern".
+    None of the three may be a generic AI look (cream + serif + one accent, purple
+    gradient, Inter with rounded cards): the list is in the kit's
+    `reference/AI-DEFAULTS.md`. Why: the designs came out like every other generated site
+    (César, 2026-11-20), and a style label with no anchor is exactly what produces that.
+    The chosen anchor goes into the brief's § 2.
+
     Ask him to pick one, or to mix. If he has no opinion, **pick the one that fits the
-    business best yourself and say why.**
+    business best yourself and say why.** If he would rather see them than read them, show
+    them: the same screen (the hero or the main view) in the three directions, side by side
+    on one page, before he chooses — César asked to see them, then for a mix and variations
+    (kit-deploy).
 
 ### Block D — Technical
 
@@ -148,8 +167,9 @@ Me faltan estas para armar el plan:
     Auth, no dashboard, Storage or Realtime included), **Supabase** or **Firebase**. It
     decides whether local QA needs Docker or Java. See `reference/STACK-NEXTJS.md` ("Backend").
     **WordPress** if the client already has one, edits content in its admin, or the shop is
-    WooCommerce: `reference/tech/wordpress.md` (code in a site plugin in git, a local copy
-    with wp-env).
+    WooCommerce: `reference/tech/wordpress.md` (code in a site plugin in git, a local copy,
+    deploy by SSH or FTPS). The repo is set up with `new-project.ps1 -Stack wordpress` and the
+    order is `reference/tech/wordpress-adopt.md`, not the Next.js steps of this skill.
     **Tech refs:** what is chosen here goes in `CLAUDE.md`'s `Tech refs` line
     (`reference/tech/README.md`), so the project only ever reads those.
     **Payments:** for each method the client wants, `reference/PAYMENTS.md` gives what the
@@ -170,9 +190,10 @@ Me faltan estas para armar el plan:
 
     If there is already code with one of the three, that one wins: migrating mid-project
     does not pay off.
-14. **Where it deploys** (Vercel, or another host: `reference/tech/other-hosting.md`, asked now
-    because a plan without Node changes the stack) and whether there is a domain. It goes in
-    `Tech refs` too.
+14. **Where it deploys** (Vercel; César's VPS through kit-deploy, only if `ssh kit-vps
+    kit-deploy version` answers: `reference/tech/vps-hosting.md`; or another host:
+    `reference/tech/other-hosting.md`, asked now because a plan without Node changes the stack)
+    and whether there is a domain. It goes in `Tech refs` too.
 15. **External services** already decided: payment gateway, auth provider, database, CMS,
     email sending, analytics.
 
@@ -216,6 +237,7 @@ Present the plan with `ExitPlanMode` and wait for approval.
 | **Landing** | 01 · 02 · 03 · 04 · 06 · 08 · 09 | A single page. Skips 05 (the page is assembled in 04) and 07 unless there is a form that really submits. |
 | **Site** | 01 – 06 · 08 · 09 | Corporate or multi-page without a heavy backend. |
 | **Product** | 01 – 09 | E-commerce, SaaS, dashboard: anything with auth, payments or user data. |
+| **Infra** | The project's own phases first (server, agent, CLI, API), then 01 – 09 nested in one phase "Dashboard" | It starts with infrastructure and the interface comes after. No track fitted kit-deploy and one was improvised. |
 
 See `phases-templates/`. Choosing too much is as bad as choosing too little: empty phases
 create ceremony without real work.
@@ -320,6 +342,10 @@ Follow `reference/DEPLOY.md`:
 1. **GitHub**: first commit, `gh repo create`, and the settings that used to be manual
    (delete branches on merge, permission for the Action to open the version PR, protection
    of `main`). Each setting is read back to confirm it. `GIT_STATE.md` → `pr` mode.
+   On an existing repo, read its default branch first (`gh repo view --json
+   defaultBranchRef --jq .defaultBranchRef.name`): if it is not `main`, tell César and use
+   his answer everywhere the kit says `main`. A 403 on the protection (a private repo on a
+   free plan) is not an error to retry: say so and go on, `pr` mode works without it.
 2. **Vercel**: `vercel link`, `vercel git connect` (preview per PR, production on merge to
    `main`), non-secret environment variables (`NEXT_PUBLIC_SITE_URL`), domain if there is one,
    and `.env.local` pulled from Vercel (`vercel env pull .env.local --yes`; if it was
@@ -381,6 +407,12 @@ When César comes back with Claude Design's result:
    component's states, mobile behavior, a token without a value), **say so before starting
    to code** and give César the exact question to send back to Claude Design. It is far
    cheaper than finding out in phase 5.
+2b. If the design came with an HTML export, save it in `design/export/` and run the
+   detector on it (`reference/AI-DEFAULTS.md` § 2). Each `slop` finding that the handoff
+   does not justify in "Decisions and traps" goes to César as a question to take back to
+   Claude Design, together with the missing pieces: changing it now costs one prompt, and
+   after phase 04 it costs sections. Without an export, say so in one line and leave it to
+   `design-qa`.
 3. Reconcile the handoff with `context/`: if Claude Design changed a color or a scale,
    update `COLORS.md`/`TYPOGRAPHY.md`/`DESIGN_TOKENS.md` and record the decision. The
    handoff overrides the original proposal, but the change stays documented.

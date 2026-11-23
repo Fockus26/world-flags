@@ -16,7 +16,9 @@ numbers below are kept because older pieces cite them (§2c, §2d).
 
 Requirements: CLI (`vercel --version`) with a session (`vercel whoami`). Without a
 session, César runs `vercel login`. If the Vercel MCP is connected, it can be used to
-check deployments and logs; creating and linking the project goes through the CLI.
+check deployments and logs; creating and linking the project goes through the CLI. A
+build's logs: the MCP's `list_deployment_events`, not `vercel inspect --logs`, which failed
+with "Worker timed out" (krea).
 
 ```bash
 vercel link --yes --scope <team>       # creates/links the project; adds .vercel to .gitignore

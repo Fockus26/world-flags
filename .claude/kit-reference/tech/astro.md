@@ -36,3 +36,8 @@ Going from a static site to routes in the same origin is not only adding an adap
   already have the old worker installed: test with it installed, not only with a clean browser.
 - **An httpOnly session cookie cannot be read from the browser**, so a PWA that must know who
   is playing offline keeps that identity apart, and announces session changes between tabs.
+- **QA on the real build, not only in dev:** the service worker and the rate limits only behave
+  as in production there. `@astrojs/vercel` brings no `astro preview`, so the project adds a
+  `qa:serve` script that serves `.vercel/output` on `--port <port>` (static files plus the
+  functions), and `qa:local -- --preview` uses it with `NODE_ENV=production`. World-flags
+  tested the migration in dev only and wrote that server by hand (`.qa/fqa-prod.mjs`).
