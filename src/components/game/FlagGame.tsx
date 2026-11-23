@@ -15,6 +15,7 @@ import { Results } from "./Results";
 import { CountriesPractice } from "./session/countries/CountriesPractice";
 import { CountriesRush } from "./session/countries/CountriesRush";
 import { DailyPractice } from "./session/DailyPractice";
+import { MapPractice } from "./session/map/MapPractice";
 import { Session } from "./session/Session";
 import { Tutorial } from "./tutorial/Tutorial";
 
@@ -85,6 +86,10 @@ function FlagGameContent() {
 						return <CountriesRush key={activeGame.id} />;
 					}
 					return <CountriesPractice key={activeGame.id} runtime={game} />;
+				}
+				// Mapa solo tiene práctica (D240).
+				if (activeGame?.configuration.gameType === "map") {
+					return <MapPractice key={activeGame.id} runtime={game} />;
 				}
 				// Banderas y Capitales: la misma sesión con otra tarjeta (D068),
 				// con el mismo contrato que `CountriesPractice` (D121).

@@ -36,6 +36,7 @@ const NOUN_ARTICLES: Record<GameType, string> = {
 	countries: "los",
 	flags: "las",
 	capitals: "las",
+	map: "los",
 };
 
 /**

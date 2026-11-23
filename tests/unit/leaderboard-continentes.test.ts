@@ -16,6 +16,7 @@ import { beforeEach, describe, test } from "node:test";
 
 import {
 	BEST_TIME_RULE_SUFFIXES,
+	COMPETITIVE_GAME_TYPES,
 	GAME_TYPES,
 	getLeaderboardScope,
 	LEADERBOARD_REGIONS,
@@ -171,7 +172,8 @@ describe("claves versionadas por continente (D137)", () => {
 
 describe("scopes del ranking (D137)", () => {
 	test("27 scopes distintos; Todo el mundo no cambia", () => {
-		const scopes = GAME_TYPES.flatMap((gameType) =>
+		// Los juegos con competitivo: Mapa no tiene ranking (D240).
+		const scopes = COMPETITIVE_GAME_TYPES.flatMap((gameType) =>
 			LEADERBOARD_REGIONS.map((region) =>
 				getLeaderboardScope(gameType, region),
 			),
@@ -180,7 +182,7 @@ describe("scopes del ranking (D137)", () => {
 		assert.equal(scopes.length, 27);
 		assert.equal(new Set(scopes).size, 27);
 
-		for (const gameType of GAME_TYPES) {
+		for (const gameType of COMPETITIVE_GAME_TYPES) {
 			assert.equal(
 				getLeaderboardScope(gameType, "world"),
 				LEADERBOARD_SCOPES[gameType],

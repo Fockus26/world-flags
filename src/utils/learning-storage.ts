@@ -125,6 +125,7 @@ export type SubGameKey = {
 export const SUB_GAME_KEYS: Record<SubGameType, SubGameKey> = {
 	countries: "countriesGame",
 	capitals: "capitalsGame",
+	map: "mapGame",
 };
 
 /** Los juegos con sub-objeto, en el orden de `GAME_TYPES`: fija el orden de sus claves en `UserLearningData`. */
@@ -141,6 +142,7 @@ export const DEFAULT_DATA: UserLearningData = {
 	lastPracticeByCountry: {},
 	countriesGame: DEFAULT_GAME_PROGRESS,
 	capitalsGame: DEFAULT_GAME_PROGRESS,
+	mapGame: DEFAULT_GAME_PROGRESS,
 	achievements: {},
 	stats: DEFAULT_STATS,
 	sessionHistory: [],

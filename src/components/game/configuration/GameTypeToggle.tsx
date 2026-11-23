@@ -1,4 +1,4 @@
-import { City, Globe, TriangleFlag } from "iconoir-react";
+import { City, Globe, MapPin, TriangleFlag } from "iconoir-react";
 import { useId, useState } from "react";
 import { Fieldset } from "@/components/ui/Fieldset";
 import { Select } from "@/components/ui/Select";
@@ -14,6 +14,8 @@ interface GameTypeToggleProps {
 	 *  Sin píldora ni opción marcada, para que no aparezca en "Países" y se
 	 *  deslice a "Banderas" al llegar los datos. */
 	isLoading?: boolean;
+	/** Los juegos que se ofrecen. Sin esto, todos; el ranking pasa solo los que tienen competitivo (D240). */
+	gameTypes?: readonly GameType[];
 	className?: string;
 }
 
@@ -21,12 +23,8 @@ const GAME_TYPE_ICONS: Record<GameType, typeof Globe> = {
 	countries: Globe,
 	flags: TriangleFlag,
 	capitals: City,
+	map: MapPin,
 };
-
-const OPTIONS = GAME_TYPES.map((gameType) => ({
-	value: gameType,
-	label: GAME_TYPE_LABELS[gameType],
-}));
 
 /**
  * Selector de juego (D030: Países primero; Capitales al final, D066).
@@ -75,10 +73,15 @@ export function GameTypeToggle({
 	value,
 	onChange,
 	isLoading = false,
+	gameTypes = GAME_TYPES,
 	className,
 }: GameTypeToggleProps) {
 	const name = useId();
-	const selectedIndex = GAME_TYPES.indexOf(value);
+	const selectedIndex = gameTypes.indexOf(value);
+	const options = gameTypes.map((gameType) => ({
+		value: gameType,
+		label: GAME_TYPE_LABELS[gameType],
+	}));
 	// El "tic" de selección (D143) en las dos formas, sin tocar `ui/Select`.
 	const withSelectSound = useSelectSound();
 	const handleChange = withSelectSound(onChange);
@@ -94,7 +97,7 @@ export function GameTypeToggle({
 			<Select
 				className="min-[30rem]:hidden"
 				aria-label={legend}
-				options={OPTIONS}
+				options={options}
 				value={isLoading ? "" : value}
 				// Solo se lee mientras carga, que es cuando no hay juego elegido
 				// todavía; sin él, HeroUI pone "Select an item" en inglés.
@@ -120,7 +123,7 @@ export function GameTypeToggle({
 						// opción mientras dura.
 						className="absolute inset-y-1 left-1 transition-transform duration-200 ease-in-out"
 						style={{
-							width: `calc((100% - 0.5rem) / ${GAME_TYPES.length})`,
+							width: `calc((100% - 0.5rem) / ${gameTypes.length})`,
 							transform: `translateX(${selectedIndex * 100}%)`,
 						}}
 					>
@@ -131,7 +134,7 @@ export function GameTypeToggle({
 					</div>
 				)}
 
-				{GAME_TYPES.map((type) => {
+				{gameTypes.map((type) => {
 					const Icon = GAME_TYPE_ICONS[type];
 					const checked = !isLoading && value === type;
 

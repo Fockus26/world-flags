@@ -14,11 +14,11 @@ import { isCorrectAnswer } from "@/utils/normalize-answer";
 import { CapitalCard } from "./capitals/CapitalCard";
 import { FlagDisplay } from "./FlagDisplay";
 
-/** Juegos de tarjeta + input (`Session`). Países tiene su tablero (`session/countries/`). */
-export type CardGameType = Exclude<GameType, "countries">;
+/** Juegos de tarjeta + input (`Session`). Países tiene su tablero (`session/countries/`) y Mapa su mapa (`session/map/`). */
+export type CardGameType = Exclude<GameType, "countries" | "map">;
 
 export function isCardGameType(gameType: GameType): gameType is CardGameType {
-	return gameType !== "countries";
+	return gameType !== "countries" && gameType !== "map";
 }
 
 /**

@@ -29,6 +29,8 @@ interface ConfigurationModalProps {
 	profile: UserProfile;
 	onSaveProfile: (profile: UserProfile) => void;
 	mode: GameMode;
+	/** El juego elegido tiene competitivo. Mapa todavía no (D240). */
+	isCompetitiveAvailable: boolean;
 	onModeChange: (mode: GameMode) => void;
 	order: PracticeOrder;
 	onOrderChange: (order: PracticeOrder) => void;
@@ -95,6 +97,7 @@ export function ConfigurationModal({
 	profile,
 	onSaveProfile,
 	mode,
+	isCompetitiveAvailable,
 	onModeChange,
 	order,
 	onOrderChange,
@@ -324,6 +327,7 @@ export function ConfigurationModal({
 					>
 						<GameTab
 							mode={mode}
+							isCompetitiveAvailable={isCompetitiveAvailable}
 							onModeChange={onModeChange}
 							order={order}
 							onOrderChange={onOrderChange}

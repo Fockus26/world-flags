@@ -10,7 +10,7 @@
  * a ser visible, sin acoplarse a la duración exacta de la animación.
  */
 export function focusWhenVisible(
-	element: HTMLElement | null,
+	element: HTMLElement | SVGElement | null,
 	attemptsLeft = 40,
 ) {
 	if (!element) return;
