@@ -67,7 +67,7 @@ bun run test:e2e       # Playwright (necesita el server corriendo)
 su puerto). Build, typecheck, lint y tests sí se corren sin preguntar.
 
 **QA:** `bun run qa:local -- --port <p>` — Postgres y Mailpit en Docker (migraciones + seed) con las
-cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`; las escribes tú, nunca pidas login al dueño); nunca la base real.
+cuentas de `.env.test.local` (`EMAIL_TEST`/`PASSWORD_TEST`; las escribes tú, sin pedir login); nunca la base real.
 Scripts de Playwright con `node` (Bun se cuelga en Windows), en `.qa/`.
 
 **Docs:** **Context7** antes de cualquier API de librería.
