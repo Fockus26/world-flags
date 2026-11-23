@@ -3,6 +3,7 @@ import {
 	readLearningData,
 	writeLearningData,
 } from "@/server/data/learning-data";
+import { MAX_BODY_CHARS } from "@/server/data/learning-data-shape";
 import {
 	badRequest,
 	getSessionUserId,
@@ -32,6 +33,11 @@ export const POST = withErrorHandling(async (request) => {
 	const userId = await getSessionUserId(request);
 
 	if (!userId) return unauthorized();
+
+	const length = Number(request.headers.get("content-length") ?? 0);
+
+	if (length > MAX_BODY_CHARS)
+		return json({ message: "Demasiado grande" }, 413);
 
 	const body = await readJsonObject(request);
 
