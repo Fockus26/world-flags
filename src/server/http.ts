@@ -50,6 +50,10 @@ export async function readJsonObject(
 }
 
 /**
+ * Las escrituras (todo lo que no es GET) leen la sesión de la
+ * base, sin la caché de cookie de 5 min: una sesión cerrada en otro dispositivo deja de
+ * escribir al momento (P59). Las lecturas siguen usando la caché.
+ *
  * La cuenta de esta petición. **Toda escritura y toda lectura privada sale de aquí**,
  * nunca del cuerpo o de la URL: es lo que sustituye a `auth.uid() = user_id` de las
  * políticas de Supabase.
@@ -57,7 +61,11 @@ export async function readJsonObject(
 export async function getSessionUserId(
 	request: Request,
 ): Promise<string | null> {
-	const session = await auth.api.getSession({ headers: request.headers });
+	const isWrite = request.method !== "GET" && request.method !== "HEAD";
+	const session = await auth.api.getSession({
+		headers: request.headers,
+		query: { disableCookieCache: isWrite },
+	});
 	const userId = session?.user.id ?? null;
 	const expected = request.headers.get(ACCOUNT_HEADER);
 
