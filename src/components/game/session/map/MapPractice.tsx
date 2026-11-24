@@ -214,20 +214,25 @@ export function MapPractice({ runtime }: MapPracticeProps) {
 	// o se enseña. Un país reencolado vuelve sin pintar.
 	const foundCodes = new Set(practiceQueue.completedCodes);
 	if (isAnswered) foundCodes.add(currentCountry.code);
+
+	// Solo se juega con los continentes de la partida: sus países se pueden
+	// tocar (también los que no entran en esta partida, si no un lote de tres
+	// sería elegir entre tres) y el resto del mundo queda de fondo.
+	const sessionRegions = new Set(countries.map((country) => country.region));
+	const sessionCodes = catalog
+		.filter((country) => sessionRegions.has(country.region))
+		.map(({ code }) => code);
 	const selectableCodes = new Set(
-		catalog.map(({ code }) => code).filter((code) => !foundCodes.has(code)),
+		sessionCodes.filter((code) => !foundCodes.has(code)),
 	);
 
-	// Mientras se busca, el mapa encuadra los continentes de la partida (el
-	// mundo entero si son todos). Al acertar o enseñar, vuela al país.
-	const sessionRegions = new Set(countries.map((country) => country.region));
+	// Mientras se busca, el mapa encuadra esos continentes (el mundo entero si
+	// son todos). Al acertar o enseñar, vuela al país.
 	const focusCodes = isAnswered
 		? [currentCountry.code]
 		: sessionRegions.size === REGIONS.length
 			? undefined
-			: catalog
-					.filter((country) => sessionRegions.has(country.region))
-					.map(({ code }) => code);
+			: sessionCodes;
 
 	function handleOpenExitModal() {
 		pauseClock(clockPausesRef.current, "exit", performance.now());
