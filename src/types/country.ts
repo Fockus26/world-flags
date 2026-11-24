@@ -60,13 +60,37 @@ export const GAME_MODE_LABELS: Record<GameMode, string> = {
  * capital de cada país ("capitals"). Este orden es también el orden en que se
  * muestran en el selector de la configuración: Países primero (D030), porque
  * aprender los países ayuda luego a ubicar sus banderas y sus capitales;
- * Capitales al final para no mover lo que ya existía (D066).
+ * Capitales después para no mover lo que ya existía (D066), y Mapa al final
+ * por lo mismo (D240): ubicar un país en el mapa pide conocerlo antes.
  */
-export const GAME_TYPES = ["countries", "flags", "capitals"] as const;
+export const GAME_TYPES = ["countries", "flags", "capitals", "map"] as const;
 export type GameType = (typeof GAME_TYPES)[number];
 /** Un usuario nuevo arranca en Países (D030); uno con configuración vieja sin
  *  `gameType` se migra a "flags" en `migrateConfiguration`, no a este default. */
 export const DEFAULT_GAME_TYPE: GameType = "countries";
+
+/**
+ * Los juegos completos: competitivo con ranking, práctica diaria y partida
+ * de ejemplo en el recorrido. Mapa de momento solo tiene práctica (D240):
+ * lo demás llega en sus unidades y entonces entra aquí.
+ */
+export const COMPETITIVE_GAME_TYPES = [
+	"countries",
+	"flags",
+	"capitals",
+] as const satisfies readonly GameType[];
+export type CompetitiveGameType = (typeof COMPETITIVE_GAME_TYPES)[number];
+
+export function hasCompetitiveMode(
+	gameType: GameType,
+): gameType is CompetitiveGameType {
+	return (COMPETITIVE_GAME_TYPES as readonly GameType[]).includes(gameType);
+}
+
+/** El modo en que se juega `gameType`: el elegido, o práctica si el juego no tiene competitivo. */
+export function resolveGameMode(gameType: GameType, mode: GameMode): GameMode {
+	return hasCompetitiveMode(gameType) ? mode : "practice";
+}
 
 export function isGameType(value: unknown): value is GameType {
 	return (GAME_TYPES as readonly unknown[]).includes(value);
@@ -86,6 +110,7 @@ export const GAME_TYPE_LABELS: Record<GameType, string> = {
 	countries: "Países",
 	flags: "Banderas",
 	capitals: "Capitales",
+	map: "Mapa",
 };
 
 // Lo que cambia por juego en la UI vive en mapas como estos, no en ternarios
@@ -97,6 +122,7 @@ export const GAME_TYPE_TITLES: Record<GameType, string> = {
 	countries: "Aprende los países del mundo",
 	flags: "Aprende las banderas del mundo",
 	capitals: "Aprende las capitales del mundo",
+	map: "Ubica los países en el mapa",
 };
 
 /** Qué se recorre en una partida, en plural ("Recorriste 45 países"). */
@@ -104,6 +130,7 @@ export const GAME_TYPE_NOUNS: Record<GameType, string> = {
 	countries: "países",
 	flags: "banderas",
 	capitals: "capitales",
+	map: "países",
 };
 
 /**
@@ -145,6 +172,7 @@ export const WORLD_BEST_TIME_KEYS: Record<GameType, WorldBestTimeKey> = {
 	countries: "world",
 	flags: "world@2",
 	capitals: "world@2",
+	map: "world",
 };
 
 /**
@@ -159,6 +187,7 @@ export const LEADERBOARD_SCOPES: Record<GameType, string> = {
 	countries: "countries:world",
 	flags: "flags:world@2",
 	capitals: "capitals:world@2",
+	map: "map:world",
 };
 
 /**
@@ -173,6 +202,7 @@ export const BEST_TIME_RULE_SUFFIXES: Record<GameType, "" | "@2"> = {
 	countries: "",
 	flags: "@2",
 	capitals: "@2",
+	map: "",
 };
 
 /**

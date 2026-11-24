@@ -71,6 +71,8 @@ const DEMO_INSTRUCTIONS: Record<GameType, ReactNode> = {
 			enseña la respuesta.
 		</>
 	),
+	// Mapa no tiene partida de ejemplo (D240): no se llega a leer.
+	map: null,
 };
 
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [

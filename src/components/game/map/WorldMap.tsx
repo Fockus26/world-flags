@@ -3,12 +3,16 @@ import type {
 	KeyboardEvent as ReactKeyboardEvent,
 	PointerEvent as ReactPointerEvent,
 } from "react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { countries } from "@/data/countries";
 import type { Region } from "@/types/country";
 import type { WorldMapCountry, WorldMapData } from "@/types/world-map";
+import { getFlagUrl } from "@/utils/flag-precache";
+import { focusWhenVisible } from "@/utils/focus";
 import {
+	type Box,
 	clampView,
 	type Direction,
 	findClosest,
@@ -24,6 +28,7 @@ import {
 	toScreen,
 	zoomAt,
 } from "@/utils/map-viewport";
+import { loadWorldMap } from "@/utils/world-map-loader";
 
 /** Relleno de un país acertado: el color de su continente (D238). Clases literales: Tailwind las lee del código. */
 const REGION_FILLS: Record<Region, string> = {
@@ -56,6 +61,11 @@ const FIT_PADDING_PX = 24;
 /** Cuánto amplía cada pulsación de + o −, y cada paso de rueda. */
 const ZOOM_STEP = 1.6;
 const WHEEL_ZOOM_RATE = 0.0015;
+/**
+ * Al volar a un solo país, la caja se abre al menos hasta esto (unidades del
+ * mapa): se ve el país con sus vecinos, no un microestado a 60 aumentos.
+ */
+const MIN_FOCUS_SIZE = 700;
 
 const ARROW_DIRECTIONS: Record<string, Direction> = {
 	ArrowUp: "up",
@@ -74,6 +84,12 @@ export interface WorldMapProps {
 	/** El mapa vuela hasta encuadrar estos países cada vez que cambian. Sin esto, el mundo entero. */
 	focusCodes?: readonly string[];
 	onSelect?: (code: string) => void;
+	/** El país que se acaba de tocar por error: se marca en rojo mientras dure. */
+	wrongCode?: string;
+	/** El país recién acertado o revelado: su bandera aparece en la silueta y se funde con el color. */
+	celebrateCode?: string;
+	/** Al cambiar, el foco de teclado va al mapa (cada pregunta nueva). */
+	autoFocusKey?: string | number;
 	/**
 	 * Nombre del país para el lector de pantalla al enfocarlo con el teclado.
 	 * Durante una pregunta no se pasa: el nombre sería la respuesta (D239).
@@ -82,33 +98,42 @@ export interface WorldMapProps {
 	className?: string;
 }
 
-let worldMapPromise: Promise<WorldMapData> | undefined;
-
-/** El mapa pesa ~100 KB comprimido: se pide solo cuando hace falta, una vez. */
-function loadWorldMap(): Promise<WorldMapData> {
-	worldMapPromise ??= import("@/data/world-map.json").then(
-		(module) => module.default as unknown as WorldMapData,
-	);
-	return worldMapPromise;
-}
-
-function useWorldMap(): WorldMapData | undefined {
+/** El mapa, y si su descarga falló: `retry` vuelve a pedirlo. */
+function useWorldMap() {
 	const [worldMap, setWorldMap] = useState<WorldMapData>();
+	const [attempt, setAttempt] = useState(0);
+	const [failedAttempt, setFailedAttempt] = useState<number>();
 
 	useEffect(() => {
 		let isCurrent = true;
-		loadWorldMap().then((data) => {
-			if (isCurrent) setWorldMap(data);
-		});
+		loadWorldMap().then(
+			(data) => {
+				if (isCurrent) setWorldMap(data);
+			},
+			() => {
+				if (isCurrent) setFailedAttempt(attempt);
+			},
+		);
 		return () => {
 			isCurrent = false;
 		};
-	}, []);
+	}, [attempt]);
 
-	return worldMap;
+	return {
+		worldMap,
+		hasFailed: failedAttempt === attempt,
+		retry: () => setAttempt(attempt + 1),
+	};
 }
 
-function getFill(code: string, isFound: boolean, isSelectable: boolean) {
+function getFill(
+	code: string,
+	isFound: boolean,
+	isSelectable: boolean,
+	isWrong = false,
+) {
+	if (isWrong) return "fill-danger-soft stroke-danger";
+
 	const region = REGION_BY_CODE.get(code);
 	if (isFound && region) return `${REGION_FILLS[region]} stroke-surface`;
 
@@ -121,6 +146,7 @@ interface CountryShapesProps {
 	countries: WorldMapData["countries"];
 	foundCodes: ReadonlySet<string> | undefined;
 	selectableCodes: ReadonlySet<string> | undefined;
+	wrongCode: string | undefined;
 }
 
 /**
@@ -131,6 +157,7 @@ const CountryShapes = memo(function CountryShapes({
 	countries: shapes,
 	foundCodes,
 	selectableCodes,
+	wrongCode,
 }: CountryShapesProps) {
 	return Object.entries(shapes).map(([code, { d }]) => {
 		if (d === "") return null;
@@ -146,6 +173,7 @@ const CountryShapes = memo(function CountryShapes({
 					code,
 					foundCodes?.has(code) ?? false,
 					isSelectable,
+					code === wrongCode,
 				)} ${isSelectable ? "cursor-pointer" : ""}`}
 			/>
 		);
@@ -170,10 +198,13 @@ export function WorldMap({
 	selectableCodes,
 	focusCodes,
 	onSelect,
+	wrongCode,
+	celebrateCode,
+	autoFocusKey,
 	getCountryLabel,
 	className = "",
 }: WorldMapProps) {
-	const worldMap = useWorldMap();
+	const { worldMap, hasFailed, retry } = useWorldMap();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 	const [canvas, setCanvas] = useState<Size>();
@@ -185,6 +216,7 @@ export function WorldMap({
 	const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
 	/** A qué países se voló por última vez; `undefined` = todavía a ninguno. */
 	const [flownKey, setFlownKey] = useState<string>();
+	const celebrationClipId = useId();
 	const pointers = useRef(new Map<number, Point>());
 	const hasDragged = useRef(false);
 
@@ -199,6 +231,13 @@ export function WorldMap({
 		observer.observe(container);
 		return () => observer.disconnect();
 	}, []);
+
+	// Cada pregunta nueva deja el foco en el mapa: se puede seguir con las
+	// flechas sin volver a tabular hasta él.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: se dispara al cambiar `autoFocusKey`, que el cuerpo no lee
+	useEffect(() => {
+		if (autoFocusKey !== undefined) focusWhenVisible(svgRef.current);
+	}, [autoFocusKey, worldMap !== undefined && canvas !== undefined]);
 
 	// La rueda necesita `preventDefault` (si no, se desplaza la página), y eso
 	// solo se puede con un listener no pasivo: React los registra pasivos.
@@ -232,8 +271,25 @@ export function WorldMap({
 		return (
 			<div
 				ref={containerRef}
-				className={`relative size-full overflow-hidden rounded-xl bg-background ${className}`}
-			/>
+				className={`relative flex size-full flex-col items-center justify-center gap-3 overflow-hidden rounded-xl bg-background p-4 text-center ${className}`}
+			>
+				{/* Sin el mapa no se puede jugar: se dice y se ofrece reintentar. */}
+				{hasFailed && !worldMap && (
+					<>
+						<FeedbackMessage variant="danger" role="alert">
+							No se pudo cargar el mapa. Revisa tu conexión.
+						</FeedbackMessage>
+						<Button
+							type="button"
+							variant="outline"
+							color="neutral"
+							onClick={retry}
+						>
+							Reintentar
+						</Button>
+					</>
+				)}
+			</div>
 		);
 	}
 
@@ -248,6 +304,15 @@ export function WorldMap({
 				.map((code) => worldMap.countries[code]?.bbox)
 				.filter((bbox) => bbox !== undefined),
 		);
+		// Un país solo (o dos pegados) no se encuadra a ras: se abre la caja.
+		if (box) {
+			const growX = Math.max(MIN_FOCUS_SIZE - (box[2] - box[0]), 0) / 2;
+			const growY = Math.max(MIN_FOCUS_SIZE - (box[3] - box[1]), 0) / 2;
+			box[0] -= growX;
+			box[2] += growX;
+			box[1] -= growY;
+			box[3] += growY;
+		}
 		setFlownKey(focusKey);
 		setIsAnimated(true);
 		setView(box ? fitBox(box, worldMap, canvas, FIT_PADDING_PX) : undefined);
@@ -434,6 +499,22 @@ export function WorldMap({
 		([, country]) => getSizeOnScreen(country, current.scale) < MARKER_BELOW_PX,
 	);
 	const isFocusShown = hasKeyboardFocus && focused !== undefined;
+	const celebrated = celebrateCode
+		? worldMap.countries[celebrateCode]
+		: undefined;
+	const isCelebratedTiny =
+		celebrated !== undefined &&
+		(celebrated.d === "" ||
+			getSizeOnScreen(celebrated, current.scale) < MARKER_BELOW_PX);
+	const celebrationBox: Box =
+		celebrated && isCelebratedTiny
+			? [
+					celebrated.centroid[0] - targetRadius,
+					celebrated.centroid[1] - targetRadius,
+					celebrated.centroid[0] + targetRadius,
+					celebrated.centroid[1] + targetRadius,
+				]
+			: (celebrated?.bbox ?? [0, 0, 0, 0]);
 	const instructionsId = "world-map-instructions";
 
 	return (
@@ -479,6 +560,7 @@ export function WorldMap({
 						countries={worldMap.countries}
 						foundCodes={foundCodes}
 						selectableCodes={selectableCodes}
+						wrongCode={wrongCode}
 					/>
 					{markers.map(([code, { centroid }]) => (
 						<circle
@@ -491,6 +573,7 @@ export function WorldMap({
 								code,
 								foundCodes?.has(code) ?? false,
 								isSelectable(code),
+								code === wrongCode,
 							)} ${isSelectable(code) ? "cursor-pointer" : ""}`}
 						/>
 					))}
@@ -506,6 +589,37 @@ export function WorldMap({
 									className="cursor-pointer fill-transparent"
 								/>
 							),
+					)}
+					{celebrated && celebrateCode && (
+						// La bandera dentro de la silueta (o del punto, si el país es
+						// diminuto): se queda un momento y se funde, dejando el color
+						// del continente que ya hay debajo (D240). `key`: cada país
+						// vuelve a empezar la animación.
+						<g
+							key={celebrateCode}
+							className="pointer-events-none animate-out fade-out-0 fill-mode-forwards delay-700 duration-700"
+						>
+							<clipPath id={celebrationClipId}>
+								{isCelebratedTiny ? (
+									<circle
+										cx={celebrated.centroid[0]}
+										cy={celebrated.centroid[1]}
+										r={targetRadius}
+									/>
+								) : (
+									<path d={celebrated.d} />
+								)}
+							</clipPath>
+							<image
+								href={getFlagUrl(celebrateCode)}
+								x={celebrationBox[0]}
+								y={celebrationBox[1]}
+								width={celebrationBox[2] - celebrationBox[0]}
+								height={celebrationBox[3] - celebrationBox[1]}
+								preserveAspectRatio="xMidYMid slice"
+								clipPath={`url(#${celebrationClipId})`}
+							/>
+						</g>
 					)}
 					{isFocusShown && focused.d !== "" && (
 						<path

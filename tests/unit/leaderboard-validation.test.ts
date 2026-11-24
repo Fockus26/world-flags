@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 import { CAPITALS } from "@/data/capitals";
 import { countries } from "@/data/countries";
 import {
-	GAME_TYPES,
-	type GameType,
+	COMPETITIVE_GAME_TYPES,
+	type CompetitiveGameType,
 	getLeaderboardScope,
 	LEADERBOARD_REGIONS,
 	LEADERBOARD_SCOPES,
@@ -86,7 +86,7 @@ describe("mínimos del ranking", () => {
 
 		assert.equal(Object.keys(minimums).length, 27);
 
-		for (const gameType of GAME_TYPES) {
+		for (const gameType of COMPETITIVE_GAME_TYPES) {
 			assert.equal(
 				minimums[LEADERBOARD_SCOPES[gameType]],
 				countries.length * LEADERBOARD_MIN_MS_PER_ANSWER,
@@ -132,13 +132,13 @@ describe("mínimos del ranking", () => {
 			}, 0);
 
 			// Países acepta solo al escribir; Banderas y Capitales, con Enter.
-			const keys: Record<GameType, number> = {
+			const keys: Record<CompetitiveGameType, number> = {
 				countries: countryKeys,
 				flags: countryKeys + inScope.length,
 				capitals: capitalKeys + inScope.length,
 			};
 
-			for (const gameType of GAME_TYPES) {
+			for (const gameType of COMPETITIVE_GAME_TYPES) {
 				keysByScope[getLeaderboardScope(gameType, region)] = keys[gameType];
 			}
 		}

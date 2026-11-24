@@ -1,5 +1,5 @@
 import {
-	GAME_TYPES,
+	COMPETITIVE_GAME_TYPES,
 	getLeaderboardScope,
 	LEADERBOARD_REGIONS,
 } from "@/types/country";
@@ -49,7 +49,7 @@ export function collectLeaderboardMarks(
 	const marks: LeaderboardMark[] = [];
 
 	for (const region of LEADERBOARD_REGIONS) {
-		for (const gameType of GAME_TYPES) {
+		for (const gameType of COMPETITIVE_GAME_TYPES) {
 			const bestTimeMs = getRegionBestTime(
 				getGameProgress(data, gameType).regionBestTimes,
 				region,

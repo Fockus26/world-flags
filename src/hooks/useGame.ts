@@ -16,6 +16,7 @@ import {
 	type GameType,
 	type PracticeScope,
 	type Region,
+	resolveGameMode,
 } from "@/types/country";
 import type {
 	BestTimeKey,
@@ -196,10 +197,16 @@ export function useGame() {
 		// El modo competitivo ("rush") siempre es difícil y aleatorio: no son
 		// ajustables, así que se fuerzan acá sin importar qué haya quedado
 		// guardado (incluida configuración vieja de antes de esta regla).
+		// Un juego sin competitivo (Mapa, D240) se juega siempre en práctica,
+		// venga lo que venga guardado.
+		const requestedMode = resolveGameMode(
+			requestedConfiguration.gameType,
+			requestedConfiguration.mode,
+		);
 		const configuration: GameConfigurationType =
-			requestedConfiguration.mode === "competitive"
+			requestedMode === "competitive"
 				? { ...requestedConfiguration, order: "random", difficulty: "hard" }
-				: requestedConfiguration;
+				: { ...requestedConfiguration, mode: requestedMode };
 
 		let effectiveConfiguration = configuration;
 
@@ -240,10 +247,12 @@ export function useGame() {
 		// Se recuerda la selección tal como la pidió el usuario (no la
 		// recortada), para que la próxima vez vea marcado lo que eligió.
 		if (!isLearningPath) {
-			const updatedData = saveLastConfiguration(
-				getCurrentLearningData(),
-				configuration,
-			);
+			// El modo guardado no cambia por jugar a un juego que no lo
+			// elige (D240): al volver a Banderas sigue en el que estaba.
+			const updatedData = saveLastConfiguration(getCurrentLearningData(), {
+				...configuration,
+				mode: requestedConfiguration.mode,
+			});
 
 			dispatch(setLearningData(updatedData));
 		}

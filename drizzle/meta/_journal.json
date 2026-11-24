@@ -15,6 +15,13 @@
       "when": 1793746269986,
       "tag": "0001_ranking_validacion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795470040413,
+      "tag": "0002_juego_mapa",
+      "breakpoints": true
     }
   ]
 }

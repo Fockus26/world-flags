@@ -16,9 +16,12 @@ import { useTutorial } from "@/hooks/useTutorial";
 import {
 	DEFAULT_DIFFICULTY,
 	DEFAULT_GAME_MODE,
+	DEFAULT_GAME_TYPE,
 	DEFAULT_SCOPE,
 	DEFAULT_TIMER_DURATION,
 	GAME_TYPE_TITLES,
+	hasCompetitiveMode,
+	resolveGameMode,
 	resolveGameType,
 } from "@/types/country";
 import { getAvatarUrl } from "@/utils/avatar";
@@ -110,7 +113,7 @@ export function Configuration() {
 	const timerEnabled = learningData.lastConfiguration?.timerEnabled ?? false;
 	const difficulty =
 		learningData.lastConfiguration?.difficulty ?? DEFAULT_DIFFICULTY;
-	const mode = learningData.lastConfiguration?.mode ?? DEFAULT_GAME_MODE;
+	const storedMode = learningData.lastConfiguration?.mode ?? DEFAULT_GAME_MODE;
 	// Sin config guardada (usuario nuevo): arranca en Países (D030). Con
 	// config vieja sin `gameType`, `migrateConfiguration` ya la migró a
 	// "flags". Un juego que este cliente no conoce (de una versión más nueva,
@@ -118,6 +121,9 @@ export function Configuration() {
 	// al leerlo: lo guardado no se toca (D062). Es el único sitio que lee el
 	// juego de la configuración; todo lo demás lo recibe ya resuelto.
 	const gameType = resolveGameType(learningData.lastConfiguration?.gameType);
+	// Mapa solo tiene práctica (D240): el modo guardado no se toca, así al
+	// volver a otro juego sigue como estaba.
+	const mode = resolveGameMode(gameType, storedMode);
 	const scope = learningData.lastConfiguration?.scope ?? DEFAULT_SCOPE;
 	const customCodes = scope.type === "custom" ? scope.countryCodes : [];
 	// El selector recibe `customCodes` entero (los devuelve intactos al
@@ -165,7 +171,8 @@ export function Configuration() {
 			timerDuration,
 			timerEnabled,
 			difficulty,
-			mode,
+			// El guardado: `startGame` lo resuelve y lo conserva (D240).
+			mode: storedMode,
 			gameType,
 		});
 
@@ -340,6 +347,14 @@ export function Configuration() {
 					<StreakPanel activeDays={learningData.stats.activeDays} />
 				</AutoHeight>
 
+				{/* Para quien no ve el mapa (D239). */}
+				{gameType === "map" && (
+					<p className="sr-only">
+						El juego Mapa necesita ver el mapa. Con lector de pantalla, elige
+						Países, Banderas o Capitales.
+					</p>
+				)}
+
 				<GameTypeToggle
 					legend="Qué practicar"
 					value={gameType}
@@ -447,6 +462,8 @@ export function Configuration() {
 						</Button>
 					</Skeleton>
 				) : (
+					// Mapa aún no tiene práctica diaria (D240).
+					hasCompetitiveMode(gameType) &&
 					dueCount > 0 && (
 						<Button
 							color="secondary"
@@ -507,6 +524,7 @@ export function Configuration() {
 				profile={learningData.profile}
 				onSaveProfile={saveProfile}
 				mode={mode}
+				isCompetitiveAvailable={hasCompetitiveMode(gameType)}
 				onModeChange={(value) =>
 					// Competitivo siempre es difícil y aleatorio: no son ajustables.
 					updateSettings(
@@ -586,7 +604,9 @@ export function Configuration() {
 			<LeaderboardModal
 				isOpen={isLeaderboardOpen}
 				onClose={() => setIsLeaderboardOpen(false)}
-				defaultGameType={gameType}
+				defaultGameType={
+					hasCompetitiveMode(gameType) ? gameType : DEFAULT_GAME_TYPE
+				}
 			/>
 
 			<AchievementsModal

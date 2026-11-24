@@ -175,4 +175,5 @@ export const userLearningData = pgTable("user_learning_data", {
 	fieldUpdatedAt: jsonb("field_updated_at").notNull().default(emptyObject),
 	capitalsGame: jsonb("capitals_game").notNull().default(emptyObject),
 	learningPaths: jsonb("learning_paths").notNull().default(emptyObject),
+	mapGame: jsonb("map_game").notNull().default(emptyObject),
 });

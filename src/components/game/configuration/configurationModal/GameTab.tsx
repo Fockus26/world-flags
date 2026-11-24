@@ -39,6 +39,7 @@ function HelpHint({ label }: { label: string }) {
 
 interface GameTabProps {
 	mode: GameMode;
+	isCompetitiveAvailable: boolean;
 	onModeChange: (mode: GameMode) => void;
 	order: PracticeOrder;
 	onOrderChange: (order: PracticeOrder) => void;
@@ -52,6 +53,7 @@ interface GameTabProps {
 
 export function GameTab({
 	mode,
+	isCompetitiveAvailable,
 	onModeChange,
 	order,
 	onOrderChange,
@@ -92,7 +94,9 @@ export function GameTab({
 				}
 			>
 				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
-					{GAME_MODES.map((gameMode) => (
+					{GAME_MODES.filter(
+						(gameMode) => isCompetitiveAvailable || gameMode === "practice",
+					).map((gameMode) => (
 						<OptionTile
 							key={gameMode}
 							name="settings-mode"
@@ -104,6 +108,11 @@ export function GameTab({
 						</OptionTile>
 					))}
 				</div>
+				{!isCompetitiveAvailable && (
+					<p className="mt-2 text-caption text-text-placeholder">
+						El juego Mapa solo tiene práctica por ahora.
+					</p>
+				)}
 			</Fieldset>
 
 			<AutoHeight show={mode === "practice"}>

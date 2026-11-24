@@ -258,6 +258,8 @@ export interface UserLearningData {
 	countriesGame: GameProgress;
 	/** Progreso de Capitales (D061), igual que el de Países. Columna `capitals_game`. */
 	capitalsGame: GameProgress;
+	/** Progreso de Mapa (D240), igual que el de Países. Columna `map_game`. */
+	mapGame: GameProgress;
 	achievements: UnlockedAchievements;
 	stats: UserStats;
 	sessionHistory: SessionRecord[];
