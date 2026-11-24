@@ -175,6 +175,18 @@ function toRelativePath(d: string, digits: number): string {
  */
 const MAIN_TERRITORY_RATIO = 0.2;
 
+/**
+ * Países cuyo territorio mayor queda al otro lado del corte del mapa: su caja
+ * y su centro salen de los territorios cercanos a este punto `[longitud,
+ * latitud]`. Kiribati: Kiritimati (la isla mayor) cae en el borde izquierdo,
+ * lejos de Oceanía; se usa Tarawa, la capital.
+ */
+const MAIN_TERRITORY_NEAR: Record<string, [number, number]> = {
+	ki: [173, 1.4],
+};
+/** Radio, en unidades del mapa, de "cerca" para `MAIN_TERRITORY_NEAR`. */
+const NEAR_RADIUS = 150;
+
 const toPolygons = (geometry: MultiPolygon) =>
 	geometry.coordinates.map(
 		(coordinates): Polygon => ({ type: "Polygon", coordinates }),
@@ -203,9 +215,19 @@ for (const { code, name } of countries) {
 		}
 
 		const largestArea = Math.max(...territories.map(({ area }) => area));
+		const near = MAIN_TERRITORY_NEAR[code];
+		const nearPoint = near && projection(near);
 		const main = territories
-			.filter(({ area }) => area >= largestArea * MAIN_TERRITORY_RATIO)
+			.filter(({ polygon, area }) => {
+				if (!nearPoint) return area >= largestArea * MAIN_TERRITORY_RATIO;
+
+				const [x, y] = path.centroid(polygon);
+				return Math.hypot(x - nearPoint[0], y - nearPoint[1]) < NEAR_RADIUS;
+			})
 			.sort((a, b) => b.area - a.area);
+		if (main.length === 0) {
+			throw new Error(`${code}: ningún territorio cerca de su punto`);
+		}
 		const [[x0, y0], [x1, y1]] = path.bounds({
 			type: "GeometryCollection",
 			geometries: main.map(({ polygon }) => polygon),

@@ -74,6 +74,19 @@
 	--color-medal-bronze-soft: var(--app-color-medal-bronze-soft);
 
 	/* ===========================
+	   Continentes del modo Mapa (D238)
+	=========================== */
+
+	--color-region-north-america: var(--app-color-region-north-america);
+	--color-region-central-america: var(--app-color-region-central-america);
+	--color-region-caribbean: var(--app-color-region-caribbean);
+	--color-region-south-america: var(--app-color-region-south-america);
+	--color-region-europe: var(--app-color-region-europe);
+	--color-region-africa: var(--app-color-region-africa);
+	--color-region-asia: var(--app-color-region-asia);
+	--color-region-oceania: var(--app-color-region-oceania);
+
+	/* ===========================
 	   Overlay
 	   OJO: HeroUI usa el namespace `overlay` de Tailwind para el FONDO de sus
 	   superficies flotantes (modal, popover, menú, tooltip) — tiene que ser
