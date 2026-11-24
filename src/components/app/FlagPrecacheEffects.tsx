@@ -4,6 +4,7 @@ import {
 	requestFlagPrecache,
 	requestPersistentStorage,
 } from "@/utils/flag-precache";
+import { precacheWorldMap } from "@/utils/world-map-loader";
 
 /**
  * Espera antes de pedir la precarga: la primera carga (bundle, datos, la
@@ -20,7 +21,11 @@ const PRECACHE_DELAY_MS = 5_000;
  */
 export function FlagPrecacheEffects() {
 	useEffect(() => {
-		const request = () => void requestFlagPrecache();
+		const request = () => {
+			void requestFlagPrecache();
+			// El mapa del juego Mapa, por lo mismo: poder jugarlo sin red.
+			void precacheWorldMap();
+		};
 		const requestWhenVisible = () => {
 			if (document.visibilityState === "visible") request();
 		};

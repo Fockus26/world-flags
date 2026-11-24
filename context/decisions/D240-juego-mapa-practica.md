@@ -32,7 +32,15 @@ Un cliente con el SW en caché que reciba `gameType: "map"` por la nube cae a Pa
 
 `/mapa-lab` y `src/lab/` (D239) se quitan: el mapa ya se prueba en la app.
 
+### Si el mapa no llega, y sin red (QA funcional, 2026-11-23)
+
+- `world-map.json` se pide con `fetch` a su URL (`utils/world-map-loader.ts`), no con `import()`: un fallo no queda recordado y la siguiente llamada lo reintenta. Mientras falla, `WorldMap` lo dice («No se pudo cargar el mapa. Revisa tu conexión.») y ofrece «Reintentar».
+- `FlagPrecacheEffects` pide el mapa junto con las banderas (mismas condiciones: con service worker al mando, con red, sin ahorro de datos ni 2G). El service worker guarda todo GET propio, así que `public/sw.js` no cambia. Con eso Mapa se juega sin red aunque nunca se haya abierto.
+- Volver a tocar el país que ya está en rojo no gasta otro de los tres intentos (un doble toque gastaba dos).
+
 ### Verificación (2026-11-23)
+
+- QA funcional con cuenta y base local (`.qa/functional-qa-mapa.md`): migración, API, sincronización entre dispositivos, modos, temporizador y «Aprender por lotes», sin hallazgos. Sus dos hallazgos (mapa en blanco, doble toque) están arreglados: los dos repros de `.qa/repro/functional/` pasan sobre el build, y el mapa queda en la caché del service worker sin abrir el juego.
 
 - Sobre el build, servido en estático y como invitado: partida completa de Sudamérica a 375 px (toque equivocado, acierto al segundo intento, «No lo sé», tres fallos, resultados 9 de 12). En `localStorage`, el progreso quedó solo en `mapGame` y el modo guardado no cambió.
 - `.qa/mapa-partida-axe.mjs`: 0 violaciones y sin scroll horizontal en configuración, pregunta, tras un toque y revelado, a 320 y 1280 px, claro y oscuro.

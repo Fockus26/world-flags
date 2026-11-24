@@ -269,6 +269,9 @@ export function MapPractice({ runtime }: MapPracticeProps) {
 
 	function handleSelect(code: string) {
 		if (!currentCountry || answerStatus !== "idle") return;
+		// Volver a tocar el país que ya está marcado en rojo (un doble toque) no
+		// gasta otro intento.
+		if (code === wrongCode) return;
 
 		if (code === currentCountry.code) {
 			playSound("correct");

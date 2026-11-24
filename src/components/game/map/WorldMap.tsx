@@ -5,6 +5,7 @@ import type {
 } from "react";
 import { memo, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { countries } from "@/data/countries";
 import type { Region } from "@/types/country";
 import type { WorldMapCountry, WorldMapData } from "@/types/world-map";
@@ -27,6 +28,7 @@ import {
 	toScreen,
 	zoomAt,
 } from "@/utils/map-viewport";
+import { loadWorldMap } from "@/utils/world-map-loader";
 
 /** Relleno de un país acertado: el color de su continente (D238). Clases literales: Tailwind las lee del código. */
 const REGION_FILLS: Record<Region, string> = {
@@ -96,30 +98,32 @@ export interface WorldMapProps {
 	className?: string;
 }
 
-let worldMapPromise: Promise<WorldMapData> | undefined;
-
-/** El mapa pesa ~100 KB comprimido: se pide solo cuando hace falta, una vez. */
-function loadWorldMap(): Promise<WorldMapData> {
-	worldMapPromise ??= import("@/data/world-map.json").then(
-		(module) => module.default as unknown as WorldMapData,
-	);
-	return worldMapPromise;
-}
-
-function useWorldMap(): WorldMapData | undefined {
+/** El mapa, y si su descarga falló: `retry` vuelve a pedirlo. */
+function useWorldMap() {
 	const [worldMap, setWorldMap] = useState<WorldMapData>();
+	const [attempt, setAttempt] = useState(0);
+	const [failedAttempt, setFailedAttempt] = useState<number>();
 
 	useEffect(() => {
 		let isCurrent = true;
-		loadWorldMap().then((data) => {
-			if (isCurrent) setWorldMap(data);
-		});
+		loadWorldMap().then(
+			(data) => {
+				if (isCurrent) setWorldMap(data);
+			},
+			() => {
+				if (isCurrent) setFailedAttempt(attempt);
+			},
+		);
 		return () => {
 			isCurrent = false;
 		};
-	}, []);
+	}, [attempt]);
 
-	return worldMap;
+	return {
+		worldMap,
+		hasFailed: failedAttempt === attempt,
+		retry: () => setAttempt(attempt + 1),
+	};
 }
 
 function getFill(
@@ -200,7 +204,7 @@ export function WorldMap({
 	getCountryLabel,
 	className = "",
 }: WorldMapProps) {
-	const worldMap = useWorldMap();
+	const { worldMap, hasFailed, retry } = useWorldMap();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 	const [canvas, setCanvas] = useState<Size>();
@@ -267,8 +271,25 @@ export function WorldMap({
 		return (
 			<div
 				ref={containerRef}
-				className={`relative size-full overflow-hidden rounded-xl bg-background ${className}`}
-			/>
+				className={`relative flex size-full flex-col items-center justify-center gap-3 overflow-hidden rounded-xl bg-background p-4 text-center ${className}`}
+			>
+				{/* Sin el mapa no se puede jugar: se dice y se ofrece reintentar. */}
+				{hasFailed && !worldMap && (
+					<>
+						<FeedbackMessage variant="danger" role="alert">
+							No se pudo cargar el mapa. Revisa tu conexión.
+						</FeedbackMessage>
+						<Button
+							type="button"
+							variant="outline"
+							color="neutral"
+							onClick={retry}
+						>
+							Reintentar
+						</Button>
+					</>
+				)}
+			</div>
 		);
 	}
 
