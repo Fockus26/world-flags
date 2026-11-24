@@ -4,11 +4,14 @@
  */
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { getFlagRatio } from "@/data/flag-ratios";
 import worldMapJson from "@/data/world-map.json";
 import type { WorldMapData } from "@/types/world-map";
 import {
 	boxesIntersect,
+	clampBox,
 	containsBox,
+	coverBox,
 	expandBox,
 	getFlagBoxes,
 	getPathBox,
@@ -100,5 +103,43 @@ describe("zona dibujada", () => {
 
 	test("ampliar una caja la hace crecer por los cuatro lados", () => {
 		assert.deepEqual(expandBox([0, 0, 10, 20], 0.5), [-5, -10, 15, 30]);
+	});
+});
+
+describe("recortar y cubrir cajas", () => {
+	test("`clampBox` deja lo que cae dentro de los límites", () => {
+		assert.deepEqual(
+			clampBox([-50, 20, 80, 300], [0, 0, 100, 200]),
+			[0, 20, 80, 200],
+		);
+		assert.deepEqual(
+			clampBox([10, 10, 20, 20], [0, 0, 100, 200]),
+			[10, 10, 20, 20],
+		);
+	});
+
+	test("`coverBox` cubre una caja más alta que la bandera sin deformarla", () => {
+		// Caja de 100 × 200 y bandera 3:2: 300 × 200, centrada.
+		assert.deepEqual(coverBox([0, 0, 100, 200], 1.5), [-100, 0, 200, 200]);
+	});
+
+	test("`coverBox` cubre una caja más ancha que la bandera", () => {
+		// Caja de 400 × 100 y bandera 2:1: 400 × 200, centrada.
+		assert.deepEqual(coverBox([0, 0, 400, 100], 2), [0, -50, 400, 150]);
+	});
+
+	test("la bandera, colocada con su proporción, cubre cada grupo de territorios de cada país", () => {
+		for (const [code, { d }] of Object.entries(worldMap.countries)) {
+			for (const box of getFlagBoxes(d)) {
+				const ratio = getFlagRatio(code);
+				const cover = coverBox(box, ratio);
+				assert.ok(containsBox(expandBox(cover, 1e-9), box), code);
+				assert.ok(
+					Math.abs((cover[2] - cover[0]) / (cover[3] - cover[1]) - ratio) <
+						1e-9,
+					code,
+				);
+			}
+		}
 	});
 });

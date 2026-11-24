@@ -275,3 +275,45 @@ export function findClosest(
 
 	return best;
 }
+
+/**
+ * La zona del mapa que está dibujada (`box`) y a cuántos px por unidad. El
+ * mapa se pinta una vez así y, mientras la vista cambia, el navegador solo
+ * mueve y escala esa capa ya pintada (D242).
+ */
+export interface MapRaster {
+	box: Box;
+	scale: number;
+}
+
+/** Dónde cae en el lienzo la esquina de la capa dibujada y cuánto se escala para enseñar `view`. */
+export interface LayerPlacement {
+	x: number;
+	y: number;
+	scale: number;
+}
+
+export function getLayerPlacement(
+	view: MapView,
+	raster: MapRaster,
+	canvas: Size,
+): LayerPlacement {
+	const [x, y] = toScreen([raster.box[0], raster.box[1]], view, canvas);
+	return { x, y, scale: view.scale / raster.scale };
+}
+
+/** La inversa de `getLayerPlacement`: la vista que se ve con la capa colocada así. */
+export function getViewFromPlacement(
+	placement: LayerPlacement,
+	raster: MapRaster,
+	canvas: Size,
+): MapView {
+	const scale = placement.scale * raster.scale;
+	return {
+		scale,
+		center: [
+			raster.box[0] - (placement.x - canvas.width / 2) / scale,
+			raster.box[1] - (placement.y - canvas.height / 2) / scale,
+		],
+	};
+}

@@ -22,12 +22,16 @@ import {
 	findNeighbor,
 	fitBox,
 	getFocusBox,
+	getLayerPlacement,
 	getMaxScale,
 	getMinScale,
+	getViewFromPlacement,
 	getWorldView,
 	getZoom,
 	isVisible,
 	MAX_ZOOM,
+	type MapRaster,
+	type MapView,
 	type Point,
 	panBy,
 	toMap,
@@ -231,5 +235,49 @@ describe("foco de teclado en el mapa", () => {
 	test("el primer foco es el país más cercano al centro de la vista", () => {
 		assert.equal(findClosest(worldMap.countries.fr.centroid, candidates), "fr");
 		assert.equal(findClosest([0, 0], []), undefined);
+	});
+});
+
+describe("capa dibujada del mapa", () => {
+	const canvas = { width: 400, height: 300 };
+	const raster: MapRaster = { box: [1_000, 500, 3_000, 2_000], scale: 0.2 };
+
+	test("con la vista a la escala de lo dibujado, la capa no se escala y su esquina cae donde toca", () => {
+		const view: MapView = { center: [2_000, 1_250], scale: 0.2 };
+		const placement = getLayerPlacement(view, raster, canvas);
+
+		assert.equal(placement.scale, 1);
+		assert.deepEqual(
+			[placement.x, placement.y],
+			toScreen([1_000, 500], view, canvas),
+		);
+	});
+
+	test("un punto del mapa cae en el mismo sitio del lienzo por la capa que por la vista", () => {
+		const view: MapView = { center: [2_400, 900], scale: 0.7 };
+		const { x, y, scale } = getLayerPlacement(view, raster, canvas);
+		const point: [number, number] = [2_650, 1_100];
+		// Dentro de la capa, el punto está a (punto − esquina) × escala dibujada.
+		const inLayer = [
+			(point[0] - raster.box[0]) * raster.scale,
+			(point[1] - raster.box[1]) * raster.scale,
+		];
+		const [expectedX, expectedY] = toScreen(point, view, canvas);
+
+		assert.ok(Math.abs(x + inLayer[0] * scale - expectedX) < 1e-9);
+		assert.ok(Math.abs(y + inLayer[1] * scale - expectedY) < 1e-9);
+	});
+
+	test("de la colocación de la capa se recupera la vista", () => {
+		const view: MapView = { center: [2_400, 900], scale: 0.7 };
+		const back = getViewFromPlacement(
+			getLayerPlacement(view, raster, canvas),
+			raster,
+			canvas,
+		);
+
+		assert.ok(Math.abs(back.scale - view.scale) < 1e-9);
+		assert.ok(Math.abs(back.center[0] - view.center[0]) < 1e-9);
+		assert.ok(Math.abs(back.center[1] - view.center[1]) < 1e-9);
 	});
 });
