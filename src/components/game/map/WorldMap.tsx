@@ -12,6 +12,14 @@ import type { WorldMapCountry, WorldMapData } from "@/types/world-map";
 import { getFlagUrl } from "@/utils/flag-precache";
 import { focusWhenVisible } from "@/utils/focus";
 import {
+	boxesIntersect,
+	containsBox,
+	expandBox,
+	getBoxArea,
+	getFlagBoxes,
+	getPathBox,
+} from "@/utils/map-paths";
+import {
 	type Box,
 	clampView,
 	type Direction,
@@ -137,30 +145,63 @@ function getFill(
 	const region = REGION_BY_CODE.get(code);
 	if (isFound && region) return `${REGION_FILLS[region]} stroke-surface`;
 
+	// Ni se puede elegir ni está acertado: no es de la partida. Queda de fondo,
+	// como el resto de la tierra.
 	return isSelectable
-		? "fill-surface-border stroke-text-placeholder hover:fill-primary-border"
-		: "fill-surface-border stroke-text-placeholder";
+		? "fill-surface-border stroke-text-placeholder transition-colors hover:fill-primary-border"
+		: "fill-neutral-soft stroke-surface-border";
 }
+
+const countryBoxesCache = new WeakMap<WorldMapData, Record<string, Box>>();
+
+/** La caja de cada país con todos sus territorios (la del JSON es solo la del principal). */
+function getCountryBoxes(worldMap: WorldMapData): Record<string, Box> {
+	let boxes = countryBoxesCache.get(worldMap);
+	if (!boxes) {
+		boxes = Object.fromEntries(
+			Object.entries(worldMap.countries).map(([code, { d, bbox }]) => [
+				code,
+				getPathBox(d) ?? bbox,
+			]),
+		);
+		countryBoxesCache.set(worldMap, boxes);
+	}
+	return boxes;
+}
+
+/**
+ * Cuánto de más se dibuja alrededor de lo que se ve (en veces el tamaño de la
+ * vista, por cada lado), y a partir de cuántas veces de sobra se recorta.
+ */
+const RENDER_MARGIN_RATIO = 0.5;
+const RENDER_SLACK_RATIO = 0.1;
+const RENDER_SHRINK_AREA_RATIO = 6;
 
 interface CountryShapesProps {
 	countries: WorldMapData["countries"];
+	boxes: Record<string, Box>;
+	/** Solo se dibujan los países que tocan esta zona del mapa. */
+	renderBox: Box;
 	foundCodes: ReadonlySet<string> | undefined;
 	selectableCodes: ReadonlySet<string> | undefined;
 	wrongCode: string | undefined;
 }
 
 /**
- * Las 197 siluetas. Aparte y con `memo`: al arrastrar o ampliar solo cambia
- * la transformación del grupo que las contiene, no ellas.
+ * Las siluetas de la zona que se ve. Aparte y con `memo`: al arrastrar o
+ * ampliar solo cambia la transformación del grupo que las contiene, no ellas
+ * (hasta que la vista se sale de `renderBox`).
  */
 const CountryShapes = memo(function CountryShapes({
 	countries: shapes,
+	boxes,
+	renderBox,
 	foundCodes,
 	selectableCodes,
 	wrongCode,
 }: CountryShapesProps) {
 	return Object.entries(shapes).map(([code, { d }]) => {
-		if (d === "") return null;
+		if (d === "" || !boxesIntersect(boxes[code], renderBox)) return null;
 
 		const isSelectable = selectableCodes?.has(code) ?? true;
 		return (
@@ -169,7 +210,7 @@ const CountryShapes = memo(function CountryShapes({
 				d={d}
 				data-code={isSelectable ? code : undefined}
 				vectorEffect="non-scaling-stroke"
-				className={`stroke-1 transition-colors ${getFill(
+				className={`stroke-1 ${getFill(
 					code,
 					foundCodes?.has(code) ?? false,
 					isSelectable,
@@ -216,6 +257,8 @@ export function WorldMap({
 	const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
 	/** A qué países se voló por última vez; `undefined` = todavía a ninguno. */
 	const [flownKey, setFlownKey] = useState<string>();
+	/** La zona del mapa cuyos países están dibujados: la vista y un margen. */
+	const [renderBox, setRenderBox] = useState<Box>();
 	const celebrationClipId = useId();
 	const pointers = useRef(new Map<number, Point>());
 	const hasDragged = useRef(false);
@@ -323,6 +366,36 @@ export function WorldMap({
 		worldMap,
 		canvas,
 	);
+	// Solo se dibuja lo que cae cerca de la vista: con un continente encuadrado,
+	// tres de cada cuatro siluetas no se ven y no hay por qué pintarlas en cada
+	// fotograma. La zona crece en cuanto la vista se acerca a su borde, y se
+	// recorta cuando sobra mucho; no durante un vuelo, que lo de alrededor
+	// todavía se ve mientras dura.
+	const halfWidth = canvas.width / 2 / current.scale;
+	const halfHeight = canvas.height / 2 / current.scale;
+	const viewBox: Box = [
+		current.center[0] - halfWidth,
+		current.center[1] - halfHeight,
+		current.center[0] + halfWidth,
+		current.center[1] + halfHeight,
+	];
+	const wantedBox = expandBox(viewBox, RENDER_MARGIN_RATIO);
+	let drawnBox = renderBox ?? wantedBox;
+	// Con un vuelo recién pedido, este render aún lleva la vista vieja: la zona
+	// se decide en el siguiente, ya con la nueva.
+	if (flownKey !== focusKey) {
+		// Nada: `setView` de arriba repite el render.
+	} else if (
+		!renderBox ||
+		!containsBox(renderBox, expandBox(viewBox, RENDER_SLACK_RATIO)) ||
+		(!isAnimated &&
+			getBoxArea(renderBox) > getBoxArea(wantedBox) * RENDER_SHRINK_AREA_RATIO)
+	) {
+		drawnBox = wantedBox;
+		setRenderBox(wantedBox);
+	}
+	const countryBoxes = getCountryBoxes(worldMap);
+
 	const isSelectable = (code: string) => selectableCodes?.has(code) ?? true;
 	const candidates = Object.entries(worldMap.countries)
 		.filter(([code]) => isSelectable(code))
@@ -495,8 +568,12 @@ export function WorldMap({
 	const [tx, ty] = toScreen([0, 0], current, canvas);
 	const dotRadius = MARKER_DOT_PX / 2 / current.scale;
 	const targetRadius = MIN_TARGET_PX / 2 / current.scale;
+	// Los países de fondo (ni elegibles ni acertados) no llevan punto.
 	const markers = Object.entries(worldMap.countries).filter(
-		([, country]) => getSizeOnScreen(country, current.scale) < MARKER_BELOW_PX,
+		([code, country]) =>
+			getSizeOnScreen(country, current.scale) < MARKER_BELOW_PX &&
+			(isSelectable(code) || (foundCodes?.has(code) ?? false)) &&
+			boxesIntersect(countryBoxes[code], drawnBox),
 	);
 	const isFocusShown = hasKeyboardFocus && focused !== undefined;
 	const celebrated = celebrateCode
@@ -506,15 +583,20 @@ export function WorldMap({
 		celebrated !== undefined &&
 		(celebrated.d === "" ||
 			getSizeOnScreen(celebrated, current.scale) < MARKER_BELOW_PX);
-	const celebrationBox: Box =
-		celebrated && isCelebratedTiny
+	// La bandera, una vez por grupo de territorios: así cubre también las islas
+	// que quedan fuera de la caja del territorio principal.
+	const celebrationBoxes: Box[] = !celebrated
+		? []
+		: isCelebratedTiny
 			? [
-					celebrated.centroid[0] - targetRadius,
-					celebrated.centroid[1] - targetRadius,
-					celebrated.centroid[0] + targetRadius,
-					celebrated.centroid[1] + targetRadius,
+					[
+						celebrated.centroid[0] - targetRadius,
+						celebrated.centroid[1] - targetRadius,
+						celebrated.centroid[0] + targetRadius,
+						celebrated.centroid[1] + targetRadius,
+					],
 				]
-			: (celebrated?.bbox ?? [0, 0, 0, 0]);
+			: getFlagBoxes(celebrated.d);
 	const instructionsId = "world-map-instructions";
 
 	return (
@@ -558,6 +640,8 @@ export function WorldMap({
 					/>
 					<CountryShapes
 						countries={worldMap.countries}
+						boxes={countryBoxes}
+						renderBox={drawnBox}
 						foundCodes={foundCodes}
 						selectableCodes={selectableCodes}
 						wrongCode={wrongCode}
@@ -610,15 +694,19 @@ export function WorldMap({
 									<path d={celebrated.d} />
 								)}
 							</clipPath>
-							<image
-								href={getFlagUrl(celebrateCode)}
-								x={celebrationBox[0]}
-								y={celebrationBox[1]}
-								width={celebrationBox[2] - celebrationBox[0]}
-								height={celebrationBox[3] - celebrationBox[1]}
-								preserveAspectRatio="xMidYMid slice"
-								clipPath={`url(#${celebrationClipId})`}
-							/>
+							<g clipPath={`url(#${celebrationClipId})`}>
+								{celebrationBoxes.map((box) => (
+									<image
+										key={box.join(",")}
+										href={getFlagUrl(celebrateCode)}
+										x={box[0]}
+										y={box[1]}
+										width={box[2] - box[0]}
+										height={box[3] - box[1]}
+										preserveAspectRatio="xMidYMid slice"
+									/>
+								))}
+							</g>
 						</g>
 					)}
 					{isFocusShown && focused.d !== "" && (
