@@ -57,3 +57,6 @@ pnpm-debug.log*
 
 # QA scripts y logs (web-agent-kit)
 .qa/
+
+# project-showcase: cuadros sueltos de la toma del tráiler
+/docs/showcase/take/
