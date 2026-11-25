@@ -9,6 +9,23 @@ las versiones siguen el [Versionado Semántico](https://semver.org/lang/es/).
 Cómo se añade una entrada y cuándo se sube cada número: ver
 [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-versioning).
 
+## [2.13.1] - 2026-11-25
+
+### Corregido
+
+- En Mapa, al jugar un continente ya solo se pueden tocar sus países: el resto
+  del mundo queda de fondo.
+- La bandera que aparece al acertar cubre el país entero, también sus islas.
+- El mapa se mueve con más soltura: ya no dibuja los países que quedan lejos de
+  lo que estás viendo.
+- El mapa va mucho más fluido al arrastrarlo, ampliarlo y volver a ver el mundo
+  entero: la transición ya no se queda a tirones. Justo después de acercar, las
+  fronteras se ven un instante menos nítidas y enseguida se afinan.
+- La bandera que aparece al acertar en Mapa cubre de verdad todo el país: en
+  muchos (Bolivia, Brasil, Venezuela, Uruguay…) dejaba franjas sin cubrir.
+- En Elegir países, marcar un rango con Shift y clic funciona a la primera: ya
+  no se selecciona el texto de los nombres.
+
 ## [2.13.0] - 2026-11-24
 
 ### Añadido
