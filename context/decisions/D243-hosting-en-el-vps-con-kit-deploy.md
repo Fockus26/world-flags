@@ -1,4 +1,4 @@
-# D243 · Infraestructura · De Vercel al VPS con kit-deploy · Implementado en el repo (corte pendiente de los pasos del dueño)
+# D243 · Infraestructura · De Vercel al VPS con kit-deploy · Implementado (corte hecho el 2026-11-25)
 
 **Resumen:** decidido por el dueño (2026-11-24) para un coste fijo y la app junto a su base. La app deja Vercel y pasa a kit-deploy en el VPS: imagen Docker construida en GitHub Actions, preview por PR en `world-flags-pr-<n>.preview.fockus.dev`, producción en `https://world-flags.fockus.dev`.
 
@@ -11,6 +11,9 @@
 - **Recordatorio diario:** el cron de kit-deploy (`GET`, con `CRON_SECRET`); la ruta acepta `GET` y `POST` hasta retirar el temporizador `systemd`.
 - **Salud:** `/api/health` responde 200 sin tocar la base.
 - **Base:** la de siempre (`world_flags`, creada a mano con kit-db) se adopta con `kit-deploy db adopt`; no se mueve nada.
+
+- **Secretos nuevos en el VPS:** las variables de Vercel eran *sensitive* y no se pueden leer. `BETTER_AUTH_SECRET` y `CRON_SECRET` se generaron de nuevo; el par VAPID también (`VAPID_SUBJECT=mailto:world-flags@fockus.dev`), así que las suscripciones push hechas con la clave de Vercel no valen en el VPS: hay que volver a activar las notificaciones. Remitente: `World Flags <world-flags@fockus.dev>` (dominio ya verificado en Brevo). Google solo en producción; en preview se entra con correo.
+- **Cron:** trabajo `0 * * * *` en kit-deploy; el temporizador `systemd` se retiró el 2026-11-25.
 
 **Alternativas descartadas:** Vercel como proxy del VPS (conserva el origen, pero Vercel sigue en medio); dominio propio ahora (coste; se puede añadir luego con `kit-deploy domain add`).
 

@@ -20,7 +20,5 @@ ssh kit-vps kit-deploy cron add world_flags /api/cron/send-daily-reminders "0 * 
 ssh kit-vps kit-deploy cron runs world_flags
 ```
 
-La ruta acepta también `POST` para el temporizador `systemd` de antes
-(`world-flags-reminders.timer`, contra `world-flags-hazel.vercel.app`), que se retira al
-pasar producción al VPS: `systemctl disable --now world-flags-reminders.timer`, y luego
-borrar el `.service`, el `.timer` y `/etc/world-flags/cron.header`.
+La ruta acepta también `POST`, del temporizador `systemd` de antes
+(`world-flags-reminders.timer`, contra Vercel), retirado el 2026-11-25.
