@@ -1,6 +1,6 @@
 import { countries } from "@/data/countries";
 import {
-	GAME_TYPES,
+	COMPETITIVE_GAME_TYPES,
 	getLeaderboardScope,
 	LEADERBOARD_REGIONS,
 	type PracticeRegion,
@@ -63,7 +63,7 @@ export function isPlausibleRushTime(
  */
 export function getLeaderboardMinimums(): Record<string, number> {
 	return Object.fromEntries(
-		GAME_TYPES.flatMap((gameType) =>
+		COMPETITIVE_GAME_TYPES.flatMap((gameType) =>
 			LEADERBOARD_REGIONS.map((region) => [
 				getLeaderboardScope(gameType, region),
 				getRushMinTimeMs(region),

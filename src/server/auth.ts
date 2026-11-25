@@ -10,12 +10,16 @@ import { sendConfirmationEmail } from "./email";
 
 /**
  * URL de la app en este despliegue. En producción, `BETTER_AUTH_URL`; en un preview
- * no hay URL fija y Vercel da la suya, que es la que tienen que llevar los enlaces.
+ * no hay URL fija: kit-deploy pone la suya en `KIT_DEPLOY_PREVIEW_URL` (ya con
+ * `https://`) y Vercel, mientras siga de respaldo, en `VERCEL_URL`/`VERCEL_BRANCH_URL`.
+ * Es la que tienen que llevar los enlaces.
  */
 function deploymentOrigins(): string[] {
-	return [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+	const vercel = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
 		.filter((host): host is string => Boolean(host))
 		.map((host) => `https://${host}`);
+	const kitDeploy = process.env.KIT_DEPLOY_PREVIEW_URL;
+	return kitDeploy ? [kitDeploy, ...vercel] : vercel;
 }
 
 const baseURL = process.env.BETTER_AUTH_URL ?? deploymentOrigins()[0];
@@ -36,7 +40,8 @@ export const auth = betterAuth({
 		database: { generateId: "uuid" },
 		// El correo se manda sin esperarlo: si no, un registro nuevo tardaría más que
 		// uno con correo ya usado y delataría qué correos tienen cuenta (D212). En una
-		// función de Vercel, sin `waitUntil` el envío moriría al responder.
+		// función de Vercel, sin `waitUntil` el envío moriría al responder; en el servidor
+		// Node del VPS el proceso sigue vivo y `waitUntil` no hace nada (la promesa ya corre).
 		backgroundTasks: { handler: waitUntil },
 	},
 	emailAndPassword: {

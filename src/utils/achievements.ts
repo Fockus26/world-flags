@@ -1,6 +1,6 @@
 import { countries } from "@/data/countries";
 import {
-	GAME_TYPES,
+	COMPETITIVE_GAME_TYPES,
 	type GameType,
 	REGIONS,
 	type Region,
@@ -136,7 +136,8 @@ function hasRegionLearnedInBothGames(data: UserLearningData): boolean {
 /** Para "tres_en_uno": algún continente completo en los tres juegos a la vez. */
 function hasRegionLearnedInAllGames(data: UserLearningData): boolean {
 	return REGIONS.some((region) =>
-		GAME_TYPES.every(
+		// Los tres de siempre: Mapa no entra en este logro (D240).
+		COMPETITIVE_GAME_TYPES.every(
 			(gameType) =>
 				countLearnedInRegions(data, gameType, [region]) >=
 				REGION_COUNTRY_COUNTS[region],

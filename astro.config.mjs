@@ -1,5 +1,6 @@
 // @ts-check
 
+import node from "@astrojs/node";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
@@ -30,15 +31,17 @@ for (const key of [
 	process.env[key] ??= fileEnv[key];
 }
 
-// Dominio de producción (Vercel). Si cambia, actualizar también el `Sitemap:`
-// de `public/robots.txt`.
-const SITE_URL = "https://world-flags-hazel.vercel.app";
+// Dominio de producción (kit-deploy en el VPS, D243). Si cambia, actualizar también el
+// `Sitemap:` de `public/robots.txt`.
+const SITE_URL = "https://world-flags.fockus.dev";
 
 // https://astro.build/config
 export default defineConfig({
 	site: SITE_URL,
-	// `/` sigue prerenderizada; solo `/api/*` corre en funciones (`prerender = false`).
-	adapter: vercel(),
+	// `/` sigue prerenderizada; solo `/api/*` corre en el servidor (`prerender = false`).
+	// En el VPS, un servidor Node propio (imagen Docker de kit-deploy, D243). Vercel pone
+	// `VERCEL=1` en sus builds: mientras siga como respaldo, construye con su adaptador.
+	adapter: process.env.VERCEL ? vercel() : node({ mode: "standalone" }),
 	integrations: [
 		react({
 			babel: {

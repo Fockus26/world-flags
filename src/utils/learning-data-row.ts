@@ -17,6 +17,7 @@ import {
 export const SUB_GAME_COLUMNS = {
 	countries: "countries_game",
 	capitals: "capitals_game",
+	map: "map_game",
 } as const satisfies Record<SubGameType, LearningDataColumn>;
 
 /** Las columnas de datos de la fila (sin `user_id` ni `updated_at`). */

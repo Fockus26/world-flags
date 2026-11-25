@@ -11,41 +11,14 @@ Una migración se aplica **antes** de desplegar el código que la usa.
 
 ## Recordatorio diario
 
-`POST /api/cron/send-daily-reminders` se llama cada hora en punto desde el VPS: sirve con
-cualquier plan de Vercel. **Ya instalado y activo en el VPS.** El secreto (`CRON_SECRET`, el mismo que en
-Vercel) va en un archivo solo legible por root, para que no se vea en la lista de procesos. El `Content-Type` hace falta: sin él, la comprobación
-de origen de Astro responde 403 antes de llegar a la ruta.
-
-`/etc/world-flags/cron.header` (permisos 600):
-
-```
-Authorization: Bearer <CRON_SECRET>
-```
-
-`/etc/systemd/system/world-flags-reminders.service`:
-
-```ini
-[Unit]
-Description=World Flags: recordatorio diario
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/curl -fsS --max-time 60 -X POST -H "Content-Type: application/json" -H @/etc/world-flags/cron.header https://world-flags-hazel.vercel.app/api/cron/send-daily-reminders
-```
-
-`/etc/systemd/system/world-flags-reminders.timer`:
-
-```ini
-[Unit]
-Description=World Flags: recordatorio diario, cada hora
-
-[Timer]
-OnCalendar=hourly
-
-[Install]
-WantedBy=timers.target
-```
+`/api/cron/send-daily-reminders` se llama cada hora en punto con `Authorization: Bearer <CRON_SECRET>`.
+Desde D243 lo llama el cron de kit-deploy (un `GET`; el secreto lo pone kit-deploy con la
+variable `CRON_SECRET` de producción):
 
 ```bash
-systemctl daemon-reload && systemctl enable --now world-flags-reminders.timer
+ssh kit-vps kit-deploy cron add world_flags /api/cron/send-daily-reminders "0 * * * *"
+ssh kit-vps kit-deploy cron runs world_flags
 ```
+
+La ruta acepta también `POST`, del temporizador `systemd` de antes
+(`world-flags-reminders.timer`, contra Vercel), retirado el 2026-11-25.

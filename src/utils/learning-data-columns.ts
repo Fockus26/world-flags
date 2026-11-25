@@ -12,6 +12,7 @@ export const LEARNING_DATA_COLUMNS = [
 	"last_practice_by_country",
 	"countries_game",
 	"capitals_game",
+	"map_game",
 	"achievements",
 	"stats",
 	"session_history",

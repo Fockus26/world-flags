@@ -2,11 +2,11 @@ import { AutoHeight } from "@/components/ui/AutoHeight";
 import { Fieldset } from "@/components/ui/Fieldset";
 import { OPTION_TILE_ROW, OptionTile } from "@/components/ui/OptionTile";
 import {
+	COMPETITIVE_GAME_TYPES,
 	type Difficulty,
 	GAME_MODE_LABELS,
 	GAME_MODES,
 	GAME_TYPE_LABELS,
-	GAME_TYPES,
 	type GameConfiguration,
 	type GameMode,
 	type PracticeOrder,
@@ -48,11 +48,11 @@ export function TutorialSettings({
 		<div className="flex flex-col gap-5">
 			{/* El juego de la partida de ejemplo (D121): los tres, con el mismo
 			    orden y las mismas etiquetas que el selector de la configuración
-			    (`GAME_TYPES`, `GAME_TYPE_LABELS`). Países por defecto, como un
-			    usuario nuevo (D030). */}
+			    (`COMPETITIVE_GAME_TYPES`, `GAME_TYPE_LABELS`). Países por defecto, como un
+			    usuario nuevo (D030). Mapa no tiene partida de ejemplo (D240). */}
 			<Fieldset legend="Juego">
 				<div className={`${OPTION_TILE_ROW} gap-1.5`}>
-					{GAME_TYPES.map((gameType) => (
+					{COMPETITIVE_GAME_TYPES.map((gameType) => (
 						<OptionTile
 							key={gameType}
 							name="tutorial-game-type"

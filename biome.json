@@ -19,6 +19,11 @@
 		}
 	],
 	"files": {
-		"includes": ["**", "!.claude/worktrees", "!**/.claude/kit-reference"]
+		"includes": [
+			"**",
+			"!.claude/worktrees",
+			"!**/.claude/kit-reference",
+			"!src/data/world-map.json"
+		]
 	}
 }

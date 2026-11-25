@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import {
+	COMPETITIVE_GAME_TYPES,
 	type GameType,
 	getLeaderboardScope,
 	LEADERBOARD_REGIONS,
@@ -157,6 +158,8 @@ const LEADERBOARD_DESCRIPTIONS: Record<GameType, string> = {
 	countries: "Mejor tiempo en modo competitivo practicando todos los países",
 	flags: "Mejor tiempo en modo competitivo practicando todas las banderas",
 	capitals: "Mejor tiempo en modo competitivo practicando todas las capitales",
+	// Mapa aún no tiene competitivo (D240): no sale en el selector del ranking.
+	map: "",
 };
 
 /**
@@ -515,6 +518,7 @@ export function LeaderboardModal({
 				legend="Ranking de"
 				value={gameType}
 				onChange={setGameType}
+				gameTypes={COMPETITIVE_GAME_TYPES}
 				className="mb-3"
 			/>
 
