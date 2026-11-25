@@ -16,4 +16,6 @@
 
 **Rollback:** una semana con Vercel publicando `main` (con su adaptador) en `world-flags-hazel.vercel.app`; apagar kit-deploy = `gh variable set KIT_DEPLOY_ENABLED --body false`. Pasada la semana, el dueño decide y se van `vercel.json`, `@astrojs/vercel`, `@vercel/functions` y el proyecto de Vercel.
 
+- **Nombre en kit-deploy:** `world_flags` (no admite guiones); el host lo pasa a `world-flags.fockus.dev`, y coincide con la base de kit-db.
+
 **Rama:** `chore/hosting-vps`
