@@ -75,9 +75,13 @@ function CountryCheckbox({
 	// casilla y nombre: todas las celdas de una fila miden lo mismo, así que
 	// las casillas siguen a la misma altura aunque un nombre ocupe dos líneas.
 	// Desde `sm` vuelve a la alineación de arriba de D169.
+	//
+	// `select-none` (D242): con Shift, el clic del navegador extiende la
+	// selección de texto desde el clic anterior; los nombres quedaban resaltados
+	// y el primer Shift+clic no marcaba el rango.
 	return (
 		<label
-			className={`relative flex min-h-11 min-w-0 items-center gap-1.5 rounded-sm px-1.5 text-label leading-snug transition-colors sm:min-h-0 sm:items-start sm:py-1 ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer hover:bg-surface-hover"}`}
+			className={`relative flex min-h-11 min-w-0 select-none items-center gap-1.5 rounded-sm px-1.5 text-label leading-snug transition-colors sm:min-h-0 sm:items-start sm:py-1 ${disabled ? "cursor-not-allowed text-text-placeholder" : "cursor-pointer hover:bg-surface-hover"}`}
 		>
 			<input
 				type="checkbox"

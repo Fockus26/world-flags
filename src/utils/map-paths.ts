@@ -66,6 +66,36 @@ export function getBoxArea(box: Box): number {
 	return (box[2] - box[0]) * (box[3] - box[1]);
 }
 
+/** Lo que `box` tiene dentro de `limits`. Si no se tocan, una caja sin tamaño en el borde de `limits`. */
+export function clampBox(box: Box, limits: Box): Box {
+	const clamp = (value: number, min: number, max: number) =>
+		Math.min(Math.max(value, min), max);
+	return [
+		clamp(box[0], limits[0], limits[2]),
+		clamp(box[1], limits[1], limits[3]),
+		clamp(box[2], limits[0], limits[2]),
+		clamp(box[3], limits[1], limits[3]),
+	];
+}
+
+/**
+ * La caja más pequeña de proporción `ratio` (ancho / alto) que cubre `box`,
+ * centrada en ella: dónde va una imagen de esa proporción para llenar `box`
+ * sin deformarse (lo que sobra queda fuera, a partes iguales).
+ */
+export function coverBox(box: Box, ratio: number): Box {
+	const width = Math.max(box[2] - box[0], (box[3] - box[1]) * ratio);
+	const height = width / ratio;
+	const centerX = (box[0] + box[2]) / 2;
+	const centerY = (box[1] + box[3]) / 2;
+	return [
+		centerX - width / 2,
+		centerY - height / 2,
+		centerX + width / 2,
+		centerY + height / 2,
+	];
+}
+
 /**
  * Un territorio se pinta con la misma bandera que otro si queda a menos de
  * esto de él, en proporción al lado mayor del grupo: Tierra del Fuego va con
