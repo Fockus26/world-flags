@@ -1,0 +1,19 @@
+# kit-deploy (D243): nada local ni secreto entra en la imagen; las variables las pone kit-agent.
+.git
+.github
+node_modules
+dist
+.astro
+coverage
+.env*
+!.env.example
+*.log
+.DS_Store
+.vercel
+.claude
+context
+.qa
+test-results
+playwright-report
+e2e
+tests

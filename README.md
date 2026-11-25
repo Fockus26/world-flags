@@ -7,7 +7,7 @@ Learn every country and flag in the world with Anki-style spaced repetition.
 An installable PWA with cloud-synced progress, a timed competitive mode with a public
 leaderboard, streaks, achievements and daily reminders.
 
-**▶ Play it:** [world-flags-hazel.vercel.app](https://world-flags-hazel.vercel.app)
+**▶ Play it:** [world-flags.fockus.dev](https://world-flags.fockus.dev)
 
 > The app's interface is in Spanish. Code, issues and PRs can be in English or Spanish.
 

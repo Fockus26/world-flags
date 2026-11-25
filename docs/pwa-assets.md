@@ -14,7 +14,7 @@ Referenciados desde `src/layouts/Layout.astro` y `public/manifest.webmanifest`.
 | `public/og-image.png` | **1200×630** | PNG o JPG | — | `og:image` / `twitter:image` (default de `image` en `Layout.astro`) | No — PNG |
 
 Los cuatro iconos y `og-image.png` ya están en `public/`; `SITE_URL` (`astro.config.mjs`) es
-`https://world-flags-hazel.vercel.app`, así que las URL absolutas de OG salen bien.
+`https://world-flags.fockus.dev`, así que las URL absolutas de OG salen bien.
 
 ## Identidad visual (para que todo vaya a juego)
 

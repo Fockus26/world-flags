@@ -57,14 +57,16 @@ ni un test académico severo.
 - Auth: **Better Auth** (correo + Google), cookie httpOnly
 - Persistencia local: `localStorage` vía `src/utils/learning-storage.ts`
 - Pagos: N/A · Correo: solo el de confirmar cuenta (ver "Correos")
-- Despliegue: **Vercel** (ver "Repo y despliegue")
+- Despliegue: **kit-deploy en el VPS** (Docker + `@astrojs/node`, D243; ver "Repo y despliegue")
 
 ## Repo y despliegue
 
 - Repo: https://github.com/Fockus26/World-Flags (público; "Automatically delete head branches" activo)
-- Vercel: proyecto conectado al repo en la cuenta del dueño (sin `.vercel/` enlazado en local)
-- Producción: https://world-flags-hazel.vercel.app (`SITE_URL`, #52) · Previews: uno por PR
-- DNS gestionado por: no aplica (dominio `*.vercel.app`, sin dominio propio)
+- Hosting: **kit-deploy** en el VPS (D243): `deploy-vps.yml` construye la imagen en GitHub Actions
+  y la despliega; proyecto `world-flags`, base `world_flags` adoptada
+- Producción: https://world-flags.fockus.dev (`SITE_URL`) · Previews: `world-flags-pr-<n>.preview.fockus.dev`, uno por PR
+- Vercel: respaldo una semana tras el corte (`world-flags-hazel.vercel.app`, construye con `@astrojs/vercel`); luego se retira
+- DNS gestionado por: kit-deploy (subdominio de `fockus.dev`, sin dominio propio)
 - Mantenimiento: no aplica (app estática; el SW sirve la última versión sin red)
 
 ## Assets de marca
