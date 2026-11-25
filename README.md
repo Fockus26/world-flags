@@ -1,19 +1,20 @@
 # World Flags
 
-> A game for learning every country, flag and capital in the world: short daily practice that brings back what you are about to forget, and a timed mode with a public ranking.
+> A game for learning every country, flag and capital in the world, and where each country is on the map: short daily practice that brings back what you are about to forget, and a timed mode with a public ranking.
 
-*Juego para aprender los países, las banderas y las capitales del mundo con repetición espaciada.*
+*Juego para aprender los países, las banderas y las capitales del mundo, y a ubicarlos en el mapa, con repetición espaciada.*
 *Se instala en el teléfono, funciona sin conexión y guarda el progreso en la nube.*
 
-[Play it](https://world-flags-hazel.vercel.app) · In production · v2.12.1 · [![CI](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml/badge.svg)](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[Play it](https://world-flags.fockus.dev) · In production · v2.13.1 · [![CI](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml/badge.svg)](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-<!-- Screenshot pending: docs/readme/flags-session.png (a Flags practice card mid-session, phone 390×844, demo data). -->
+<img src="docs/showcase/media/poster.jpg" alt="Home screen on a phone: Flags chosen as the game and South America as the continent to practise" width="300">
 
 > The app's interface is in Spanish. Code, issues and PRs can be in English or Spanish.
 
 ## What it does
 
-- A player picks one of three games (which countries belong to each continent, which country a flag belongs to, which capital a country has) and plays the whole world, any mix of continents, or hand-picked countries.
+- A player picks one of four games (which countries belong to each continent, which country a flag belongs to, which capital a country has, where a country is on the world map) and plays the whole world, any mix of continents, or hand-picked countries.
+- In the map game the player gets a country and its flag and finds it by tapping a world map they can drag and zoom; a right answer paints the flag over the country. It has practice mode only so far.
 - In practice mode the app decides what to ask: countries the player keeps missing come back sooner, the ones they know are spaced out, and a daily queue gathers everything due today.
 - In competitive mode the session is a stopwatch, wrong answers and skips cost time, and the best time goes to a public ranking, per game, for the whole world and per continent.
 - A player with an account continues on another device where they left off; without one they play as a guest and nothing leaves the phone.
@@ -24,7 +25,7 @@
 
 | Layer | Choice |
 |---|---|
-| Framework | [Astro 7](https://astro.build): a prerendered page that mounts one React island, plus API routes as serverless functions |
+| Framework | [Astro 7](https://astro.build): a prerendered page that mounts one React island, plus API routes served by the Node adapter |
 | UI | React 19 with the React Compiler, strict TypeScript, [HeroUI v3](https://www.heroui.com/) on Tailwind CSS v4 driven by design tokens; light, dark or system theme |
 | State | Redux Toolkit, reached only through hooks in `src/hooks/`; local persistence through a single storage module |
 | Learning | SM-2 spaced repetition, a practice queue and learning in batches, all pure functions in `src/utils/` |
@@ -32,7 +33,8 @@
 | Auth | [Better Auth](https://better-auth.com): email with confirmation, or Google; httpOnly cookie |
 | Offline | Hand-written service worker (`public/sw.js`) and web manifest; self-hosted flags and font |
 | Reminders | Web Push, sent by a scheduled call to a protected route |
-| Hosting | Vercel for the app and its functions; self-hosted Postgres behind a connection pooler |
+| Map | One SVG outline per country, generated once from Natural Earth 1:50m and stored already projected (`bun run map:build`); the client loads no map library |
+| Hosting | A Docker image built in GitHub Actions and deployed to a VPS, with a preview per pull request; self-hosted Postgres behind a connection pooler on the same server |
 
 ```mermaid
 flowchart LR
@@ -40,7 +42,7 @@ flowchart LR
   App --> Local[(Local progress)]
   App -- read, merge, conditional write --> API[API routes]
   API --> DB[(PostgreSQL)]
-  Timer[Hourly timer] --> API
+  Timer[Scheduled call] --> API
   API -- web push --> Player
 ```
 
@@ -53,14 +55,14 @@ The first version uploaded the whole progress row after every answer: with two d
 The ranking is public and anyone with a session can call the route, so the client cannot be trusted. A trigger on the ranking table rejects times under a per-scope minimum (number of countries × 300 ms, more than twice the typing world record), unknown scopes, blank or invisible names and invalid avatars; it sets the date itself and keeps the better of the old and new time, so a worse run never replaces a better one. A trigger was chosen over reading before writing because it is atomic and also covers old clients. A test compares the minimums in the SQL with the ones the client uses. The cost: it does not prove the game was played; any time above the minimum is accepted. Replaying each game on the server was considered and left out. Evidence: `drizzle/0001_ranking_validacion.sql`, `tests/unit/leaderboard-validation.test.ts`.
 
 **Leaving Supabase for a self-hosted Postgres.**
-Database and auth moved to a Postgres server with Drizzle and Better Auth, so the product does not depend on a paid plan. Each row-level security policy became an explicit check in its API route, with the user id taken from the session and never from the request body, and one test per policy. Existing accounts kept their ids and passwords: the old bcrypt hashes are still verified. Daily reminders are triggered by a system timer calling a protected route instead of a platform cron. The cost: earlier service workers had cached API responses, so the first new one had to take over and reload open tabs once; and after the cut there was no way back. Evidence: `src/server/`, `src/pages/api/`, `tests/api/authorization.test.ts`.
+Database and auth moved to a Postgres server with Drizzle and Better Auth, so the product does not depend on a paid plan. Each row-level security policy became an explicit check in its API route, with the user id taken from the session and never from the request body, and one test per policy. Existing accounts kept their ids and passwords: the old bcrypt hashes are still verified. Daily reminders are triggered by a scheduled call to a protected route instead of a database job. The app itself later left Vercel for the same server, as a Docker image, for a fixed cost and to sit next to its database. The cost: earlier service workers had cached API responses, so the first new one had to take over and reload open tabs once; and after the cut there was no way back. Evidence: `src/server/`, `src/pages/api/`, `tests/api/authorization.test.ts`.
 
 **The flags are part of the app, not a CDN call.**
 Practising offline a continent that had never been opened showed broken images. The 197 flags are served from the app's own origin, and a few seconds after load the app sends the list to the service worker, which downloads only the missing ones and resumes where it stopped if the network drops. It never runs with data saver on or on a 2G connection. The cost: about 3.1 MB once per device, and again if the cache name ever changes. Evidence: `public/sw.js`, `tests/unit/flag-precache.test.ts`.
 
 ## Quality
 
-- **Tests:** about 440 unit tests in 37 files (progress merge and concurrent sync, practice queue and learning path, ranking validation, capitals answers, service worker precache, session handling), 34 access-policy tests against the API with a local database, and 14 end-to-end tests with Playwright.
+- **Tests:** 522 unit tests in 41 files (progress merge and concurrent sync, practice queue and learning path, ranking validation, capitals answers, map data and camera, service worker precache, session handling), 34 access-policy tests against the API with a local database, and 14 end-to-end tests with Playwright.
 - **CI:** every pull request runs typecheck, lint (Biome), the unit suite and a production build.
 - **Releases:** each player-visible change ships with a changeset; the changelog it produces is what the in-app "what's new" dialog shows, and a server-side minimum version can require outdated installs to update.
 - **Accessibility:** built to WCAG 2.1 AA: full keyboard support, visible focus, no state conveyed by colour or sound alone, usable down to 320 px.
@@ -108,9 +110,9 @@ Environment variables, by name (see `.env.example` for what each one does):
 src/
   components/
     app/        Providers and startup effects (auth, sync, theme, achievements), snackbars
-    game/       Home screen and its dialogs, sessions for the three games, results
+    game/       Home screen and its dialogs, sessions for the four games, the world map, results
     ui/         Wrappers over HeroUI (Button, Modal, Select, Tooltip…)
-  data/         Countries and capitals datasets
+  data/         Countries and capitals datasets, the generated world map
   hooks/        The only way components touch Redux (useGame, useAuth, useAchievements…)
   pages/        The app shell and the API routes (auth, progress, ranking, push, cron)
   server/       Database schema and client, auth setup, email, data access
@@ -121,7 +123,7 @@ public/         Flags, PWA icons, manifest, service worker
 drizzle/        SQL migrations and seed
 tests/          Unit tests and API access-policy tests
 e2e/            Playwright tests
-docs/           State management, design system, components, PWA assets
+docs/           State management, design system, components, PWA assets; showcase/ holds the trailer and its storyboard
 context/        Design rules, tokens and decision records
 ```
 
@@ -129,7 +131,7 @@ Deeper dives: [state management](./docs/state-management.md), [design system](./
 
 ## My role
 
-A personal product. I defined it and developed all of it: the three games and their learning logic, accounts and progress sync, the public ranking and its validation, the offline app, the database and its migration off Supabase, and the release pipeline.
+A personal product. I defined it and developed all of it: the four games and their learning logic, accounts and progress sync, the public ranking and its validation, the offline app, the database and its migration off Supabase, the move to a self-hosted server, and the release pipeline.
 
 ## Contributing and license
 
