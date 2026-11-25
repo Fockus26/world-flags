@@ -7,7 +7,7 @@
 
 [Play it](https://world-flags.fockus.dev) · In production · v2.13.1 · [![CI](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml/badge.svg)](https://github.com/Fockus26/World-Flags/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-<img src="docs/showcase/media/poster.jpg" alt="Home screen on a phone: Flags chosen as the game and South America as the continent to practise" width="300">
+<img src="docs/showcase/media/poster.jpg" alt="Home screen: Flags chosen as the game and South America as the continent to practise" width="800">
 
 > The app's interface is in Spanish. Code, issues and PRs can be in English or Spanish.
 

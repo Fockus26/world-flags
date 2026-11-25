@@ -4,7 +4,7 @@
 //
 //   node scripts/qa-local.ts --port 4310 --offline
 //   node ~/.claude/skills/project-showcase/scripts/record.mjs \
-//     --storyboard docs/showcase/storyboard.mjs --format phone \
+//     --storyboard docs/showcase/storyboard.mjs --format desktop \
 //     --base http://localhost:4310 --out docs/showcase/take
 
 export const start = "/";
@@ -33,14 +33,18 @@ export async function setup(page, context) {
 	await context.addInitScript(() => {
 		addEventListener("DOMContentLoaded", () => {
 			const style = document.createElement("style");
-			style.textContent = "astro-dev-toolbar{display:none!important}";
+			style.textContent =
+				"astro-dev-toolbar{display:none!important}" +
+				// No scrollbar or its reserved rail at the edge of the take
+				"html{scrollbar-gutter:auto!important;scrollbar-width:none!important}" +
+				"html::-webkit-scrollbar{display:none!important}";
 			document.head.appendChild(style);
 		});
 	});
 	await page.goto(BASE);
 	await page.getByRole("button", { name: "Saltar tutorial" }).click();
-	await page.locator('button[aria-label="Qué practicar"]:visible').click();
-	await page.getByRole("option", { name: "Banderas" }).click();
+	// From 30rem up the game selector is a row of pills; below, a dropdown
+	await page.getByText("Banderas", { exact: true }).filter({ visible: true }).first().click();
 	await page.getByText("Sudamérica", { exact: true }).click();
 	// One card played before recording: the first-flag achievement and the first level arrive
 	// here, so the home screen of the first frame has the same layout as the one of the last
