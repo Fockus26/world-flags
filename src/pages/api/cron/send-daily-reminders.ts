@@ -29,10 +29,11 @@ function localHourInTimezone(timezone: string): number | null {
 /**
  * El recordatorio diario, a quien tenga `reminder_hour` == la hora actual EN SU zona
  * horaria. Se llama una vez por hora: así cada usuario lo recibe a SU hora local sin 24
- * trabajos distintos. La llama un temporizador en el VPS (`drizzle/README.md`), con
- * `CRON_SECRET`: sin él esto dejaría a cualquiera disparar envíos a discreción.
+ * trabajos distintos. La llama el cron de kit-deploy (`GET`, D243; `drizzle/README.md`), con
+ * `CRON_SECRET`: sin él esto dejaría a cualquiera disparar envíos a discreción. `POST`
+ * sigue para el temporizador `systemd` de antes, mientras exista.
  */
-export const POST = withErrorHandling(async (request) => {
+const sendDailyReminders = withErrorHandling(async (request) => {
 	const cronSecret = process.env.CRON_SECRET;
 
 	if (
@@ -52,7 +53,11 @@ export const POST = withErrorHandling(async (request) => {
 
 	webpush.setVapidDetails(
 		process.env.VAPID_SUBJECT ?? "",
-		process.env.PUBLIC_VAPID_PUBLIC_KEY ?? "",
+		// kit-deploy solo lleva al build las `NEXT_PUBLIC_*` (el Dockerfile la copia a
+		// `PUBLIC_*` para Astro); en el contenedor llega con ese nombre.
+		process.env.PUBLIC_VAPID_PUBLIC_KEY ??
+			process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ??
+			"",
 		process.env.VAPID_PRIVATE_KEY ?? "",
 	);
 
@@ -108,3 +113,6 @@ export const POST = withErrorHandling(async (request) => {
 
 	return json({ sent, stale: staleDeviceIds.length, failed });
 });
+
+export const GET = sendDailyReminders;
+export const POST = sendDailyReminders;

@@ -6,7 +6,8 @@ modo "rush" con ranking público y práctica por mundo, continentes o países.
 **Estado:** en producción, iterando diseño y features
 **Dueño:** Alejandro (`alejandrorey2654@gmail.com`, git `Fockus26`)
 **Kit:** web-agent-kit, versión en `.kit-version` (`/kit-update`) ·
-**Despliegue:** Vercel `world-flags-hazel.vercel.app` · preview por PR
+**Despliegue:** kit-deploy en el VPS `world-flags.fockus.dev` · preview por PR (D243; Vercel queda
+una semana de respaldo en `world-flags-hazel.vercel.app`)
 
 ---
 
@@ -21,7 +22,7 @@ modo "rush" con ranking público y práctica por mundo, continentes o países.
 `grep -rhi "^# D.*modal" context/decisions/`.
 
 **`reference/…` del kit** = `~/.claude/kit-reference/…` (o `.claude/kit-reference/…`).
-**Tech refs:** astro, vps-postgres, vercel → su `tech/<nombre>.md` cuando la tarea lo toque; solo esos.
+**Tech refs:** astro, vps-postgres, vps-hosting (y vercel mientras siga de respaldo) → su `tech/<nombre>.md` cuando la tarea lo toque; solo esos.
 
 ### Qué está en el repo y qué vive solo en local
 

@@ -11,7 +11,8 @@ const MIN_VERSION_KEY = "min_version";
 /**
  * `app_config lectura pública`, solo la clave que usa la app: la tabla no se expone
  * entera y no hay ruta de escritura (se edita a mano, en la base). Se pide a cada
- * jugador al volver a la pestaña: un minuto de caché en Vercel evita una consulta por cada uno.
+ * jugador al volver a la pestaña: un minuto de caché en Vercel evita una consulta por cada uno
+ * (en el VPS no hay CDN delante: cada visita consulta, que es una fila por clave).
  */
 export const GET = withErrorHandling(async () => {
 	const [row] = await db
