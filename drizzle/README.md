@@ -16,8 +16,8 @@ Desde D243 lo llama el cron de kit-deploy (un `GET`; el secreto lo pone kit-depl
 variable `CRON_SECRET` de producción):
 
 ```bash
-ssh kit-vps kit-deploy cron add world-flags /api/cron/send-daily-reminders "0 * * * *"
-ssh kit-vps kit-deploy cron runs world-flags
+ssh kit-vps kit-deploy cron add world_flags /api/cron/send-daily-reminders "0 * * * *"
+ssh kit-vps kit-deploy cron runs world_flags
 ```
 
 La ruta acepta también `POST` para el temporizador `systemd` de antes

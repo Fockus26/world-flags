@@ -63,7 +63,7 @@ ni un test académico severo.
 
 - Repo: https://github.com/Fockus26/World-Flags (público; "Automatically delete head branches" activo)
 - Hosting: **kit-deploy** en el VPS (D243): `deploy-vps.yml` construye la imagen en GitHub Actions
-  y la despliega; proyecto `world-flags`, base `world_flags` adoptada
+  y la despliega; proyecto `world_flags` (kit-deploy no admite guiones; el host sale con `-`), base `world_flags` adoptada
 - Producción: https://world-flags.fockus.dev (`SITE_URL`) · Previews: `world-flags-pr-<n>.preview.fockus.dev`, uno por PR
 - Vercel: respaldo una semana tras el corte (`world-flags-hazel.vercel.app`, construye con `@astrojs/vercel`); luego se retira
 - DNS gestionado por: kit-deploy (subdominio de `fockus.dev`, sin dominio propio)
